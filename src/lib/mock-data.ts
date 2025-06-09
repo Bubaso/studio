@@ -36,9 +36,9 @@ const items: Item[] = [
     id: 'item1',
     name: 'Veste en Cuir Vintage',
     description: 'Une veste en cuir vintage élégante, à peine portée. Taille M. Excellent état, look classique.',
-    price: 49000, // Approx 75 EUR
+    price: 49000, 
     category: 'Vêtements et Accessoires' as ItemCategory,
-    location: 'Dakar, SN', // Changed location for context
+    location: 'Dakar, SN', 
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'veste cuir',
     sellerId: 'user1',
@@ -50,9 +50,9 @@ const items: Item[] = [
     id: 'item2',
     name: 'Chaise en Bois Antique',
     description: 'Chaise en bois antique magnifiquement ouvragée. Ajoute un charme rustique à n\'importe quelle pièce. Chêne massif.',
-    price: 79000, // Approx 120 EUR
+    price: 79000, 
     category: 'Mobilier' as ItemCategory,
-    location: 'Abidjan, CI', // Changed location for context
+    location: 'Abidjan, CI', 
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'chaise bois',
     sellerId: 'user2',
@@ -64,9 +64,9 @@ const items: Item[] = [
     id: 'item3',
     name: 'Console de Jeu Rétro',
     description: 'Console de jeu rétro classique avec 2 manettes et 5 jeux populaires. Fonctionne parfaitement.',
-    price: 59000, // Approx 90 EUR
+    price: 59000, 
     category: 'Électronique' as ItemCategory,
-    location: 'Cotonou, BJ', // Changed location for context
+    location: 'Cotonou, BJ', 
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'console jeu',
     sellerId: 'user3',
@@ -78,7 +78,7 @@ const items: Item[] = [
     id: 'item4',
     name: 'Sac à Main de Créateur',
     description: 'Authentique sac à main de créateur, légèrement utilisé. Livré avec son sac anti-poussière d\'origine. Cuir, noir.',
-    price: 164000, // Approx 250 EUR
+    price: 164000, 
     category: 'Vêtements et Accessoires' as ItemCategory,
     location: 'Dakar, SN',
     imageUrl: 'https://placehold.co/600x400.png',
@@ -92,7 +92,7 @@ const items: Item[] = [
     id: 'item5',
     name: 'VTT',
     description: 'VTT robuste, adapté à tous les terrains. 21 vitesses, suspension avant. Récemment entretenu.',
-    price: 118000, // Approx 180 EUR
+    price: 118000, 
     category: 'Sports et Plein Air' as ItemCategory,
     location: 'Abidjan, CI',
     imageUrl: 'https://placehold.co/600x400.png',
@@ -106,7 +106,7 @@ const items: Item[] = [
     id: 'item6',
     name: 'Livre Première Édition Signée',
     description: 'Rare première édition signée d\'un roman populaire. Excellent état, le rêve d\'un collectionneur.',
-    price: 197000, // Approx 300 EUR
+    price: 197000, 
     category: 'Livres, Films et Musique' as ItemCategory,
     location: 'Dakar, SN',
     imageUrl: 'https://placehold.co/600x400.png',
@@ -269,7 +269,7 @@ export const addMockItem = async (itemData: Omit<Item, 'id' | 'postedDate' | 'se
                 sellerName: seller?.name || 'Vendeur inconnu',
                 dataAiHint: itemData.dataAiHint || `${itemData.category} ${itemData.name.split(' ').slice(0,1).join('')}`.toLowerCase()
             };
-            items.push(newItem); // Add to the beginning for most recent
+            items.unshift(newItem); // Add to the beginning for most recent
             if (seller) {
                 seller.listings = [newItem, ...(seller.listings || [])];
             }
@@ -329,3 +329,4 @@ export const mockSignOut = async (): Promise<void> => {
         }, 50);
     });
 };
+
