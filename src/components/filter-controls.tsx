@@ -13,14 +13,15 @@ import { X } from 'lucide-react';
 
 const MAX_PRICE_FCFA = 500000; // Max price for slider in FCFA
 const PRICE_STEP_FCFA = 1000;
+const ALL_ITEMS_VALUE = "_all_"; // Value for "all" options to avoid empty string
 
 export function FilterControls() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [category, setCategory] = useState(searchParams.get('category') || '');
-  const [condition, setCondition] = useState(searchParams.get('condition') || '');
+  const [category, setCategory] = useState(searchParams.get('category') || ALL_ITEMS_VALUE);
+  const [condition, setCondition] = useState(searchParams.get('condition') || ALL_ITEMS_VALUE);
   const [priceRange, setPriceRange] = useState<[number, number]>([
     parseInt(searchParams.get('minPrice') || '0', 10),
     parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
@@ -28,8 +29,8 @@ export function FilterControls() {
   const [location, setLocation] = useState(searchParams.get('location') || '');
 
   useEffect(() => {
-    setCategory(searchParams.get('category') || '');
-    setCondition(searchParams.get('condition') || '');
+    setCategory(searchParams.get('category') || ALL_ITEMS_VALUE);
+    setCondition(searchParams.get('condition') || ALL_ITEMS_VALUE);
     setPriceRange([
       parseInt(searchParams.get('minPrice') || '0', 10),
       parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
@@ -39,8 +40,8 @@ export function FilterControls() {
 
   const handleApplyFilters = () => {
     const params = new URLSearchParams(searchParams);
-    if (category) params.set('category', category); else params.delete('category');
-    if (condition) params.set('condition', condition); else params.delete('condition');
+    if (category && category !== ALL_ITEMS_VALUE) params.set('category', category); else params.delete('category');
+    if (condition && condition !== ALL_ITEMS_VALUE) params.set('condition', condition); else params.delete('condition');
     params.set('minPrice', priceRange[0].toString());
     params.set('maxPrice', priceRange[1].toString());
     if (location) params.set('location', location); else params.delete('location');
@@ -60,8 +61,8 @@ export function FilterControls() {
       params.set('q', query); 
     }
     router.push(`${pathname}?${params.toString()}`);
-    setCategory('');
-    setCondition('');
+    setCategory(ALL_ITEMS_VALUE);
+    setCondition(ALL_ITEMS_VALUE);
     setPriceRange([0, MAX_PRICE_FCFA]);
     setLocation('');
   };
@@ -77,7 +78,7 @@ export function FilterControls() {
             <SelectValue placeholder="Toutes les catégories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Toutes les catégories</SelectItem>
+            <SelectItem value={ALL_ITEMS_VALUE}>Toutes les catégories</SelectItem>
             {ItemCategories.map(cat => (
               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
             ))}
@@ -92,7 +93,7 @@ export function FilterControls() {
             <SelectValue placeholder="Tous les états" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Tous les états</SelectItem>
+            <SelectItem value={ALL_ITEMS_VALUE}>Tous les états</SelectItem>
             {ItemConditions.map(cond => (
               <SelectItem key={cond} value={cond} className="capitalize">{cond.charAt(0).toUpperCase() + cond.slice(1)}</SelectItem>
             ))}
