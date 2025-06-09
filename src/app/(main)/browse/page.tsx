@@ -22,10 +22,12 @@ interface BrowsePageProps {
 }
 
 async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
+  const queryParam = searchParams.q; // Assign searchParams.q to a variable
+
   // For now, ItemGrid will fetch all items based on filters, pagination is illustrative
   // Actual pagination would require more complex server-side logic or client-side slicing
   const items = await getItemsFromFirestore({
-    query: searchParams.q,
+    query: queryParam, // Use the variable
     category: searchParams.category,
     priceMin: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
     priceMax: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
@@ -46,7 +48,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
         <>
           <p className="mb-4 text-muted-foreground">
             Affichage de {paginatedItems.length} sur {items.length} articles
-            {searchParams.q && ` pour "${searchParams.q}"`}
+            {queryParam && ` pour "${queryParam}"`} {/* Use the variable */}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {paginatedItems.map((item) => (
@@ -57,12 +59,12 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
             <Pagination className="mt-8">
               <PaginationContent>
                 {currentPage > 1 && (
-                  <PaginationPrevious href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage - 1).toString()})}`} />
+                  <PaginationPrevious href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: (currentPage - 1).toString()})}`} />
                 )}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <PaginationItem key={page}>
-                    <PaginationLink 
-                      href={`/browse?${new URLSearchParams({...searchParams, page: page.toString()})}`}
+                    <PaginationLink
+                      href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: page.toString()})}`}
                       isActive={currentPage === page}
                     >
                       {page}
@@ -70,7 +72,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                   </PaginationItem>
                 ))}
                 {currentPage < totalPages && (
-                  <PaginationNext href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage + 1).toString()})}`} />
+                  <PaginationNext href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: (currentPage + 1).toString()})}`} />
                 )}
               </PaginationContent>
             </Pagination>
@@ -114,9 +116,9 @@ function CardSkeleton() {
 
 
 export default function BrowsePage({ searchParams }: BrowsePageProps) {
-  const pageTitle = searchParams.q 
-    ? `Résultats pour "${searchParams.q}"` 
-    : searchParams.category 
+  const pageTitle = searchParams.q
+    ? `Résultats pour "${searchParams.q}"`
+    : searchParams.category
     ? `Parcourir ${searchParams.category}`
     : 'Parcourir tous les articles';
 
