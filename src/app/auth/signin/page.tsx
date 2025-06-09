@@ -17,8 +17,8 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-// import { auth } from "@/lib/firebase"; // Temporarily remove Firebase auth
-// import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth"; // Temporarily remove Firebase auth
+import { auth } from "@/lib/firebase"; 
+import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -27,61 +27,49 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // const [firebaseUser, setFirebaseUser] = useState<User | null>(null); // Temporarily remove Firebase auth state
-  const [authLoading, setAuthLoading] = useState(false); // Default to false as we are not loading auth
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const redirectTo = searchParams.get('redirect') || '/';
 
-  // useEffect(() => { // Temporarily remove auth listener
-  //   console.log("SignInPage: Auth effect running (simplified - no auth)");
-  //   // const unsubscribe = onAuthStateChanged(auth, (user) => {
-  //   //   console.log("SignInPage: onAuthStateChanged callback, user:", user);
-  //   //   setFirebaseUser(user);
-  //   //   setAuthLoading(false);
-  //   //   if (user) {
-  //   //     console.log("SignInPage: User already signed in, redirecting to", redirectTo);
-  //   //     router.push(redirectTo);
-  //   //   } else {
-  //   //     console.log("SignInPage: No user signed in.");
-  //   //   }
-  //   // });
-  //   // return () => {
-  //   //   console.log("SignInPage: Auth effect cleanup (simplified - no auth)");
-  //   //   // unsubscribe();
-  //   // };
-  // }, [router, redirectTo]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setAuthLoading(false);
+      if (user) {
+        router.push(redirectTo);
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [router, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("SignInPage: handleSubmit called (simplified - no auth action)");
     setIsLoading(true);
-    toast({ title: "Form Submitted (Simplified)", description: "Auth logic is temporarily disabled." });
-    // Simulate a delay
-    setTimeout(() => {
-        setIsLoading(false);
-        // router.push(redirectTo); // Don't redirect for now
-    }, 1000);
-    // try {
-    //   // await signInWithEmailAndPassword(auth, email, password);
-    //   // toast({ title: "Connexion réussie !", description: "Vous allez être redirigé." });
-    //   // router.push(redirectTo);
-    // } catch (error: any) {
-    //   // let errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
-    //   // if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-    //   //   errorMessage = "Adresse e-mail ou mot de passe incorrect.";
-    //   // } else if (error.code === 'auth/invalid-email') {
-    //   //   errorMessage = "Format d'email invalide.";
-    //   // } else if (error.code === 'auth/too-many-requests') {
-    //   //   errorMessage = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
-    //   // }
-    //   // toast({ title: "Erreur de connexion", description: errorMessage, variant: "destructive" });
-    // } finally {
-    //   // setIsLoading(false);
-    // }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Connexion réussie !", description: "Vous allez être redirigé." });
+      // The useEffect hook will handle the redirect if user state changes successfully
+    } catch (error: any) {
+      let errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Adresse e-mail ou mot de passe incorrect.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Format d'email invalide.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Trop de tentatives de connexion. Veuillez réessayer plus tard.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
+      }
+      toast({ title: "Erreur de connexion", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (authLoading) { // This should ideally not be hit with current simplification
-    console.log("Render: Auth is loading (simplified - should not happen often)...");
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
@@ -89,23 +77,21 @@ export default function SignInPage() {
     );
   }
 
-  // if (firebaseUser) { // Temporarily remove this block
-  //    console.log("Render: User is already signed in. Redirecting (simplified)...");
-  //    return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <p>Vous êtes déjà connecté. Redirection...</p>
-  //     </div>
-  //   );
-  // }
+  if (firebaseUser && !authLoading) { 
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Vous êtes déjà connecté. Redirection...</p>
+      </div>
+    );
+  }
 
-  console.log("Render: Showing simplified sign-in form.");
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
         <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
         </Link>
-        <CardTitle className="text-3xl font-headline">Connectez-vous à ReFind (Simplifié)</CardTitle>
+        <CardTitle className="text-3xl font-headline">Connectez-vous à ReFind</CardTitle>
         <CardDescription>Accédez à votre compte pour acheter et vendre.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -144,7 +130,7 @@ export default function SignInPage() {
           </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
             {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
-            Se connecter (Simplifié)
+            Se connecter
           </Button>
         </form>
       </CardContent>
