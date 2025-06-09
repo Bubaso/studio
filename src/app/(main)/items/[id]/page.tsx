@@ -1,8 +1,9 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { getItemByIdFromFirestore } from '@/services/itemService'; // Updated import
-import { getMockUserById } from '@/lib/mock-data'; // User data still mock for now
+import { getItemByIdFromFirestore } from '@/services/itemService';
+import { getUserDocument } from '@/services/userService'; // Updated import for seller
+import type { UserProfile } from '@/lib/types'; // Using UserProfile for seller
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,15 +15,13 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  // Fetch item from Firestore
   const item = await getItemByIdFromFirestore(params.id);
 
   if (!item) {
     return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
   }
 
-  // Seller info still comes from mock data for now
-  const seller = await getMockUserById(item.sellerId);
+  const seller: UserProfile | null = await getUserDocument(item.sellerId);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -70,7 +69,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </CardContent>
           </Card>
           
-          {seller && (
+          {seller ? (
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
@@ -82,17 +81,26 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 </Avatar>
                 <div>
                   <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors">
-                    {seller.name}
+                    {seller.name || 'Vendeur Anonyme'}
                   </Link>
-                  {/* Ratings for mock seller are not implemented for now in UserProfile type
-                  {seller.ratings && (
+                   <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
+                  {/* Ratings are not part of UserProfile from Firestore
+                  {seller.ratings && ( 
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Star className="h-4 w-4 mr-1 text-yellow-400 fill-yellow-400" />
                       {seller.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})} ({seller.ratings.count} évaluations)
                     </div>
                   )} */}
-                   <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
                 </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Vendeur non trouvé.</p>
               </CardContent>
             </Card>
           )}
@@ -101,11 +109,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
-            <Link href={`/messages/new?userId=${seller?.uid}&itemId=${item.id}`} className="flex-1">
-              <Button size="lg" variant="outline" className="w-full">
-                <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
-              </Button>
-            </Link>
+            {seller && (
+              <Link href={`/messages/new?userId=${seller.uid}&itemId=${item.id}`} className="flex-1">
+                <Button size="lg" variant="outline" className="w-full">
+                  <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
+                </Button>
+              </Link>
+            )}
           </div>
           
            <div className="text-sm text-muted-foreground">
