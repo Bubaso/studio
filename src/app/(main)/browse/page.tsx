@@ -1,6 +1,6 @@
 
 import { ItemCard } from '@/components/item-card';
-import { getItemsFromFirestore } from '@/services/itemService'; // Updated import
+// import { getItemsFromFirestore } from '@/services/itemService'; // Temporarily commented out
 import type { Item, ItemCategory } from '@/lib/types';
 import { FilterControls } from '@/components/filter-controls';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -22,17 +22,8 @@ interface BrowsePageProps {
 }
 
 async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
-  const filters = {
-    query: searchParams.q,
-    category: searchParams.category,
-    priceMin: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
-    priceMax: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
-    location: searchParams.location,
-    condition: searchParams.condition,
-  };
-
-  // Fetch items from Firestore
-  const allItems: Item[] = await getItemsFromFirestore(filters);
+  // Temporarily use an empty array instead of fetching from Firestore
+  const allItems: Item[] = []; 
   const currentPage = parseInt(searchParams.page || '1');
   const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
   const paginatedItems = allItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -61,13 +52,8 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                 
                 {Array.from({ length: totalPages }, (_, i) => {
                   const pageNumber = i + 1;
-                  const showEllipsisBefore = currentPage > 3 && pageNumber === 1 && totalPages > 5;
-                  const showEllipsisAfter = currentPage < totalPages - 2 && pageNumber === totalPages && totalPages > 5;
-
-                  if (totalPages > 5) {
-                    // Always show first page
-                    if (pageNumber === 1) {
-                       return (
+                  // Simplified pagination logic for now
+                   return (
                         <PaginationItem key={pageNumber}>
                           <PaginationLink 
                             href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
@@ -77,55 +63,6 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                           </PaginationLink>
                         </PaginationItem>
                       );
-                    }
-                     // Ellipsis after first page if current page is far
-                    if (currentPage > 3 && pageNumber === 2) {
-                      return <PaginationEllipsis key={`ellipsis-start-${pageNumber}`} />;
-                    }
-                    // Show pages around current page
-                    if (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) {
-                      return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationLink 
-                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
-                            isActive={currentPage === pageNumber}
-                          >
-                            {pageNumber}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    }
-                    // Ellipsis before last page if current page is far
-                    if (currentPage < totalPages - 2 && pageNumber === totalPages -1) {
-                       return <PaginationEllipsis key={`ellipsis-end-${pageNumber}`} />;
-                    }
-                     // Always show last page
-                    if (pageNumber === totalPages) {
-                       return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationLink 
-                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
-                            isActive={currentPage === pageNumber}
-                          >
-                            {pageNumber}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    }
-                    return null; // Don't render other pages in condensed view
-                  } else {
-                     // Show all pages if total pages is 5 or less
-                     return (
-                        <PaginationItem key={pageNumber}>
-                          <PaginationLink 
-                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
-                            isActive={currentPage === pageNumber}
-                          >
-                            {pageNumber}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                  }
                 })}
 
                 {currentPage < totalPages && (
@@ -142,8 +79,8 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
         </>
       ) : (
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
-          <p className="text-muted-foreground">Essayez d'ajuster vos filtres ou termes de recherche. Assurez-vous que votre base de données Firestore contient des articles.</p>
+          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé (Test Modu)</h2>
+          <p className="text-muted-foreground">Veri çekme geçici olarak devre dışı bırakıldı.</p>
         </div>
       )}
     </div>
