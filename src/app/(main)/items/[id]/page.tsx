@@ -27,23 +27,33 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   let seller: UserProfile | null = null;
   try {
-    if (item.sellerId && typeof item.sellerId === 'string') {
+    if (item.sellerId && typeof item.sellerId === 'string' && item.sellerId.trim() !== '' && !item.sellerId.includes('/')) {
       seller = await getUserDocument(item.sellerId);
     } else {
-      console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
+      console.warn(`Item ${item.id} has an invalid or missing sellerId: ${String(item.sellerId)}`);
       // seller remains null
     }
   } catch (error: any) {
-    // If it's specifically a permission error, we anticipate this might happen during SSR
-    // if the server-side client SDK call isn't authenticated as an end-user
-    // for Firestore rules that require request.auth.
-    // We set seller to null and let the page render with "seller info not available".
-    if (error.code !== 'permission-denied') {
-        // Log other unexpected errors more loudly.
-        console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message, error);
+    const sellerIdString = String(item?.sellerId); // Ensure sellerId is a string for logging
+    // Check if it's a Firebase error object and specifically 'permission-denied'
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
+        // Anticipated error if server-side client SDK call isn't authenticated for rules requiring request.auth
+        // Set seller to null and let the page render with "seller info not available".
+        // No console.error for this specific, handled case to potentially reduce Next.js overlay noise.
+        seller = null;
+    } else {
+        // Log other unexpected errors.
+        // Construct a safe string message for logging.
+        let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
+        if (error instanceof Error) {
+            errorMessageLog += ` Message: ${error.message}.`;
+            // Avoid logging the full error object or stack if it might cause serialization issues for Next.js overlay
+        } else {
+            errorMessageLog += ` Details: ${String(error)}.`;
+        }
+        console.error(errorMessageLog);
+        seller = null; // Ensure seller is null on any error during fetch
     }
-    // For any error during seller fetch (permission-denied or other), ensure seller is null.
-    seller = null;
   }
 
   const reviews: Review[] = await getReviewsForItem(item.id);
