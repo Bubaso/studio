@@ -47,7 +47,7 @@ export function ItemCard({ item }: ItemCardProps) {
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Link href={`/items/${item.id}`} className="w-full">
-          <Badge variant="outline" className="w-full justify-center py-2 hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Badge variant="secondary" className="w-full justify-center py-2 hover:bg-accent hover:text-accent-foreground transition-colors">
             Voir les détails
           </Badge>
         </Link>

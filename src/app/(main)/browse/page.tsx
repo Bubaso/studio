@@ -50,7 +50,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
             Affichage de {paginatedItems.length} sur {items.length} articles
             {queryParam && ` pour "${queryParam}"`} {/* Use the variable */}
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {paginatedItems.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
@@ -92,7 +92,7 @@ function ItemGridSkeleton() {
   return (
     <div className="flex-1">
       <Skeleton className="h-6 w-1/4 mb-4" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
           <CardSkeleton key={index} />
         ))}
