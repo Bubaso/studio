@@ -1,30 +1,31 @@
 
-import { getMockCurrentUser } from '@/lib/mock-data'; // User data still mock for now
-import { getUserListingsFromFirestore } from '@/services/itemService'; // Updated import
-import type { User, Item, Review } from '@/lib/types';
+"use client";
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { getUserDocument } from '@/services/userService';
+import { getUserListingsFromFirestore } from '@/services/itemService';
+import type { UserProfile, Item, Review } from '@/lib/types'; // Updated User to UserProfile
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
-import { Edit3, MapPin, CalendarDays, Star, Mail, Info, LogIn } from 'lucide-react';
-import Link from 'next/link';
+import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-async function UserProfileContent({ user }: { user: User }) {
-  // Fetch user's listings from Firestore
-  const listings = await getUserListingsFromFirestore(user.id);
-  const reviews = user.reviews || []; // Reviews still mock
-
+function UserProfileContent({ user, listings, reviews }: { user: UserProfile; listings: Item[]; reviews: Review[] }) {
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
           <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-primary">
-            <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint={user.dataAiHint} />
-            <AvatarFallback className="text-4xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user.avatarUrl || undefined} alt={user.name || 'User'} data-ai-hint={user.dataAiHint} />
+            <AvatarFallback className="text-4xl">{(user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary mb-2">{user.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur'}</h1>
             {user.location && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2" /> {user.location}
@@ -33,13 +34,14 @@ async function UserProfileContent({ user }: { user: User }) {
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            {user.ratings && (
+            {/* Ratings are not part of UserProfile yet, can be added later */}
+            {/* {user.ratings && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
                 <Star className="h-5 w-5 mr-1 text-yellow-400 fill-yellow-400" />
                 <span className="font-semibold">{user.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</span>
                 <span className="ml-1">({user.ratings.count} évaluations)</span>
               </div>
-            )}
+            )} */}
             <Button variant="outline">
               <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
             </Button>
@@ -58,18 +60,14 @@ async function UserProfileContent({ user }: { user: User }) {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p className="text-left">
-                Aucune annonce trouvée pour cet utilisateur ({user.name} - ID: {user.id}) dans Firestore. <br />
-                Veuillez vérifier les points suivants dans votre collection 'items' sur Firestore :
-              </p>
+              <p>Vous n'avez pas encore mis d'articles en vente.</p>
               <ul className="list-disc list-inside text-left my-2">
-                <li>L'article a un champ nommé <strong>sellerId</strong> (exactement ce nom, büyük/küçük harfe duyarlı).</li>
-                <li>Bu <strong>sellerId</strong> alanının değeri tam olarak <strong>{user.id}</strong> olmalıdır.</li>
-                <li>L'article a un champ nommé <strong>postedDate</strong> et son type est <strong>Timestamp</strong>.</li>
+                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ `sellerId` qui correspond à votre UID ({user.uid}).</li>
+                 <li>Le champ `postedDate` doit être un Timestamp valide.</li>
               </ul>
-              <p className="text-left">
-                Alternatif olarak, <Link href="/sell" className="text-primary hover:underline">yeni bir ilan yayınlayabilirsiniz</Link>.
-              </p>
+              <Link href="/sell" className="text-primary hover:underline">
+                Publiez votre premier article !
+              </Link>
             </CardContent>
           </Card>
         )}
@@ -107,10 +105,41 @@ async function UserProfileContent({ user }: { user: User }) {
 }
 
 
-export default async function ProfilePage() {
-  const currentUser = await getMockCurrentUser(); // User data still mock
+export default function ProfilePage() {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [listings, setListings] = useState<Item[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]); // Reviews still mock for now
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!currentUser) {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setFirebaseUser(user);
+        const profile = await getUserDocument(user.uid);
+        setUserProfile(profile);
+        if (profile) {
+          const userListings = await getUserListingsFromFirestore(profile.uid);
+          setListings(userListings);
+          // Fetch reviews for this user (mock for now, replace with Firestore later)
+          // const userReviews = await getMockReviewsForUser(profile.uid); 
+          // setReviews(userReviews);
+        }
+      } else {
+        setFirebaseUser(null);
+        setUserProfile(null);
+        setListings([]);
+      }
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!firebaseUser || !userProfile) {
     return (
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
@@ -125,5 +154,5 @@ export default async function ProfilePage() {
     );
   }
 
-  return <UserProfileContent user={currentUser} />;
+  return <UserProfileContent user={userProfile} listings={listings} reviews={reviews} />;
 }

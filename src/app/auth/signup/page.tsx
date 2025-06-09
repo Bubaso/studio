@@ -17,6 +17,9 @@ import { ShoppingBag, UserPlus, LogIn } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserDocument } from "@/services/userService"; // Import service to create user doc
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -29,10 +32,31 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000)); 
-    toast({ title: "Compte créé !", description: `Bienvenue sur ReFind, ${name} !` });
-    router.push("/auth/signin");
-    setIsLoading(false);
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Update Firebase Auth profile with the name
+      await updateProfile(firebaseUser, { displayName: name });
+
+      // Create a user document in Firestore
+      await createUserDocument(firebaseUser, { name }); // Pass name from form to ensure it's set
+      
+      toast({ title: "Compte créé !", description: `Bienvenue sur ReFind, ${name} !` });
+      router.push("/"); // Redirect to homepage or profile after signup
+    } catch (error: any) {
+      console.error("Error signing up:", error);
+      let errorMessage = "Échec de la création du compte. Veuillez réessayer.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "Cette adresse e-mail est déjà utilisée.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
+      }
+      toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

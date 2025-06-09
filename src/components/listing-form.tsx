@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +17,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions, ItemCondition, ItemCategory } from "@/lib/types";
+import { ItemCategories, ItemConditions, ItemCategory, ItemCondition } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { addMockItem, getMockCurrentUser } from "@/lib/mock-data";
 import { Loader2 } from "lucide-react";
+import { auth, db } from "@/lib/firebase"; // Import Firebase
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Firestore functions
 
 const listingFormSchema = z.object({
   name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
@@ -41,6 +43,8 @@ export function ListingForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -53,37 +57,47 @@ export function ListingForm() {
     },
   });
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const itemDescriptionForAISuggestion = form.watch("description");
 
   const handlePriceSuggested = (price: number) => {
-    form.setValue("price", Math.round(price)); // FCFA usually doesn't have decimals
+    form.setValue("price", Math.round(price));
   };
 
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
-    try {
-      const currentUser = await getMockCurrentUser();
-      if (!currentUser) {
-        toast({ title: "Erreur", description: "Vous devez être connecté pour créer une annonce.", variant: "destructive" });
-        router.push('/auth/signin');
-        return;
-      }
+    if (!currentUser) {
+      toast({ title: "Erreur", description: "Vous devez être connecté pour créer une annonce.", variant: "destructive" });
+      router.push('/auth/signin');
+      setIsSubmitting(false);
+      return;
+    }
 
+    try {
       const newItemData = {
         ...values,
-        price: Math.round(values.price), // Ensure price is integer for FCFA
+        price: Math.round(values.price),
         imageUrl: values.imageUrl || 'https://placehold.co/600x400.png',
-        sellerId: currentUser.id,
+        sellerId: currentUser.uid,
+        sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
+        postedDate: serverTimestamp(), // Use Firestore server timestamp
         dataAiHint: `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase()
       };
 
-      const createdItem = await addMockItem(newItemData as any); 
+      const docRef = await addDoc(collection(db, "items"), newItemData);
       
       toast({
         title: "Annonce créée !",
-        description: `Votre article "${createdItem.name}" a été mis en vente avec succès.`,
+        description: `Votre article "${values.name}" a été mis en vente avec succès.`,
       });
-      router.push(`/items/${createdItem.id}`);
+      router.push(`/items/${docRef.id}`);
     } catch (error) {
       console.error("Échec de la création de l'annonce:", error);
       toast({
@@ -95,6 +109,23 @@ export function ListingForm() {
         setIsSubmitting(false);
     }
   }
+  
+  if (isLoadingAuth) {
+    return <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  if (!currentUser && !isLoadingAuth) {
+     return (
+        <div className="text-center py-10 p-6 border rounded-lg shadow-sm bg-card">
+            <h2 className="text-2xl font-semibold mb-2">Connexion requise</h2>
+            <p className="text-muted-foreground mb-4">Vous devez être connecté pour lister un article.</p>
+            <Link href="/auth/signin">
+                <Button>Se connecter</Button>
+            </Link>
+        </div>
+     )
+  }
+
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
@@ -230,7 +261,7 @@ export function ListingForm() {
               </FormItem>
             )}
           />
-          <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting}>
+          <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? "Soumission..." : "Créer l'annonce"}
           </Button>

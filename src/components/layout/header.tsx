@@ -4,17 +4,17 @@ import Link from 'next/link';
 import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { User } from '@/lib/types';
-import { getMockCurrentUser, mockSignOut } from '@/lib/mock-data'; 
-import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase'; // Import Firebase auth
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; // Import Firebase auth types
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -25,13 +25,24 @@ export function Header() {
       setTheme(storedTheme);
       document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
-    getMockCurrentUser().then(setCurrentUser);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoadingAuth(false);
+    });
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
 
   const handleSignOut = async () => {
-    await mockSignOut();
-    setCurrentUser(null);
-    router.push('/');
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      // Optionally show a toast message for sign-out error
+    }
   };
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -54,7 +65,7 @@ export function Header() {
     { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
   ];
 
-  if (!mounted) {
+  if (!mounted || isLoadingAuth) {
     return ( 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
@@ -62,6 +73,7 @@ export function Header() {
             <ShoppingBag className="h-6 w-6 text-primary" />
             <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
           </Link>
+          {/* Basic navigation could be shown here, or a loading skeleton for auth buttons */}
         </div>
       </header>
     );

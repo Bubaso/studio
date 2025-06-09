@@ -17,7 +17,8 @@ import { ShoppingBag, LogIn, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { mockSignIn } from "@/lib/mock-data"; 
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -29,19 +30,25 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    let userIdToSignIn = 'user1'; 
-    if (email.startsWith('user2')) userIdToSignIn = 'user2'; 
-    if (email.startsWith('user3')) userIdToSignIn = 'user3';
-
-    const user = await mockSignIn(userIdToSignIn); 
     
-    if (user) {
-      toast({ title: "Connecté", description: `Bienvenue, ${user.name} !` });
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      toast({ title: "Connecté", description: `Bienvenue, ${user.displayName || user.email} !` });
       router.push("/"); 
-    } else {
-      toast({ title: "Échec de la connexion", description: "Email ou mot de passe invalide.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("Error signing in:", error);
+      let errorMessage = "Email ou mot de passe invalide.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = "Email ou mot de passe incorrect.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Format d'email invalide.";
+      }
+      toast({ title: "Échec de la connexion", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (

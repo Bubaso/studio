@@ -7,27 +7,28 @@ export interface Item {
   category: string;
   location?: string;
   imageUrl: string;
-  sellerId: string;
-  sellerName: string;
+  sellerId: string; // This will be user.uid
+  sellerName: string; // This can be user.name or user.displayName
   postedDate: string; // ISO date string
   condition?: 'new' | 'like new' | 'good' | 'fair' | 'poor';
   dataAiHint?: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  avatarUrl: string;
+// Represents the data structure for a user's profile stored in Firestore
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  name: string | null; // displayName
+  avatarUrl: string | null; // photoURL
   dataAiHint?: string;
   joinedDate: string; // ISO date string
-  ratings?: { value: number; count: number };
-  reviews?: Review[];
-  listings?: Item[];
   location?: string;
+  // Other fields like ratings, reviews count can be added here
+  // listings will be fetched separately
 }
 
 export interface Review {
-  id: string;
+  id:string;
   reviewerId: string;
   reviewerName: string;
   rating: number;
