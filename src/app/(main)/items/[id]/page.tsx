@@ -25,15 +25,23 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   let seller: UserProfile | null = null;
   try {
-    // item.sellerId'nin geçerli bir string olduğundan emin olun
     if (item.sellerId && typeof item.sellerId === 'string') {
       seller = await getUserDocument(item.sellerId);
     } else {
+      // Log this as a warning, but it's not a critical error for page rendering
       console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
+      // seller remains null
     }
-  } catch (error) {
-    console.error(`Failed to fetch seller document (ID: ${item.sellerId}) for item ${item.id}:`, error);
-    // Seller will remain null, and the UI will handle this.
+  } catch (error: any) {
+    // If it's specifically a permission error, we anticipate this with current rules
+    // for server-side client SDK usage. Log it subtly or not at all here to potentially
+    // avoid Next.js overlay if it's sensitive to console.error for handled errors.
+    // For other types of errors, logging might still be valuable.
+    if (error.code !== 'permission-denied') {
+      console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message);
+    }
+    // Ensure seller is null in any error case, allowing the page to render gracefully.
+    seller = null;
   }
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
