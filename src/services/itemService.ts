@@ -1,7 +1,7 @@
 
 import { db, storage } from '@/lib/firebase'; // Added storage
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc } from 'firebase/firestore'; // Added updateDoc, addDoc, serverTimestamp
 import type { Timestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
 
@@ -52,6 +52,7 @@ const mapDocToItem = (document: any): Item => {
     postedDate: convertTimestampToISO(data.postedDate),
     condition: data.condition,
     dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20),
+    lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated) : undefined,
   };
 };
 
@@ -163,3 +164,42 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     throw error; // Re-throw error to be caught by the form
   }
 };
+
+export async function createItemInFirestore(
+  itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
+): Promise<string> {
+  try {
+    const docRef = await addDoc(collection(db, "items"), {
+      ...itemData,
+      postedDate: serverTimestamp(),
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error("Error creating item in Firestore: ", error);
+    throw error;
+  }
+}
+
+export async function updateItemInFirestore(
+  itemId: string,
+  itemData: Partial<Omit<Item, 'id' | 'postedDate' | 'sellerId' | 'sellerName' | 'lastUpdated'>>
+): Promise<void> {
+  if (!itemId) {
+    throw new Error("Item ID is required for updating.");
+  }
+  const itemRef = doc(db, 'items', itemId);
+
+  const dataToUpdate: any = { ...itemData };
+
+  if (dataToUpdate.price !== undefined) {
+    dataToUpdate.price = Number(dataToUpdate.price);
+  }
+  dataToUpdate.lastUpdated = serverTimestamp();
+
+  try {
+    await updateDoc(itemRef, dataToUpdate);
+  } catch (error) {
+    console.error("Error updating item in Firestore: ", error);
+    throw error;
+  }
+}

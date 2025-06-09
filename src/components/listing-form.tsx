@@ -17,18 +17,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions } from "@/lib/types";
+import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
+import { Loader2, UploadCloud, XCircle, Save } from "lucide-react";
+import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import Link from "next/link";
-import { uploadImageAndGetURL } from "@/services/itemService"; 
+import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService"; 
 import Image from "next/image";
+import Link from "next/link";
 
 const MAX_FILE_SIZE_MB = 5;
 const MAX_FILES = 5;
@@ -52,7 +51,7 @@ const listingFormSchema = z.object({
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
-  imageFiles: z
+  imageFiles: z // This field will store NEWLY selected File objects
     .array(fileSchema)
     .max(MAX_FILES, `Vous ne pouvez télécharger que ${MAX_FILES} images au maximum.`)
     .optional(),
@@ -60,32 +59,67 @@ const listingFormSchema = z.object({
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
 
-export function ListingForm() {
+interface ListingFormProps {
+  initialItemData?: Item | null;
+}
+
+export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
+  const isEditMode = !!initialItemData?.id;
+
+  const [imagePreviews, setImagePreviews] = useState<string[]>(initialItemData?.imageUrls || []);
+  // objectUrlToFileMap helps manage removal of new files by linking their blob URL to the File object
+  const [objectUrlToFileMap, setObjectUrlToFileMap] = useState<Map<string, File>>(new Map());
+
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      price: 0,
-      location: "",
-      imageFiles: [],
+      name: initialItemData?.name || "",
+      description: initialItemData?.description || "",
+      price: initialItemData?.price || 0,
+      category: initialItemData?.category as ItemCategory | undefined,
+      condition: initialItemData?.condition as ItemCondition | undefined,
+      location: initialItemData?.location || "",
+      imageFiles: [], // RHF imageFiles is always for new uploads
     },
   });
+  
+  useEffect(() => {
+    if (initialItemData) {
+        form.reset({
+            name: initialItemData.name,
+            description: initialItemData.description,
+            price: initialItemData.price,
+            category: initialItemData.category as ItemCategory,
+            condition: initialItemData.condition as ItemCondition,
+            location: initialItemData.location || "",
+            imageFiles: [],
+        });
+        setImagePreviews(initialItemData.imageUrls || []);
+    }
+  }, [initialItemData, form.reset, form]);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsLoadingAuth(false);
     });
-    return () => unsubscribe();
-  }, []);
+    // Cleanup Object URLs from map and previews
+    return () => {
+      unsubscribe();
+      objectUrlToFileMap.forEach((_file, url) => URL.revokeObjectURL(url));
+      imagePreviews.forEach(url => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
+  }, [objectUrlToFileMap, imagePreviews]); // imagePreviews added
 
   const itemDescriptionForAISuggestion = form.watch("description");
 
@@ -94,88 +128,147 @@ export function ListingForm() {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const currentFiles = form.getValues("imageFiles") || [];
-      const newFiles = Array.from(files);
-      const combinedFiles = [...currentFiles, ...newFiles].slice(0, MAX_FILES);
-      form.setValue("imageFiles", combinedFiles, { shouldValidate: true });
+    const filesFromInput = Array.from(event.target.files || []);
+    if (!filesFromInput.length) return;
 
-      const newPreviews = combinedFiles.map(file => URL.createObjectURL(file));
-      setImagePreviews(newPreviews);
+    const currentRHFNewFiles = form.getValues("imageFiles") || [];
+    
+    // Filter out files that might already be in currentRHFImageFiles
+    const newFilesToAdd = filesFromInput.filter(
+        f_input => !currentRHFNewFiles.some(
+            f_rhf => f_rhf.name === f_input.name && f_rhf.size === f_input.size && f_rhf.lastModified === f_input.lastModified
+        )
+    );
+
+    // Calculate how many new files can be added
+    const existingHttpUrlsCount = imagePreviews.filter(url => url.startsWith("http")).length;
+    const slotsAvailableForNew = MAX_FILES - existingHttpUrlsCount - currentRHFNewFiles.length;
+    
+    const filesToActuallyProcess = newFilesToAdd.slice(0, Math.max(0, slotsAvailableForNew));
+
+    if (filesToActuallyProcess.length < newFilesToAdd.length) {
+        toast({ description: `Limite de ${MAX_FILES} images atteinte. Certaines images n'ont pas été ajoutées.`});
     }
+    if (!filesToActuallyProcess.length && newFilesToAdd.length > 0) { // No slots but tried to add
+        toast({ description: `Limite de ${MAX_FILES} images atteinte.`});
+        return;
+    }
+    if (!filesToActuallyProcess.length) return;
+
+
+    const updatedRHFNewFiles = [...currentRHFNewFiles, ...filesToActuallyProcess];
+    form.setValue("imageFiles", updatedRHFNewFiles, { shouldValidate: true });
+
+    const newObjectUrlsWithFileObjects: { objectUrl: string, file: File }[] = [];
+    for (const file of filesToActuallyProcess) {
+        newObjectUrlsWithFileObjects.push({ objectUrl: URL.createObjectURL(file), file });
+    }
+
+    setObjectUrlToFileMap(prevMap => {
+        const newMap = new Map(prevMap);
+        newObjectUrlsWithFileObjects.forEach(item => newMap.set(item.objectUrl, item.file));
+        return newMap;
+    });
+    setImagePreviews(prev => [...prev, ...newObjectUrlsWithFileObjects.map(item => item.objectUrl)]);
   };
 
   const removeImage = (indexToRemove: number) => {
-    const currentFiles = form.getValues("imageFiles") || [];
-    const updatedFiles = currentFiles.filter((_, index) => index !== indexToRemove);
-    form.setValue("imageFiles", updatedFiles, { shouldValidate: true });
+    const urlToRemove = imagePreviews[indexToRemove];
+    
+    setImagePreviews(prev => prev.filter((_, index) => index !== indexToRemove));
 
-    const updatedPreviews = updatedFiles.map(file => URL.createObjectURL(file));
-    setImagePreviews(updatedPreviews);
+    if (urlToRemove.startsWith("blob:")) {
+      const fileToRemove = objectUrlToFileMap.get(urlToRemove);
+      if (fileToRemove) {
+        const currentRHFImageFiles = form.getValues("imageFiles") || [];
+        form.setValue("imageFiles", currentRHFImageFiles.filter(f => f !== fileToRemove), { shouldValidate: true });
+        
+        setObjectUrlToFileMap(prevMap => {
+          const newMap = new Map(prevMap);
+          newMap.delete(urlToRemove);
+          return newMap;
+        });
+      }
+      URL.revokeObjectURL(urlToRemove);
+    }
+    // If it's an http URL, it's just removed from previews. The final URL list will be built on submit.
   };
   
-  // Clean up Object URLs
-  useEffect(() => {
-    return () => {
-      imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [imagePreviews]);
-
 
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
     if (!currentUser) {
-      toast({ title: "Erreur", description: "Vous devez être connecté pour créer une annonce.", variant: "destructive" });
-      router.push('/auth/signin');
+      toast({ title: "Erreur", description: "Vous devez être connecté.", variant: "destructive" });
+      router.push('/auth/signin'); // or appropriate redirect
       setIsSubmitting(false);
       return;
     }
 
-    let uploadedImageUrls: string[] = ["https://placehold.co/600x400.png"];
-    let dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase();
+    let finalImageUrls: string[] = [];
+
+    // 1. Get existing URLs that are still in imagePreviews (i.e., not removed by the user)
+    const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
+    finalImageUrls.push(...keptExistingUrls);
+
+    // 2. Upload NEW files (from RHF's imageFiles field)
+    const newFilesForUpload = values.imageFiles || [];
+    if (newFilesForUpload.length > 0) {
+      try {
+        const uploadedNewUrls = await Promise.all(
+          newFilesForUpload.map(file => uploadImageAndGetURL(file, currentUser.uid))
+        );
+        finalImageUrls.push(...uploadedNewUrls);
+      } catch (uploadError) {
+        console.error("Error uploading new images:", uploadError);
+        toast({ title: "Erreur de téléversement", description: "Certaines images n'ont pas pu être téléversées.", variant: "destructive"});
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    
+    if (finalImageUrls.length === 0) {
+      finalImageUrls.push("https://placehold.co/600x400.png"); // Default placeholder if no images
+    }
+    
+    const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
+
+    const commonItemData = {
+      name: values.name,
+      description: values.description,
+      price: Math.round(values.price),
+      category: values.category,
+      condition: values.condition,
+      location: values.location || '',
+      imageUrls: finalImageUrls,
+      dataAiHint: dataAiHintForImage,
+    };
 
     try {
-      if (values.imageFiles && values.imageFiles.length > 0) {
-        uploadedImageUrls = await Promise.all(
-          values.imageFiles.map(file => uploadImageAndGetURL(file, currentUser.uid))
-        );
-        // Hint based on the first uploaded image or kept generic
-        dataAiHintForImage = `${values.category} ${values.imageFiles[0].name.split('.')[0].split('_').pop() || values.name.split(" ")[0]}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0, 20);
+      if (isEditMode && initialItemData?.id) {
+        await updateItemInFirestore(initialItemData.id, commonItemData);
+        toast({
+          title: "Annonce mise à jour !",
+          description: `Votre article "${values.name}" a été modifié avec succès.`,
+        });
+        router.push(`/items/${initialItemData.id}`);
+      } else {
+        const newItemFullData = {
+          ...commonItemData,
+          sellerId: currentUser.uid,
+          sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
+        };
+        const newItemId = await createItemInFirestore(newItemFullData as Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>);
+        toast({
+          title: "Annonce créée !",
+          description: `Votre article "${values.name}" a été mis en vente avec succès.`,
+        });
+        router.push(`/items/${newItemId}`);
       }
-
-      const newItemData = {
-        name: values.name,
-        description: values.description,
-        price: Math.round(values.price),
-        category: values.category,
-        condition: values.condition,
-        location: values.location || '',
-        imageUrls: uploadedImageUrls, // Save array of URLs
-        sellerId: currentUser.uid,
-        sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
-        postedDate: serverTimestamp(),
-        dataAiHint: dataAiHintForImage
-      };
-
-      const docRef = await addDoc(collection(db, "items"), newItemData);
-
-      toast({
-        title: "Annonce créée !",
-        description: `Votre article "${values.name}" a été mis en vente avec succès.`,
-      });
-      router.push(`/items/${docRef.id}`);
     } catch (error) {
-      console.error("Échec de la création de l'annonce:", error);
-      let errorMessage = "Échec de la création de l'annonce. Veuillez réessayer.";
-      if (error instanceof Error && error.message.includes('storage/unauthorized')) {
-        errorMessage = "Erreur de permission lors du téléversement de l'image. Vérifiez les règles de Firebase Storage.";
-      } else if (error instanceof Error && error.message.includes('storage/object-not-found')) {
-        errorMessage = "Erreur lors du téléversement de l'image : objet non trouvé.";
-      }
+      console.error(`Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
       toast({
         title: "Erreur",
-        description: errorMessage,
+        description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. Veuillez réessayer.`,
         variant: "destructive",
       });
     } finally {
@@ -191,8 +284,8 @@ export function ListingForm() {
      return (
         <div className="text-center py-10 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-semibold mb-2">Connexion requise</h2>
-            <p className="text-muted-foreground mb-4">Vous devez être connecté pour lister un article.</p>
-            <Link href="/auth/signin">
+            <p className="text-muted-foreground mb-4">Vous devez être connecté pour {isEditMode ? "modifier" : "lister"} un article.</p>
+            <Link href={`/auth/signin?redirect=${isEditMode ? `/items/${initialItemData?.id}/edit` : '/sell'}`}>
                 <Button>Se connecter</Button>
             </Link>
         </div>
@@ -259,7 +352,7 @@ export function ListingForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Catégorie</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez une catégorie" />
@@ -285,7 +378,7 @@ export function ListingForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>État</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez l'état de l'article" />
@@ -320,21 +413,21 @@ export function ListingForm() {
 
           <FormField
             control={form.control}
-            name="imageFiles"
-            render={() => ( // field is not directly used here as we manage array with custom logic
+            name="imageFiles" // This name is for RHF's validation of new files
+            render={({ fieldState }) => ( // field not directly used, but fieldState for error
               <FormItem>
                 <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
                 <FormControl>
-                  <div> {/* Added div wrapper here */}
+                  <div>
                     <Input
                       type="file"
                       accept="image/png, image/jpeg, image/gif, image/webp"
                       multiple
                       onChange={handleFileChange}
                       className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                      disabled={(form.watch('imageFiles')?.length || 0) >= MAX_FILES}
+                      disabled={(imagePreviews.length >= MAX_FILES)}
                     />
-                    {(form.watch('imageFiles')?.length || 0) >= MAX_FILES && (
+                    {(imagePreviews.length >= MAX_FILES) && (
                         <FormDescription className="text-destructive">
                             Vous avez atteint la limite de {MAX_FILES} images.
                         </FormDescription>
@@ -344,7 +437,7 @@ export function ListingForm() {
                  {imagePreviews.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {imagePreviews.map((previewUrl, index) => (
-                        <div key={index} className="relative group aspect-square">
+                        <div key={previewUrl} className="relative group aspect-square"> {/* Use URL as key for stability */}
                             <Image 
                                 src={previewUrl} 
                                 alt={`Aperçu ${index + 1}`} 
@@ -355,7 +448,7 @@ export function ListingForm() {
                             type="button"
                             variant="destructive"
                             size="icon"
-                            className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity z-10"
                             onClick={() => removeImage(index)}
                             >
                             <XCircle className="h-4 w-4" />
@@ -372,16 +465,17 @@ export function ListingForm() {
                 )}
                 <FormDescription>
                   Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
+                  {isEditMode && " Les nouvelles images remplaceront les anciennes si vous en sélectionnez."}
                 </FormDescription>
-                <FormMessage />
+                {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
               </FormItem>
             )}
           />
 
 
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Publication..." : "Créer l'annonce"}
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
+            {isSubmitting ? (isEditMode ? "Sauvegarde..." : "Publication...") : (isEditMode ? "Sauvegarder les modifications" : "Créer l'annonce")}
           </Button>
         </form>
       </Form>
@@ -394,4 +488,3 @@ export function ListingForm() {
     </div>
   );
 }
-

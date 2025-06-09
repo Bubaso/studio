@@ -13,6 +13,7 @@ export interface Item {
   condition?: 'neuf' | 'comme neuf' | 'bon' | 'passable' | 'pauvre'; // Updated conditions
   dataAiHint?: string;
   itemId?: string; // Optional: can be used to link a thread to an item
+  lastUpdated?: string; // For showing when item was last modified
 }
 
 export interface UserProfile {
