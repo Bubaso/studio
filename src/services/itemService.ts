@@ -1,8 +1,9 @@
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase'; // Added storage
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint } from 'firebase/firestore';
 import type { Timestamp } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
@@ -13,7 +14,6 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 
 const mapDocToItem = (document: any): Item => {
   const data = document.data();
-  const seller = data.seller; // Assuming seller is an object with id and name for now
   return {
     id: document.id,
     name: data.name || '',
@@ -22,20 +22,20 @@ const mapDocToItem = (document: any): Item => {
     category: data.category || 'Autre',
     location: data.location || '',
     imageUrl: data.imageUrl || 'https://placehold.co/600x400.png',
-    sellerId: data.sellerId || (seller?.id || 'unknown'), // Adapt based on your Firestore structure
-    sellerName: data.sellerName || (seller?.name || 'Vendeur inconnu'), // Adapt based on your Firestore structure
+    sellerId: data.sellerId || 'unknown',
+    sellerName: data.sellerName || 'Vendeur inconnu',
     postedDate: convertTimestampToISO(data.postedDate),
     condition: data.condition,
     dataAiHint: data.dataAiHint || `${data.category} ${data.name?.split(' ')[0]}`.toLowerCase(),
   };
 };
 
-export const getItemsFromFirestore = async (filters?: { 
-  category?: ItemCategory; 
-  priceMin?: number; 
-  priceMax?: number; 
-  location?: string; 
-  query?: string; 
+export const getItemsFromFirestore = async (filters?: {
+  category?: ItemCategory;
+  priceMin?: number;
+  priceMax?: number;
+  location?: string;
+  query?: string;
   condition?: ItemCondition;
   count?: number;
 }): Promise<Item[]> => {
@@ -55,28 +55,17 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.priceMax !== undefined) {
       queryConstraints.push(where('price', '<=', filters.priceMax));
     }
-    // Note: Firestore does not support full text search on partial strings like location or general query out of the box.
-    // For location, you might need to filter client-side or use a more complex setup (e.g., Algolia/Typesense).
-    // For query, consider searching by name for a simple implementation.
-    if (filters?.query) {
-        // Simple name search, case-insensitive would require more complex setup or fetching all and filtering
-        // This is a limitation of basic Firestore queries.
-        // For a more robust search, consider dedicated search services.
-        // queryConstraints.push(where('name', '>=', filters.query));
-        // queryConstraints.push(where('name', '<=', filters.query + '\uf8ff'));
-    }
-    
+
     queryConstraints.push(orderBy('postedDate', 'desc'));
 
     if (filters?.count) {
       queryConstraints.push(limit(filters.count));
     }
-    
+
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
     let fetchedItems = querySnapshot.docs.map(mapDocToItem);
 
-    // Client-side filtering for location and query as Firestore is limited here
     if (filters?.location) {
       fetchedItems = fetchedItems.filter(item => item.location?.toLowerCase().includes(filters.location!.toLowerCase()));
     }
@@ -92,7 +81,7 @@ export const getItemsFromFirestore = async (filters?: {
     return fetchedItems;
   } catch (error) {
     console.error("Error fetching items from Firestore: ", error);
-    return []; // Return empty array on error
+    return [];
   }
 };
 
@@ -125,3 +114,15 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
   }
 };
 
+export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
+  const uniqueFileName = `${Date.now()}_${imageFile.name}`;
+  const imageRef = storageRef(storage, `items/${userId}/${uniqueFileName}`);
+  try {
+    const snapshot = await uploadBytes(imageRef, imageFile);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading image: ", error);
+    throw error; // Re-throw error to be caught by the form
+  }
+};

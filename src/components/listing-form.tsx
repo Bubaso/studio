@@ -17,15 +17,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions, ItemCategory, ItemCondition } from "@/lib/types";
+import { ItemCategories, ItemConditions } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import { auth, db } from "@/lib/firebase"; // Import Firebase
+import { Loader2, UploadCloud } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Firestore functions
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import Link from "next/link";
+import { uploadImageAndGetURL } from "@/services/itemService"; // Import the upload service
+
+const MAX_FILE_SIZE_MB = 5;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
 const listingFormSchema = z.object({
   name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
@@ -34,7 +39,17 @@ const listingFormSchema = z.object({
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
-  imageUrl: z.string().url("Veuillez entrer une URL d'image valide.").optional().or(z.literal('')),
+  imageFile: z
+    .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
+    .optional()
+    .refine(
+      (file) => !file || file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
+      `La taille maximale du fichier est de ${MAX_FILE_SIZE_MB}MB.`
+    )
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      "Formats de fichiers acceptés : .jpg, .jpeg, .png, .webp, .gif."
+    ),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
@@ -45,15 +60,16 @@ export function ListingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
     defaultValues: {
       name: "",
       description: "",
       price: 0,
-      imageUrl: "https://placehold.co/600x400.png",
       location: "",
+      imageFile: undefined,
     },
   });
 
@@ -80,19 +96,33 @@ export function ListingForm() {
       return;
     }
 
+    let uploadedImageUrl = "https://placehold.co/600x400.png"; // Default placeholder
+    let dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase();
+
+
     try {
+      if (values.imageFile) {
+        uploadedImageUrl = await uploadImageAndGetURL(values.imageFile, currentUser.uid);
+        // Potentially derive a more specific hint if needed, e.g., from filename, but category/name is usually fine
+        dataAiHintForImage = `${values.category} ${values.imageFile.name.split('.')[0].split('_').pop() || values.name.split(" ")[0]}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0, 20);
+      }
+
       const newItemData = {
-        ...values,
+        name: values.name,
+        description: values.description,
         price: Math.round(values.price),
-        imageUrl: values.imageUrl || 'https://placehold.co/600x400.png',
+        category: values.category,
+        condition: values.condition,
+        location: values.location || '',
+        imageUrl: uploadedImageUrl,
         sellerId: currentUser.uid,
         sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
-        postedDate: serverTimestamp(), // Use Firestore server timestamp
-        dataAiHint: `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase()
+        postedDate: serverTimestamp(),
+        dataAiHint: dataAiHintForImage
       };
 
       const docRef = await addDoc(collection(db, "items"), newItemData);
-      
+
       toast({
         title: "Annonce créée !",
         description: `Votre article "${values.name}" a été mis en vente avec succès.`,
@@ -100,16 +130,22 @@ export function ListingForm() {
       router.push(`/items/${docRef.id}`);
     } catch (error) {
       console.error("Échec de la création de l'annonce:", error);
+      let errorMessage = "Échec de la création de l'annonce. Veuillez réessayer.";
+      if (error instanceof Error && error.message.includes('storage/unauthorized')) {
+        errorMessage = "Erreur de permission lors du téléversement de l'image. Vérifiez les règles de Firebase Storage.";
+      } else if (error instanceof Error && error.message.includes('storage/object-not-found')) {
+        errorMessage = "Erreur lors du téléversement de l'image : objet non trouvé.";
+      }
       toast({
         title: "Erreur",
-        description: "Échec de la création de l'annonce. Veuillez réessayer.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
         setIsSubmitting(false);
     }
   }
-  
+
   if (isLoadingAuth) {
     return <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -125,7 +161,6 @@ export function ListingForm() {
         </div>
      )
   }
-
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
@@ -169,7 +204,7 @@ export function ListingForm() {
                 <FormItem>
                   <FormLabel>Prix (FCFA)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="1" placeholder="ex: 25000" {...field} 
+                    <Input type="number" step="1" placeholder="ex: 25000" {...field}
                       onChange={e => field.onChange(parseInt(e.target.value, 10))}
                       onBlur={e => {
                         const value = parseInt(e.target.value, 10)
@@ -220,9 +255,9 @@ export function ListingForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {ItemConditions.map((condition) => (
-                        <SelectItem key={condition} value={condition} className="capitalize">
-                          {condition.charAt(0).toUpperCase() + condition.slice(1)}
+                      {ItemConditions.map((conditionValue) => (
+                        <SelectItem key={conditionValue} value={conditionValue} className="capitalize">
+                          {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -245,25 +280,53 @@ export function ListingForm() {
                 )}
             />
           </div>
+
           <FormField
             control={form.control}
-            name="imageUrl"
+            name="imageFile"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>URL de l'image (Optionnel)</FormLabel>
+                <FormLabel>Image de l'article (Optionnel)</FormLabel>
                 <FormControl>
-                  <Input placeholder="https://example.com/image.png" {...field} />
+                  <div className="flex items-center space-x-4">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Aperçu de l'image" className="h-20 w-20 object-cover rounded-md border" />
+                    ) : (
+                      <div className="h-20 w-20 bg-muted rounded-md flex items-center justify-center border">
+                        <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/png, image/jpeg, image/gif, image/webp"
+                      onChange={(event) => {
+                        const file = event.target.files ? event.target.files[0] : null;
+                        field.onChange(file);
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setImagePreview(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        } else {
+                          setImagePreview(null);
+                        }
+                      }}
+                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    />
+                  </div>
                 </FormControl>
                 <FormDescription>
-                  Pour l'instant, veuillez fournir une URL. Le téléchargement d'images sera pris en charge ultérieurement. Par défaut, une image de remplacement est utilisée.
+                  Téléchargez une image pour votre article (Max {MAX_FILE_SIZE_MB}MB). Formats: PNG, JPG, GIF, WEBP.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Soumission..." : "Créer l'annonce"}
+            {isSubmitting ? "Publication..." : "Créer l'annonce"}
           </Button>
         </form>
       </Form>
