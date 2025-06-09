@@ -53,7 +53,7 @@ export default async function HomePage() {
             </h2>
             <Sparkles className="h-6 w-6 text-amber-500 ml-2" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8">
             {featuredItems.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
