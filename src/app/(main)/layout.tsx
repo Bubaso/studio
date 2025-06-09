@@ -1,5 +1,7 @@
-
 import React from 'react';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { Toaster } from "@/components/ui/toaster"; // Added Toaster back
 
 export default function MainLayout({
   children,
@@ -8,13 +10,10 @@ export default function MainLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <header style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-        Simplified Header
-      </header>
+      <Header />
       <main className="flex-grow container py-8">{children}</main>
-      <footer style={{ padding: '1rem', borderTop: '1px solid #eee', marginTop: 'auto' }}>
-        Simplified Footer
-      </footer>
+      <Footer />
+      <Toaster />
     </div>
   );
 }
