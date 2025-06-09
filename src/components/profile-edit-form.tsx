@@ -25,7 +25,7 @@ import { uploadAvatarAndGetURL, updateUserProfile } from "@/services/userService
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-const MAX_AVATAR_SIZE_MB = 2;
+const MAX_AVATAR_SIZE_MB = 10; // Updated from 2 to 10
 const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
 const profileEditFormSchema = z.object({
@@ -35,7 +35,7 @@ const profileEditFormSchema = z.object({
     .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
     .refine(
       (file) => file.size <= MAX_AVATAR_SIZE_MB * 1024 * 1024,
-      `La taille maximale de l'avatar est de ${MAX_AVATAR_SIZE_MB}MB.`
+      `La taille maximale de l'avatar est de ${MAX_AVATAR_SIZE_MB}MB.` // Updated message
     )
     .refine(
       (file) => ACCEPTED_AVATAR_TYPES.includes(file.type),
@@ -79,9 +79,7 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
 
   const removeAvatar = () => {
     form.setValue("avatarFile", undefined, { shouldValidate: true });
-    setAvatarPreview(null); // Or set to a default placeholder, or keep old one for now
-    // If you want to revert to the original avatar after selecting a new one and then removing:
-    // setAvatarPreview(currentUserProfile.avatarUrl);
+    setAvatarPreview(null);
   };
 
   useEffect(() => {
@@ -110,19 +108,12 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
       if (values.name !== currentUserProfile.name) updateData.name = values.name;
       if (values.location !== currentUserProfile.location) updateData.location = values.location;
       if (newAvatarUrl) updateData.avatarUrl = newAvatarUrl;
-      // If avatar was removed and no new one, we might want to set a default or remove it
-      // For now, if avatarFile is undefined but avatarPreview was cleared, it means remove/reset.
-      // If user explicitly wants to REMOVE avatar (set to default), that logic needs more care.
-      // Current setup: if newAvatarUrl is undefined, existing avatar in DB isn't touched unless explicitly cleared in DB.
-      // If avatarPreview is null AND values.avatarFile is undefined, it means user cleared preview of NEW file.
-      // If we want to support "removing" avatar to go back to a default, `updateUserProfile` would need a flag.
-      // For simplicity, this form only updates if a NEW avatar is uploaded.
-
+      
       await updateUserProfile(currentUserProfile.uid, updateData);
 
       toast({ title: "Profil mis à jour", description: "Vos informations ont été enregistrées." });
-      router.push("/profile"); // Or router.refresh() if staying on the same page and data needs to update
-      router.refresh(); // To make sure layout re-fetches current user
+      router.push("/profile"); 
+      router.refresh(); 
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({ title: "Erreur", description: "Échec de la mise à jour du profil.", variant: "destructive" });
@@ -221,8 +212,7 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
   );
 }
 
-// Dummy components for Card to avoid import errors if they don't exist at this path.
-// Replace with actual imports from '@/components/ui/card'
+// These are just stubs for the generator, real imports will be used from @/components/ui
 const Card = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("border bg-card text-card-foreground rounded-lg", className)}>{children}</div>;
 const CardHeader = ({ children }: { children: React.ReactNode }) => <div className="p-6 flex flex-col space-y-1.5">{children}</div>;
 const CardTitle = ({ className, children }: { className?: string, children: React.ReactNode }) => <h3 className={cn("font-semibold leading-none tracking-tight", className)}>{children}</h3>;
