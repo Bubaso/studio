@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { getUserDocument } from '@/services/userService';
 import { getUserListingsFromFirestore } from '@/services/itemService';
-import type { UserProfile, Item, Review } from '@/lib/types'; // Updated User to UserProfile
+import type { UserProfile, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,17 +34,11 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            {/* Ratings are not part of UserProfile yet, can be added later */}
-            {/* {user.ratings && (
-              <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
-                <Star className="h-5 w-5 mr-1 text-yellow-400 fill-yellow-400" />
-                <span className="font-semibold">{user.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</span>
-                <span className="ml-1">({user.ratings.count} évaluations)</span>
-              </div>
-            )} */}
-            <Button variant="outline">
-              <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
-            </Button>
+            <Link href="/profile/edit">
+              <Button variant="outline">
+                <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
+              </Button>
+            </Link>
           </div>
         </CardContent>
       </Card>
@@ -62,8 +56,8 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
             <CardContent className="p-6 text-center text-muted-foreground">
               <p>Vous n'avez pas encore mis d'articles en vente.</p>
               <ul className="list-disc list-inside text-left my-2">
-                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ `sellerId` qui correspond à votre UID ({user.uid}).</li>
-                 <li>Le champ `postedDate` doit être un Timestamp valide.</li>
+                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ ` + "`sellerId`" + ` qui correspond à votre UID (${user.uid}).</li>
+                 <li>Le champ ` + "`postedDate`" + ` doit être un Timestamp valide.</li>
               </ul>
               <Link href="/sell" className="text-primary hover:underline">
                 Publiez votre premier article !
@@ -82,7 +76,7 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
                     {Array(5).fill(0).map((_, i) => (
-                        <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`} />
+                        <Star key={i} className={` + "`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`" + `} />
                     ))}
                     <span className="ml-2 text-sm font-semibold">{review.reviewerName}</span>
                   </div>
@@ -109,7 +103,7 @@ export default function ProfilePage() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<Item[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]); // Reviews still mock for now
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -121,9 +115,7 @@ export default function ProfilePage() {
         if (profile) {
           const userListings = await getUserListingsFromFirestore(profile.uid);
           setListings(userListings);
-          // Fetch reviews for this user (mock for now, replace with Firestore later)
-          // const userReviews = await getMockReviewsForUser(profile.uid); 
-          // setReviews(userReviews);
+          // Reviews are still mock for now
         }
       } else {
         setFirebaseUser(null);
