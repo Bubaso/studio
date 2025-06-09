@@ -6,78 +6,18 @@ import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tag, MapPin, MessageSquare, Star, ShoppingCart, Package } from 'lucide-react';
+import { Package, MapPin, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { auth } from '@/lib/firebase';
-import { createOrGetThreadAndRedirect } from '@/actions/messageActions';
 import Link from 'next/link';
+import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
 
-// Imports for the new Client Component
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 
 interface ItemPageProps {
   params: { id: string };
 }
 
-// Client Component for the Contact Seller Button
-function ContactSellerButtonClient({ sellerId, itemId }: { sellerId: string; itemId: string }) {
-  "use client";
-
-  const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (isLoadingAuth) {
-    return (
-      <Button size="lg" variant="outline" className="w-full" disabled>
-        <MessageSquare className="mr-2 h-5 w-5" /> Chargement...
-      </Button>
-    );
-  }
-
-  if (currentUser && currentUser.uid === sellerId) {
-    return null; // Don't show button if it's the seller's own item
-  }
-
-  if (!currentUser) {
-    // User is not logged in, show a button to redirect to login
-    // Include redirect query param to come back to the item page after login
-    const redirectTo = `/auth/signin?redirect=/items/${itemId}`;
-    return (
-      <Button size="lg" variant="outline" className="w-full" onClick={() => router.push(redirectTo)}>
-        <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur (Connexion requise)
-      </Button>
-    );
-  }
-
-  // User is logged in and is not the seller
-  return (
-    <form action={async () => {
-      // currentUser is guaranteed to be non-null here due to the checks above
-      await createOrGetThreadAndRedirect(currentUser.uid, sellerId, itemId);
-    }}>
-      <Button type="submit" size="lg" variant="outline" className="w-full">
-        <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
-      </Button>
-    </form>
-  );
-}
-
-
 export default async function ItemPage({ params }: ItemPageProps) {
   const item = await getItemByIdFromFirestore(params.id);
-  // auth.currentUser in a Server Component might be null if auth state is client-side only.
-  // The ContactSellerButtonClient will handle its own auth state.
 
   if (!item) {
     return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
@@ -185,7 +125,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
-            {/* Render the client component for contact button */}
+            {/* Use the client component for contact button logic */}
             {seller && (
                 <ContactSellerButtonClient sellerId={seller.uid} itemId={item.id} />
             )}
