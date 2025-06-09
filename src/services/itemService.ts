@@ -7,9 +7,20 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
-  if (!timestamp) return new Date().toISOString();
+  if (!timestamp) return new Date().toISOString(); // Default for missing
   if (typeof timestamp === 'string') return timestamp; // Already a string
-  return timestamp.toDate().toISOString();
+  // Check if it's a Firestore Timestamp-like object with a toDate method
+  if (timestamp && typeof (timestamp as Timestamp).toDate === 'function') {
+    try {
+      return (timestamp as Timestamp).toDate().toISOString();
+    } catch (e) {
+      console.warn('Error converting timestamp toDate:', timestamp, e);
+      return new Date().toISOString(); // Fallback on conversion error
+    }
+  }
+  // If it's not a string, not undefined, and not a valid Timestamp, it's malformed.
+  console.warn('Invalid timestamp format encountered:', timestamp);
+  return new Date().toISOString(); // Fallback for malformed
 };
 
 const mapDocToItem = (document: any): Item => {
@@ -22,19 +33,25 @@ const mapDocToItem = (document: any): Item => {
     imageUrls = [data.imageUrl];
   }
 
+  const itemName = typeof data.name === 'string' ? data.name : '';
+  const itemCategory = typeof data.category === 'string' ? data.category : 'Autre';
+  
+  const itemNameForHint = itemName ? itemName.split(' ')[0] : 'article';
+  const categoryForHint = itemCategory || 'general';
+
   return {
     id: document.id,
-    name: data.name || '',
+    name: itemName,
     description: data.description || '',
     price: data.price || 0,
-    category: data.category || 'Autre',
+    category: itemCategory,
     location: data.location || '',
     imageUrls: imageUrls,
     sellerId: data.sellerId || 'unknown',
     sellerName: data.sellerName || 'Vendeur inconnu',
     postedDate: convertTimestampToISO(data.postedDate),
     condition: data.condition,
-    dataAiHint: data.dataAiHint || `${data.category} ${data.name?.split(' ')[0]}`.toLowerCase(),
+    dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20),
   };
 };
 
@@ -94,6 +111,10 @@ export const getItemsFromFirestore = async (filters?: {
 };
 
 export const getItemByIdFromFirestore = async (id: string): Promise<Item | null> => {
+  if (!id || typeof id !== 'string' || id.length === 0 || id.includes('/')) {
+    console.warn(`Attempted to fetch item with invalid ID: ${id}`);
+    return null;
+  }
   try {
     const itemDocRef = doc(db, 'items', id);
     const docSnap = await getDoc(itemDocRef);
@@ -101,28 +122,36 @@ export const getItemByIdFromFirestore = async (id: string): Promise<Item | null>
     if (docSnap.exists()) {
       return mapDocToItem(docSnap);
     } else {
-      console.log("No such document!");
+      console.log(`No such item document with ID: ${id}`);
       return null;
     }
   } catch (error) {
-    console.error("Error fetching item by ID from Firestore: ", error);
+    console.error(`Error fetching item by ID ${id} from Firestore: `, error);
     return null;
   }
 };
 
 export const getUserListingsFromFirestore = async (userId: string): Promise<Item[]> => {
+  if (!userId) {
+    console.warn("Attempted to fetch user listings with no userId.");
+    return [];
+  }
   try {
     const itemsCollectionRef = collection(db, 'items');
     const q = query(itemsCollectionRef, where('sellerId', '==', userId), orderBy('postedDate', 'desc'));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(mapDocToItem);
   } catch (error) {
-    console.error("Error fetching user listings from Firestore: ", error);
+    console.error(`Error fetching user listings for ${userId} from Firestore: `, error);
     return [];
   }
 };
 
 export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
+  if (!userId) {
+     console.error("User ID is required for image upload.");
+     throw new Error("User ID is required for image upload.");
+  }
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
   const imageRef = storageRef(storage, `items/${userId}/${uniqueFileName}`);
   try {
