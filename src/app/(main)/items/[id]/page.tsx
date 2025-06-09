@@ -28,15 +28,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
     if (item.sellerId && typeof item.sellerId === 'string') {
       seller = await getUserDocument(item.sellerId);
     } else {
-      // Log this as a warning, but it's not a critical error for page rendering
       console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
-      // seller remains null
     }
   } catch (error: any) {
-    // If it's specifically a permission error, we anticipate this with current rules
-    // for server-side client SDK usage. Log it subtly or not at all here to potentially
-    // avoid Next.js overlay if it's sensitive to console.error for handled errors.
-    // For other types of errors, logging might still be valuable.
     if (error.code !== 'permission-denied') {
       console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message);
     }
@@ -146,9 +140,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
             {/* Use the client component for contact button logic */}
-            {/* Ensure seller and item.id are valid before rendering */}
-            {seller && seller.uid && item && item.id && (
-                <ContactSellerButtonClient sellerId={seller.uid} itemId={item.id} />
+            {/* Render button if item and item.id and item.sellerId exist */}
+            {item && item.id && item.sellerId && (
+                <ContactSellerButtonClient sellerId={item.sellerId} itemId={item.id} />
             )}
           </div>
           
