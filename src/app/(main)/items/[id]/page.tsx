@@ -32,8 +32,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Image
               src={item.imageUrl}
               alt={item.name}
-              layout="fill"
-              objectFit="cover"
+              fill
+              className="object-cover"
               data-ai-hint={item.dataAiHint}
             />
           </div>
@@ -77,19 +77,20 @@ export default async function ItemPage({ params }: ItemPageProps) {
               </CardHeader>
               <CardContent className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={seller.avatarUrl} alt={seller.name} data-ai-hint={seller.dataAiHint} />
-                  <AvatarFallback>{seller.name.substring(0,2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                  <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Link href={`/profile/${seller.id}`} className="font-semibold text-lg hover:text-primary transition-colors">
+                  <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors">
                     {seller.name}
                   </Link>
+                  {/* Ratings for mock seller are not implemented for now in UserProfile type
                   {seller.ratings && (
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Star className="h-4 w-4 mr-1 text-yellow-400 fill-yellow-400" />
                       {seller.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})} ({seller.ratings.count} évaluations)
                     </div>
-                  )}
+                  )} */}
                    <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
                 </div>
               </CardContent>
@@ -100,7 +101,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
-            <Link href={`/messages/new?userId=${seller?.id}&itemId=${item.id}`} className="flex-1">
+            <Link href={`/messages/new?userId=${seller?.uid}&itemId=${item.id}`} className="flex-1">
               <Button size="lg" variant="outline" className="w-full">
                 <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
               </Button>

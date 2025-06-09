@@ -32,6 +32,9 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Log the config the client-side auth object is using
+    console.log("Client-side Firebase config being used by auth object:", auth.app.options);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -52,6 +55,8 @@ export default function SignUpPage() {
         errorMessage = "Cette adresse e-mail est déjà utilisée.";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
+      } else if (error.code === 'auth/configuration-not-found') {
+        errorMessage = "Erreur de configuration Firebase. Vérifiez les logs et la configuration.";
       }
       toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
     } finally {
