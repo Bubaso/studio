@@ -1,6 +1,5 @@
 
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
+import React from 'react';
 
 export default function MainLayout({
   children,
@@ -9,9 +8,13 @@ export default function MainLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <header style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+        Simplified Header
+      </header>
       <main className="flex-grow container py-8">{children}</main>
-      <Footer />
+      <footer style={{ padding: '1rem', borderTop: '1px solid #eee', marginTop: 'auto' }}>
+        Simplified Footer
+      </footer>
     </div>
   );
 }

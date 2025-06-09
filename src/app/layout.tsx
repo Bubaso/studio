@@ -1,11 +1,10 @@
 
-import type {Metadata} from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
+import React from 'react';
 
-export const metadata: Metadata = {
-  title: 'ReFind - Trésors de Seconde Main',
-  description: 'Achetez et vendez des articles de seconde main avec ReFind.',
+export const metadata = {
+  title: 'ReFind - Simplified',
+  description: 'Simplified ReFind App for Debugging.',
 };
 
 export default function RootLayout({
@@ -14,16 +13,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Belleza&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased min-h-screen flex flex-col">
+    <html lang="fr">
+      <body>
         {children}
-        <Toaster />
+        {/* Toaster removed for simplification */}
       </body>
     </html>
   );
