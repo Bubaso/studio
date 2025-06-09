@@ -2,7 +2,7 @@
 import { ItemCard } from '@/components/item-card';
 // import { getItemsFromFirestore } from '@/services/itemService'; // Temporarily commented out
 import type { Item, ItemCategory } from '@/lib/types';
-import { FilterControls } from '@/components/filter-controls';
+// import { FilterControls } from '@/components/filter-controls'; // Temporarily commented out
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -79,8 +79,8 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
         </>
       ) : (
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé (Test Modu)</h2>
-          <p className="text-muted-foreground">Veri çekme geçici olarak devre dışı bırakıldı.</p>
+          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé (Test Modu - Veri çekme devre dışı)</h2>
+          <p className="text-muted-foreground">Veri çekme geçici olarak devre dışı bırakıldı. Filtreler de geçici olarak kaldırıldı.</p>
         </div>
       )}
     </div>
@@ -125,7 +125,7 @@ export default function BrowsePage({ searchParams }: BrowsePageProps) {
     <div className="space-y-8">
       <h1 className="text-4xl font-bold font-headline">{pageTitle}</h1>
       <div className="flex flex-col md:flex-row gap-8">
-        <FilterControls />
+        {/* <FilterControls /> */} {/* Temporarily commented out */}
         <Suspense fallback={<ItemGridSkeleton />}>
           <ItemGrid searchParams={searchParams} />
         </Suspense>
