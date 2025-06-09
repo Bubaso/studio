@@ -103,7 +103,7 @@ export default function ProfilePage() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<Item[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]); // Reviews are still mock/empty for now
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -115,8 +115,7 @@ export default function ProfilePage() {
         if (profile) {
           const userListings = await getUserListingsFromFirestore(profile.uid);
           setListings(userListings);
-          // Mock reviews or initialize as empty:
-          setReviews([]); // For now, no reviews are fetched from Firestore for this page.
+          setReviews([]); 
         }
       } else {
         setFirebaseUser(null);

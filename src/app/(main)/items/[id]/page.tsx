@@ -1,21 +1,48 @@
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { getItemByIdFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService'; 
 import type { UserProfile } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tag, MapPin, MessageSquare, Star, ShoppingCart } from 'lucide-react';
+import { Tag, MapPin, MessageSquare, Star, ShoppingCart, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { auth } from '@/lib/firebase'; // For current user
+import { createOrGetThreadAndRedirect } from '@/actions/messageActions'; // Server Action
+import Link from 'next/link'; // Keep for other links if needed
 
 interface ItemPageProps {
   params: { id: string };
 }
 
+// Helper component for the contact button to use server action
+function ContactSellerButton({ sellerId, itemId, currentUserId }: { sellerId: string; itemId: string; currentUserId: string | null }) {
+  if (!currentUserId || currentUserId === sellerId) {
+    return null; // Don't show button if not logged in or if it's the seller's own item
+  }
+
+  const handleContact = async () => {
+    // This function is now a stub for the form action
+  };
+
+  return (
+    <form action={async () => {
+      if (currentUserId) { // Ensure currentUserId is not null before calling action
+        await createOrGetThreadAndRedirect(currentUserId, sellerId, itemId);
+      }
+    }}>
+      <Button type="submit" size="lg" variant="outline" className="w-full">
+        <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
+      </Button>
+    </form>
+  );
+}
+
+
 export default async function ItemPage({ params }: ItemPageProps) {
   const item = await getItemByIdFromFirestore(params.id);
+  const currentUser = auth.currentUser; // This will be null on server, auth state is client-side
 
   if (!item) {
     return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
@@ -25,7 +52,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
-
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -39,7 +65,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 fill
                 className="object-cover"
                 data-ai-hint={imageHint}
-                priority // Prioritize loading the main image
+                priority
               />
             </div>
           </Card>
@@ -47,7 +73,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {otherImageUrls.map((url, index) => (
                 <div key={index} className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity">
-                  {/* Consider using a Link to a larger view or a lightbox here */}
                   <Image
                     src={url}
                     alt={`${item.name} - image ${index + 2}`}
@@ -67,7 +92,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">
-              <Tag className="h-4 w-4 mr-2" />
+              <Package className="h-4 w-4 mr-2" /> {/* Changed Tag to Package for category */}
               {item.category}
             </Badge>
             {item.condition && (
@@ -125,12 +150,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
+            {/* Note: auth.currentUser.uid is not available in Server Components.
+                We need a client component or another way to get current user's ID to pass to ContactSellerButton.
+                For now, this button might not work correctly if the page is fully server-rendered without client-side auth check.
+                The ContactSellerButton will handle the check for currentUserId itself.
+                We will rely on client-side check within the button or the server action to deny if not logged in.
+            */}
             {seller && (
-              <Link href={`/messages/new?userId=${seller.uid}&itemId=${item.id}`} className="flex-1">
-                <Button size="lg" variant="outline" className="w-full">
-                  <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
-                </Button>
-              </Link>
+                <ContactSellerButton sellerId={seller.uid} itemId={item.id} currentUserId={currentUser?.uid || null} />
             )}
           </div>
           

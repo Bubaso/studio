@@ -6,25 +6,23 @@ export interface Item {
   price: number;
   category: string;
   location?: string;
-  imageUrls: string[]; // Changed from imageUrl: string
-  sellerId: string; // This will be user.uid
-  sellerName: string; // This can be user.name or user.displayName
-  postedDate: string; // ISO date string
-  condition?: 'new' | 'like new' | 'good' | 'fair' | 'poor';
-  dataAiHint?: string; // Will refer to the primary image or item in general
+  imageUrls: string[];
+  sellerId: string;
+  sellerName: string;
+  postedDate: string;
+  condition?: 'neuf' | 'comme neuf' | 'bon' | 'passable' | 'pauvre'; // Updated conditions
+  dataAiHint?: string;
+  itemId?: string; // Optional: can be used to link a thread to an item
 }
 
-// Represents the data structure for a user's profile stored in Firestore
 export interface UserProfile {
   uid: string;
   email: string | null;
-  name: string | null; // displayName
-  avatarUrl: string | null; // photoURL
+  name: string | null;
+  avatarUrl: string | null;
   dataAiHint?: string;
-  joinedDate: string; // ISO date string
+  joinedDate: string;
   location?: string;
-  // Other fields like ratings, reviews count can be added here
-  // listings will be fetched separately
 }
 
 export interface Review {
@@ -33,27 +31,29 @@ export interface Review {
   reviewerName: string;
   rating: number;
   comment: string;
-  date: string; // ISO date string
-  itemId?: string; // Optional: if review is for an item transaction
+  date: string;
+  itemId?: string;
 }
 
 export interface Message {
-  id: string;
+  id: string; // Firestore document ID
   threadId: string;
   senderId: string;
-  senderName: string; // denormalized for easier display
+  senderName: string; // Denormalized for display
   text: string;
-  timestamp: string; // ISO date string
+  timestamp: string; // ISO date string (will be Firestore ServerTimestamp on write, converted on read)
 }
 
 export interface MessageThread {
-  id: string;
-  participantIds: string[];
-  participantNames: string[]; // [name1, name2]
-  participantAvatars: string[]; // [avatar1, avatar2]
-  lastMessage?: Message;
-  lastMessageAt: string; // ISO date string
-  unreadCount?: number; // for current user
+  id: string; // Firestore document ID (e.g., uid1_uid2)
+  participantIds: [string, string]; // Array of two user UIDs, sorted
+  participantNames: [string, string]; // Denormalized names corresponding to participantIds
+  participantAvatars: [string, string]; // Denormalized avatar URLs
+  lastMessageText?: string; // Denormalized for list display
+  lastMessageSenderId?: string;
+  lastMessageAt: string; // ISO date string (Firestore ServerTimestamp on write)
+  itemId?: string; // Optional: if the conversation is about a specific item
+  // unreadCount can be complex; omitting for now for client-side simplicity
 }
 
 export const ItemCategories = [
@@ -71,5 +71,6 @@ export const ItemCategories = [
 
 export type ItemCategory = typeof ItemCategories[number];
 
+// Updated ItemConditions to French and consistent casing
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];

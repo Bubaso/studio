@@ -3,8 +3,10 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getMockMessagesForThread, getMockMessageThreads, getMockCurrentUser, addMockMessage } from '@/lib/mock-data';
-import type { Message, MessageThread, User } from '@/lib/types';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { getMessagesForThread, sendMessage, getMessageThreadsForUser } from '@/services/messageService'; // Use Firestore service
+import type { Message, MessageThread } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,37 +22,52 @@ export default function MessageThreadPage() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [threadInfo, setThreadInfo] = useState<MessageThread | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingThreadInfo, setIsLoadingThreadInfo] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const user = await getMockCurrentUser();
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-
+      setIsLoadingAuth(false);
       if (!user) {
-        router.push('/auth/signin'); 
-        return;
+         setIsLoadingThreadInfo(false);
       }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+  
+  useEffect(() => {
+    if (currentUser && threadId) {
+      setIsLoadingThreadInfo(true);
+      // Fetch all threads to find the current one for participant info
+      // This is a bit inefficient, ideally get thread info directly by ID
+      // For now, reusing getMessageThreadsForUser
+      const unsubscribeThreads = getMessageThreadsForUser(currentUser.uid, (allThreads) => {
+        const currentThread = allThreads.find(t => t.id === threadId);
+        setThreadInfo(currentThread || null);
+        setIsLoadingThreadInfo(false);
+        if (!currentThread) {
+          console.warn("Fil de discussion non trouvé ou l'utilisateur n'est pas un participant.");
+        }
+      });
 
-      const allThreads = await getMockMessageThreads(user.id);
-      const currentThread = allThreads.find(t => t.id === threadId);
-      setThreadInfo(currentThread || null);
-      
-      if (currentThread) {
-        const fetchedMessages = await getMockMessagesForThread(threadId);
+      const unsubscribeMessages = getMessagesForThread(threadId, (fetchedMessages) => {
         setMessages(fetchedMessages);
-      } else {
-        console.warn("Fil de discussion non trouvé ou l'utilisateur n'est pas un participant.");
-      }
-      setIsLoading(false);
+      });
+      
+      return () => {
+        unsubscribeThreads();
+        unsubscribeMessages();
+      };
+    } else if (!currentUser && !isLoadingAuth) { // If no user and auth check is done
+        setIsLoadingThreadInfo(false);
     }
-    fetchData();
-  }, [threadId, router]);
+  }, [threadId, currentUser, isLoadingAuth]);
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,19 +76,18 @@ export default function MessageThreadPage() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !threadInfo) return;
     setIsSending(true);
-    const messageData = {
-      threadId: threadInfo.id,
-      senderId: currentUser.id,
-      senderName: currentUser.name, 
-      text: newMessage.trim(),
-    };
-    const sentMessage = await addMockMessage(messageData);
-    setMessages(prev => [...prev, sentMessage]);
-    setNewMessage('');
-    setIsSending(false);
+    try {
+      await sendMessage(threadInfo.id, currentUser.uid, currentUser.displayName || currentUser.email || 'Moi', newMessage.trim());
+      setNewMessage('');
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      // Show toast to user?
+    } finally {
+      setIsSending(false);
+    }
   };
   
-  if (isLoading) {
+  if (isLoadingAuth || isLoadingThreadInfo) {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -94,13 +110,13 @@ export default function MessageThreadPage() {
   }
   
   const otherParticipantIndex = threadInfo.participantIds.findIndex(id => id !== currentUser.id);
-  const otherParticipantName = threadInfo.participantNames[otherParticipantIndex] || 'Utilisateur';
-  const otherParticipantAvatar = threadInfo.participantAvatars[otherParticipantIndex] || 'https://placehold.co/100x100.png?text=?';
+  const otherParticipantName = otherParticipantIndex !== -1 ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
+  const otherParticipantAvatar = otherParticipantIndex !== -1 ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card">
       <header className="p-4 border-b flex items-center space-x-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="mr-2" aria-label="Retour">
+        <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="mr-2" aria-label="Retour aux messages">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <Avatar>
@@ -113,7 +129,7 @@ export default function MessageThreadPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => {
           const isCurrentUserSender = msg.senderId === currentUser.id;
-          const senderAvatar = isCurrentUserSender ? currentUser.avatarUrl : otherParticipantAvatar;
+          const senderAvatar = isCurrentUserSender ? (currentUser.photoURL || undefined) : otherParticipantAvatar;
           const senderNameDisplay = isCurrentUserSender ? "Vous" : msg.senderName;
           
           return (
@@ -132,7 +148,7 @@ export default function MessageThreadPage() {
                     : "bg-secondary text-secondary-foreground rounded-bl-none"
                 )}
               >
-                <p className="text-sm">{msg.text}</p>
+                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                 <p className={cn("text-xs mt-1", isCurrentUserSender ? "text-primary-foreground/70 text-right" : "text-muted-foreground/70")}>
                   {new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -140,7 +156,7 @@ export default function MessageThreadPage() {
                {isCurrentUserSender && (
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
-                  <AvatarFallback>{senderNameDisplay.substring(0,1).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{(currentUser.displayName || "V").substring(0,1).toUpperCase()}</AvatarFallback>
                 </Avatar>
               )}
             </div>
@@ -174,3 +190,4 @@ export default function MessageThreadPage() {
     </div>
   );
 }
+

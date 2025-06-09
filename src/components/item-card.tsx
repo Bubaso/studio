@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Item } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tag, MapPin } from 'lucide-react';
+import { Package, MapPin } from 'lucide-react'; // Changed Tag to Package
 import { Badge } from '@/components/ui/badge';
 
 interface ItemCardProps {
@@ -35,7 +35,7 @@ export function ItemCard({ item }: ItemCardProps) {
         </Link>
         <p className="text-2xl font-bold text-primary mb-2">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
         <div className="flex items-center text-sm text-muted-foreground mb-1">
-          <Tag className="h-4 w-4 mr-1 flex-shrink-0" />
+          <Package className="h-4 w-4 mr-1 flex-shrink-0" /> {/* Changed Tag to Package */}
           <span className="truncate" title={item.category}>{item.category}</span>
         </div>
         {item.location && (
