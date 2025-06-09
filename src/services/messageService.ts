@@ -113,9 +113,14 @@ export const createOrGetMessageThread = async (
       return { threadId: threadId, error: undefined };
     }
   } catch (error: any) {
-    const errorMessage = `Error in createOrGetMessageThread for thread ${threadId}: ${error.message}`;
-    console.error(errorMessage, error.stack);
-    return { threadId: null, error: "Une erreur technique est survenue lors de la création/récupération du fil de discussion." };
+    let specificError = "Une erreur technique est survenue lors de la création/récupération du fil de discussion.";
+    if (error.code === 'permission-denied') {
+      specificError = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore pour les collections 'messageThreads' et 'users'. Les actions serveur pourraient ne pas être authentifiées correctement pour ces opérations.";
+      console.error(`Firestore Permission Denied in createOrGetMessageThread for thread ${threadId}: ${error.message}`, error.stack);
+    } else {
+      console.error(`Error in createOrGetMessageThread for thread ${threadId}: ${error.message}`, error.stack);
+    }
+    return { threadId: null, error: specificError };
   }
 };
 
@@ -227,3 +232,4 @@ export const getMessagesForThread = (
     onUpdate([]);
   });
 };
+
