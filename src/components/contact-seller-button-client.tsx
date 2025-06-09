@@ -41,7 +41,9 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
 
   if (!currentUser) {
     // User is not logged in, show a button to redirect to login
-    const redirectTo = `/auth/signin?redirect=/items/${itemId}`;
+    // Construct the redirect URL to bring the user back to the item page after login
+    const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
+    const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
       <Button size="lg" variant="outline" className="w-full flex-1" onClick={() => router.push(redirectTo)}>
         <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur (Connexion requise)
@@ -53,6 +55,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   return (
     <form action={async () => {
       // currentUser is guaranteed to be non-null here due to the checks above
+      // server action will handle redirect or error
       await createOrGetThreadAndRedirect(currentUser.uid, sellerId, itemId);
     }} className="flex-1">
       <Button type="submit" size="lg" variant="outline" className="w-full">
