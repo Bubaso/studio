@@ -58,7 +58,18 @@ async function UserProfileContent({ user }: { user: User }) {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>Vous n'avez pas encore mis d'articles en vente. Vérifiez Firestore ou <Link href="/sell" className="text-primary hover:underline">mettez un article en vente</Link>.</p>
+              <p className="text-left">
+                Aucune annonce trouvée pour cet utilisateur ({user.name} - ID: {user.id}) dans Firestore. <br />
+                Veuillez vérifier les points suivants dans votre collection 'items' sur Firestore :
+              </p>
+              <ul className="list-disc list-inside text-left my-2">
+                <li>L'article a un champ nommé <strong>sellerId</strong> (exactement ce nom, büyük/küçük harfe duyarlı).</li>
+                <li>Bu <strong>sellerId</strong> alanının değeri tam olarak <strong>{user.id}</strong> olmalıdır.</li>
+                <li>L'article a un champ nommé <strong>postedDate</strong> et son type est <strong>Timestamp</strong>.</li>
+              </ul>
+              <p className="text-left">
+                Alternatif olarak, <Link href="/sell" className="text-primary hover:underline">yeni bir ilan yayınlayabilirsiniz</Link>.
+              </p>
             </CardContent>
           </Card>
         )}

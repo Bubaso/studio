@@ -9,7 +9,7 @@ const users: User[] = [
     dataAiHint: "profil femme",
     joinedDate: new Date(2023, 0, 15).toISOString(),
     location: 'Paris, FR', // Location can remain for demo purposes
-    ratings: { value: 4.5, count: 20 },
+    ratings: { value: 4.5, count: 30 },
   },
   {
     id: 'user2',
