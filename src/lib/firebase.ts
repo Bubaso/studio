@@ -13,19 +13,25 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Only add measurementId if it's set in the environment variables
 if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
   firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
+} else {
+  // console.log("Firebase Init: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID is not set."); // Optional: keep if you want to be reminded
 }
 
 // Initialize Firebase
 let app;
 if (getApps().length === 0) {
   if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {
-    console.error("Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing from environment variables. Check your .env file and ensure it's loaded correctly with NEXT_PUBLIC_ prefixes.");
+    console.error("Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing. These values should be provided by environment variables (e.g., process.env.NEXT_PUBLIC_FIREBASE_API_KEY).");
+    // Potentially throw an error or handle this state if critical for the app to function
   }
   app = initializeApp(firebaseConfig);
+  // console.log("Firebase app initialized successfully."); // Optional: confirm initialization
 } else {
   app = getApp();
+  // console.log("Firebase app retrieved successfully."); // Optional: confirm retrieval
 }
 
 const db = getFirestore(app);
