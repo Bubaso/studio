@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, startTransition } from 'react'; // Added startTransition
 import { useActionState } from 'react'; // React 19
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -151,7 +151,9 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
           formData.append('sellerId', sellerId);
           formData.append('rating', form.getValues('rating').toString());
           formData.append('comment', form.getValues('comment'));
-          formAction(formData);
+          startTransition(() => { // Wrap the action call in startTransition
+            formAction(formData);
+          });
         })}
         className="space-y-6 p-6 border rounded-lg shadow-sm bg-card"
       >
@@ -227,3 +229,4 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
     </Form>
   );
 }
+
