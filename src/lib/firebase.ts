@@ -16,22 +16,17 @@ const firebaseConfig: FirebaseOptions = {
 // Only add measurementId if it's set in the environment variables
 if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
   firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
-} else {
-  // console.log("Firebase Init: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID is not set."); // Optional: keep if you want to be reminded
 }
 
 // Initialize Firebase
 let app;
 if (getApps().length === 0) {
   if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.projectId) {
-    console.error("Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing. These values should be provided by environment variables (e.g., process.env.NEXT_PUBLIC_FIREBASE_API_KEY).");
-    // Potentially throw an error or handle this state if critical for the app to function
+    console.error("Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing. These values should be provided by environment variables (e.g., process.env.NEXT_PUBLIC_FIREBASE_API_KEY). Ensure your .env file is correctly set up and prefixed with NEXT_PUBLIC_ and that you have restarted your Next.js development server.");
   }
   app = initializeApp(firebaseConfig);
-  // console.log("Firebase app initialized successfully."); // Optional: confirm initialization
 } else {
   app = getApp();
-  // console.log("Firebase app retrieved successfully."); // Optional: confirm retrieval
 }
 
 const db = getFirestore(app);

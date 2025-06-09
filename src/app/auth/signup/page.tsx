@@ -33,7 +33,8 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    console.log("Client-side Firebase config being used by auth object:", auth.app.options);
+    // This log will show the config the 'auth' object is using on the client-side
+    // console.log("Client-side Firebase config being used by auth object:", auth.app.options);
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -56,11 +57,8 @@ export default function SignUpPage() {
         errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = "Format d'email invalide.";
-      } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN"))) {
-        // This can sometimes manifest if Email/Password sign-in isn't enabled or other project config issues.
-        errorMessage = "L'opération n'est pas autorisée. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans la console Firebase.";
-      } else if (error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
-         errorMessage = "Erreur de configuration ou requête invalide. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans les paramètres de votre projet Firebase et que votre configuration est correcte.";
+      } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) || error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
+         errorMessage = "Erreur de configuration ou requête invalide. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans les paramètres de votre projet Firebase et que votre configuration API est correcte.";
       }
       toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
     } finally {
