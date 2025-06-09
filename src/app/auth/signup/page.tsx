@@ -33,7 +33,10 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Log the config the client-side auth object is using
+    // Client-side diagnostics
+    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_API_KEY directly:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN directly:", process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN);
+    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_PROJECT_ID directly:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
     console.log("Client-side Firebase config being used by auth object:", auth.app.options);
 
     try {
