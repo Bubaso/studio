@@ -4,20 +4,33 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useFormState } from 'react-dom'; // Import useFormState
 import { auth } from '@/lib/firebase';
 import { createOrGetThreadAndRedirect } from '@/actions/messageActions';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
   itemId: string;
 }
 
+const initialState = {
+  error: null,
+  success: false,
+  threadId: null,
+};
+
 export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerButtonClientProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // Bind sellerId and itemId to the action for useFormState
+  const actionWithArgs = createOrGetThreadAndRedirect.bind(null, currentUser?.uid || '', sellerId, itemId);
+  const [state, formAction] = useFormState(actionWithArgs, initialState);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -26,6 +39,18 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (state?.error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: state.error,
+      });
+    }
+    // No explicit success toast here as successful action leads to redirect
+  }, [state, toast]);
+
 
   if (isLoadingAuth) {
     return (
@@ -40,8 +65,6 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   }
 
   if (!currentUser) {
-    // User is not logged in, show a button to redirect to login
-    // Construct the redirect URL to bring the user back to the item page after login
     const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
     const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
@@ -53,11 +76,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
 
   // User is logged in and is not the seller
   return (
-    <form action={async () => {
-      // currentUser is guaranteed to be non-null here due to the checks above
-      // server action will handle redirect or error
-      await createOrGetThreadAndRedirect(currentUser.uid, sellerId, itemId);
-    }} className="flex-1">
+    <form action={formAction} className="flex-1">
       <Button type="submit" size="lg" variant="outline" className="w-full">
         <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
       </Button>
