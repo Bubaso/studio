@@ -38,7 +38,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{item.name}</h1>
-          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">

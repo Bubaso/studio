@@ -11,6 +11,9 @@ import { ItemCategories, ItemConditions, ItemCondition } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
 import { X } from 'lucide-react';
 
+const MAX_PRICE_FCFA = 500000; // Max price for slider in FCFA
+const PRICE_STEP_FCFA = 1000;
+
 export function FilterControls() {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,7 +23,7 @@ export function FilterControls() {
   const [condition, setCondition] = useState(searchParams.get('condition') || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([
     parseInt(searchParams.get('minPrice') || '0', 10),
-    parseInt(searchParams.get('maxPrice') || '1000', 10)
+    parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
   ]);
   const [location, setLocation] = useState(searchParams.get('location') || '');
 
@@ -29,7 +32,7 @@ export function FilterControls() {
     setCondition(searchParams.get('condition') || '');
     setPriceRange([
       parseInt(searchParams.get('minPrice') || '0', 10),
-      parseInt(searchParams.get('maxPrice') || '1000', 10)
+      parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
     ]);
     setLocation(searchParams.get('location') || '');
   }, [searchParams]);
@@ -59,7 +62,7 @@ export function FilterControls() {
     router.push(`${pathname}?${params.toString()}`);
     setCategory('');
     setCondition('');
-    setPriceRange([0, 1000]);
+    setPriceRange([0, MAX_PRICE_FCFA]);
     setLocation('');
   };
 
@@ -100,13 +103,13 @@ export function FilterControls() {
       <div>
         <Label>Fourchette de prix</Label>
         <div className="flex justify-between text-sm text-muted-foreground mb-2">
-          <span>{priceRange[0].toLocaleString('fr-FR')} €</span>
-          <span>{priceRange[1].toLocaleString('fr-FR')}{priceRange[1] === 1000 ? '+' : ''} €</span>
+          <span>{priceRange[0].toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+          <span>{priceRange[1].toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}{priceRange[1] === MAX_PRICE_FCFA ? '+' : ''}</span>
         </div>
         <Slider
           min={0}
-          max={1000}
-          step={10}
+          max={MAX_PRICE_FCFA}
+          step={PRICE_STEP_FCFA}
           value={priceRange}
           onValueChange={(newRange) => setPriceRange(newRange as [number, number])}
           className="my-2"
@@ -117,7 +120,7 @@ export function FilterControls() {
         <Label htmlFor="location">Lieu</Label>
         <Input 
           id="location" 
-          placeholder="ex: Paris, Code Postal" 
+          placeholder="ex: Dakar, SN" 
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />

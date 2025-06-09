@@ -8,7 +8,7 @@ const users: User[] = [
     avatarUrl: 'https://placehold.co/100x100.png?text=AD',
     dataAiHint: "profil femme",
     joinedDate: new Date(2023, 0, 15).toISOString(),
-    location: 'Paris, FR',
+    location: 'Paris, FR', // Location can remain for demo purposes
     ratings: { value: 4.5, count: 20 },
   },
   {
@@ -36,9 +36,9 @@ const items: Item[] = [
     id: 'item1',
     name: 'Veste en Cuir Vintage',
     description: 'Une veste en cuir vintage élégante, à peine portée. Taille M. Excellent état, look classique.',
-    price: 75,
+    price: 49000, // Approx 75 EUR
     category: 'Vêtements et Accessoires' as ItemCategory,
-    location: 'Paris, FR',
+    location: 'Dakar, SN', // Changed location for context
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'veste cuir',
     sellerId: 'user1',
@@ -50,9 +50,9 @@ const items: Item[] = [
     id: 'item2',
     name: 'Chaise en Bois Antique',
     description: 'Chaise en bois antique magnifiquement ouvragée. Ajoute un charme rustique à n\'importe quelle pièce. Chêne massif.',
-    price: 120,
+    price: 79000, // Approx 120 EUR
     category: 'Mobilier' as ItemCategory,
-    location: 'Lyon, FR',
+    location: 'Abidjan, CI', // Changed location for context
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'chaise bois',
     sellerId: 'user2',
@@ -64,9 +64,9 @@ const items: Item[] = [
     id: 'item3',
     name: 'Console de Jeu Rétro',
     description: 'Console de jeu rétro classique avec 2 manettes et 5 jeux populaires. Fonctionne parfaitement.',
-    price: 90,
+    price: 59000, // Approx 90 EUR
     category: 'Électronique' as ItemCategory,
-    location: 'Marseille, FR',
+    location: 'Cotonou, BJ', // Changed location for context
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'console jeu',
     sellerId: 'user3',
@@ -78,9 +78,9 @@ const items: Item[] = [
     id: 'item4',
     name: 'Sac à Main de Créateur',
     description: 'Authentique sac à main de créateur, légèrement utilisé. Livré avec son sac anti-poussière d\'origine. Cuir, noir.',
-    price: 250,
+    price: 164000, // Approx 250 EUR
     category: 'Vêtements et Accessoires' as ItemCategory,
-    location: 'Paris, FR',
+    location: 'Dakar, SN',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'sac main mode',
     sellerId: 'user1',
@@ -92,9 +92,9 @@ const items: Item[] = [
     id: 'item5',
     name: 'VTT',
     description: 'VTT robuste, adapté à tous les terrains. 21 vitesses, suspension avant. Récemment entretenu.',
-    price: 180,
+    price: 118000, // Approx 180 EUR
     category: 'Sports et Plein Air' as ItemCategory,
-    location: 'Lyon, FR',
+    location: 'Abidjan, CI',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'vélo montagne',
     sellerId: 'user2',
@@ -106,9 +106,9 @@ const items: Item[] = [
     id: 'item6',
     name: 'Livre Première Édition Signée',
     description: 'Rare première édition signée d\'un roman populaire. Excellent état, le rêve d\'un collectionneur.',
-    price: 300,
+    price: 197000, // Approx 300 EUR
     category: 'Livres, Films et Musique' as ItemCategory,
-    location: 'Paris, FR',
+    location: 'Dakar, SN',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'livre collection',
     sellerId: 'user1',
@@ -204,7 +204,7 @@ export const getMockItems = async (filters?: { category?: ItemCategory; priceMin
           );
         }
       }
-      resolve(filteredItems);
+      resolve(filteredItems.sort((a,b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()));
     }, 500); // Simulate network delay
   });
 };
@@ -236,7 +236,7 @@ export const getMockUserById = async (id: string): Promise<User | undefined> => 
 export const getMockUserListings = async (userId: string): Promise<Item[]> => {
     return new Promise(resolve => {
         setTimeout(() => {
-            resolve(items.filter(item => item.sellerId === userId));
+            resolve(items.filter(item => item.sellerId === userId).sort((a,b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime()));
         }, 400);
     });
 };
@@ -245,7 +245,7 @@ export const getMockUserListings = async (userId: string): Promise<Item[]> => {
 export const getMockMessageThreads = async (userId: string): Promise<MessageThread[]> => {
     return new Promise(resolve => {
         setTimeout(() => {
-            resolve(messageThreads.filter(thread => thread.participantIds.includes(userId)));
+            resolve(messageThreads.filter(thread => thread.participantIds.includes(userId)).sort((a,b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()));
         }, 300);
     });
 };
@@ -269,9 +269,9 @@ export const addMockItem = async (itemData: Omit<Item, 'id' | 'postedDate' | 'se
                 sellerName: seller?.name || 'Vendeur inconnu',
                 dataAiHint: itemData.dataAiHint || `${itemData.category} ${itemData.name.split(' ').slice(0,1).join('')}`.toLowerCase()
             };
-            items.push(newItem);
+            items.push(newItem); // Add to the beginning for most recent
             if (seller) {
-                seller.listings = [...(seller.listings || []), newItem];
+                seller.listings = [newItem, ...(seller.listings || [])];
             }
             resolve(newItem);
         }, 500);
@@ -297,7 +297,7 @@ export const addMockMessage = async (messageData: Omit<Message, 'id' | 'timestam
     });
 };
 
-let currentMockUser: User | null = users[0];
+let currentMockUser: User | null = users[0]; // Default to Alice
 
 export const getMockCurrentUser = async (): Promise<User | null> => {
     return new Promise(resolve => {
@@ -307,15 +307,15 @@ export const getMockCurrentUser = async (): Promise<User | null> => {
     });
 };
 
-export const mockSignIn = async (userId: string): Promise<User | null> => {
+export const mockSignIn = async (userIdToSignIn: string): Promise<User | null> => {
     return new Promise((resolve) => {
         setTimeout(() => {
-            const user = users.find(u => u.id === userId);
+            const user = users.find(u => u.id === userIdToSignIn);
             if (user) {
                 currentMockUser = user;
                 resolve(user);
             } else {
-                resolve(null);
+                resolve(null); // User not found
             }
         }, 100);
     });

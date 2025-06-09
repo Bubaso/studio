@@ -28,7 +28,7 @@ import { Loader2 } from "lucide-react";
 const listingFormSchema = z.object({
   name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
   description: z.string().min(10, "La description doit comporter au moins 10 caractères.").max(1000),
-  price: z.coerce.number().positive("Le prix doit être un nombre positif."),
+  price: z.coerce.number().positive("Le prix doit être un nombre positif.").int("Le prix doit être un nombre entier pour FCFA."),
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
@@ -56,7 +56,7 @@ export function ListingForm() {
   const itemDescriptionForAISuggestion = form.watch("description");
 
   const handlePriceSuggested = (price: number) => {
-    form.setValue("price", parseFloat(price.toFixed(2)));
+    form.setValue("price", Math.round(price)); // FCFA usually doesn't have decimals
   };
 
   async function onSubmit(values: ListingFormValues) {
@@ -71,6 +71,7 @@ export function ListingForm() {
 
       const newItemData = {
         ...values,
+        price: Math.round(values.price), // Ensure price is integer for FCFA
         imageUrl: values.imageUrl || 'https://placehold.co/600x400.png',
         sellerId: currentUser.id,
         dataAiHint: `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase()
@@ -135,12 +136,12 @@ export function ListingForm() {
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Prix (€)</FormLabel>
+                  <FormLabel>Prix (FCFA)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="ex: 25,99" {...field} 
-                      onChange={e => field.onChange(parseFloat(e.target.value.replace(',', '.')))}
+                    <Input type="number" step="1" placeholder="ex: 25000" {...field} 
+                      onChange={e => field.onChange(parseInt(e.target.value, 10))}
                       onBlur={e => {
-                        const value = parseFloat(e.target.value.replace(',', '.'))
+                        const value = parseInt(e.target.value, 10)
                         if(!isNaN(value)) field.onChange(value)
                       }}
                     />
@@ -206,7 +207,7 @@ export function ListingForm() {
                 <FormItem>
                     <FormLabel>Lieu (Optionnel)</FormLabel>
                     <FormControl>
-                    <Input placeholder="ex: Paris, France" {...field} />
+                    <Input placeholder="ex: Dakar, Sénégal" {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>

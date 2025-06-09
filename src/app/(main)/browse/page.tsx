@@ -57,16 +57,76 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                     />
                   </PaginationItem>
                 )}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink 
-                      href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
-                      isActive={currentPage === pageNumber}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                
+                {Array.from({ length: totalPages }, (_, i) => {
+                  const pageNumber = i + 1;
+                  const showEllipsisBefore = currentPage > 3 && pageNumber === 1 && totalPages > 5;
+                  const showEllipsisAfter = currentPage < totalPages - 2 && pageNumber === totalPages && totalPages > 5;
+
+                  if (totalPages > 5) {
+                    // Always show first page
+                    if (pageNumber === 1) {
+                       return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink 
+                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
+                            isActive={currentPage === pageNumber}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                     // Ellipsis after first page if current page is far
+                    if (currentPage > 3 && pageNumber === 2) {
+                      return <PaginationEllipsis key={`ellipsis-start-${pageNumber}`} />;
+                    }
+                    // Show pages around current page
+                    if (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1) {
+                      return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink 
+                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
+                            isActive={currentPage === pageNumber}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                    // Ellipsis before last page if current page is far
+                    if (currentPage < totalPages - 2 && pageNumber === totalPages -1) {
+                       return <PaginationEllipsis key={`ellipsis-end-${pageNumber}`} />;
+                    }
+                     // Always show last page
+                    if (pageNumber === totalPages) {
+                       return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink 
+                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
+                            isActive={currentPage === pageNumber}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    }
+                    return null; // Don't render other pages in condensed view
+                  } else {
+                     // Show all pages if total pages is 5 or less
+                     return (
+                        <PaginationItem key={pageNumber}>
+                          <PaginationLink 
+                            href={`/browse?${new URLSearchParams({...searchParams, page: pageNumber.toString()}).toString()}`}
+                            isActive={currentPage === pageNumber}
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                  }
+                })}
+
                 {currentPage < totalPages && (
                   <PaginationItem>
                     <PaginationNext 

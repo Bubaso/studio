@@ -38,9 +38,10 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
         similarItems: similarItems.trim() || 'Aucun article similaire fourni.',
       };
       const result = await suggestPrice(input);
-      setSuggestedPrice(result.suggestedPrice);
+      const roundedPrice = Math.round(result.suggestedPrice); // FCFA generally doesn't use decimals
+      setSuggestedPrice(roundedPrice);
       setReasoning(result.reasoning);
-      onPriceSuggested(result.suggestedPrice);
+      onPriceSuggested(roundedPrice);
     } catch (e) {
       console.error('Erreur lors de la suggestion de prix:', e);
       setError('Impossible de suggérer un prix. Veuillez réessayer.');
@@ -57,7 +58,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           Suggestion de Prix par IA
         </CardTitle>
         <CardDescription>
-          Obtenez une suggestion de prix alimentée par l'IA basée sur la description de votre article et, éventuellement, des articles similaires.
+          Obtenez une suggestion de prix alimentée par l'IA basée sur la description de votre article et, éventuellement, des articles similaires. Le prix sera en FCFA.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -75,7 +76,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           <Label htmlFor="similar-items">Articles similaires (Optionnel)</Label>
           <Textarea
             id="similar-items"
-            placeholder="ex: T-Shirt Marque X, taille M, bon état - 15 €&#x0a;Un autre article similaire - 20 €"
+            placeholder="ex: T-Shirt Marque X, taille M, bon état - 10000 FCFA&#x0a;Un autre article similaire - 12000 FCFA"
             value={similarItems}
             onChange={(e) => setSimilarItems(e.target.value)}
             rows={3}
@@ -93,7 +94,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           ) : (
             <Wand2 className="mr-2 h-4 w-4" />
           )}
-          Suggérer un prix
+          Suggérer un prix (FCFA)
         </Button>
         {error && (
           <Alert variant="destructive">
@@ -103,7 +104,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
         )}
         {suggestedPrice !== null && reasoning && (
           <Alert variant="default" className="bg-accent/10 border-accent/50">
-            <AlertTitle className="text-accent font-semibold">Prix suggéré : {suggestedPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</AlertTitle>
+            <AlertTitle className="text-accent font-semibold">Prix suggéré : {suggestedPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</AlertTitle>
             <AlertDescription className="text-accent/90">{reasoning}</AlertDescription>
           </Alert>
         )}

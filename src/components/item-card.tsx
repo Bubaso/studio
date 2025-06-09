@@ -31,7 +31,7 @@ export function ItemCard({ item }: ItemCardProps) {
         <Link href={`/items/${item.id}`} className="block">
           <CardTitle className="text-lg font-headline mb-2 hover:text-primary transition-colors truncate" title={item.name}>{item.name}</CardTitle>
         </Link>
-        <p className="text-2xl font-bold text-primary mb-2">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+        <p className="text-2xl font-bold text-primary mb-2">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
         <div className="flex items-center text-sm text-muted-foreground mb-1">
           <Tag className="h-4 w-4 mr-1 flex-shrink-0" />
           <span className="truncate" title={item.category}>{item.category}</span>
