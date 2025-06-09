@@ -4,19 +4,26 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFormState } from 'react-dom'; // Import useFormState
+import { useFormState } from 'react-dom'; 
 import { auth } from '@/lib/firebase';
 import { createOrGetThreadAndRedirect } from '@/actions/messageActions';
 import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { MessageSquare, Loader2 } from 'lucide-react'; // Added Loader2
+import { useToast } from "@/hooks/use-toast"; 
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
   itemId: string;
 }
 
-const initialState = {
+// Define the shape of the state returned by the server action
+interface ActionState {
+  error?: string | null;
+  success?: boolean;
+  threadId?: string | null;
+}
+
+const initialState: ActionState = {
   error: null,
   success: false,
   threadId: null,
@@ -28,9 +35,17 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
-  // Bind sellerId and itemId to the action for useFormState
+  // Bind currentUserId, sellerId and itemId to the action for useFormState
+  // Note: currentUser might be null initially, the action needs to handle this
   const actionWithArgs = createOrGetThreadAndRedirect.bind(null, currentUser?.uid || '', sellerId, itemId);
-  const [state, formAction] = useFormState(actionWithArgs, initialState);
+  
+  // useFormState returns [state, formActionFunction, isPending (optional)]
+  // The 'pending' state can be used to disable the button while action is processing
+  const [state, formAction, isPending] = useFormState(
+    (prevState: ActionState, formData: FormData) => actionWithArgs(), // formData is not directly used by createOrGetThreadAndRedirect
+    initialState
+  );
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -48,14 +63,15 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
         description: state.error,
       });
     }
-    // No explicit success toast here as successful action leads to redirect
+    // A successful redirect is handled by the server action itself,
+    // so no explicit success toast is needed here unless the action changes to return a success state.
   }, [state, toast]);
 
 
   if (isLoadingAuth) {
     return (
       <Button size="lg" variant="outline" className="w-full flex-1" disabled>
-        <MessageSquare className="mr-2 h-5 w-5" /> Chargement...
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Contacter le vendeur
       </Button>
     );
   }
@@ -77,8 +93,13 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   // User is logged in and is not the seller
   return (
     <form action={formAction} className="flex-1">
-      <Button type="submit" size="lg" variant="outline" className="w-full">
-        <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
+      <Button type="submit" size="lg" variant="outline" className="w-full" disabled={isPending}>
+        {isPending ? (
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        ) : (
+          <MessageSquare className="mr-2 h-5 w-5" />
+        )}
+        {isPending ? "Envoi..." : "Contacter le vendeur"}
       </Button>
     </form>
   );
