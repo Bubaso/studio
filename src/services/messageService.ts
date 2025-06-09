@@ -1,5 +1,5 @@
 
-'use client'; // Can be called from client components if needed, though actions are preferred for mutations
+// Can be called from client components if needed, though actions are preferred for mutations
 
 import { db } from '@/lib/firebase';
 import type { Message, MessageThread, UserProfile } from '@/lib/types';
