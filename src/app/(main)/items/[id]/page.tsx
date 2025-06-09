@@ -23,7 +23,19 @@ export default async function ItemPage({ params }: ItemPageProps) {
     return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
   }
 
-  const seller: UserProfile | null = await getUserDocument(item.sellerId);
+  let seller: UserProfile | null = null;
+  try {
+    // item.sellerId'nin geçerli bir string olduğundan emin olun
+    if (item.sellerId && typeof item.sellerId === 'string') {
+      seller = await getUserDocument(item.sellerId);
+    } else {
+      console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
+    }
+  } catch (error) {
+    console.error(`Failed to fetch seller document (ID: ${item.sellerId}) for item ${item.id}:`, error);
+    // Seller will remain null, and the UI will handle this.
+  }
+
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
@@ -116,7 +128,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Vendeur non trouvé.</p>
+                <p className="text-muted-foreground">Informations sur le vendeur non disponibles ou le vendeur n'a pas été trouvé.</p>
               </CardContent>
             </Card>
           )}
@@ -126,7 +138,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
             {/* Use the client component for contact button logic */}
-            {seller && (
+            {/* Ensure seller and item.id are valid before rendering */}
+            {seller && seller.uid && item && item.id && (
                 <ContactSellerButtonClient sellerId={seller.uid} itemId={item.id} />
             )}
           </div>
