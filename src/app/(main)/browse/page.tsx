@@ -1,6 +1,6 @@
 
 import { ItemCard } from '@/components/item-card';
-import { getMockItems } from '@/lib/mock-data';
+import { getItemsFromFirestore } from '@/services/itemService'; // Updated import
 import type { Item, ItemCategory } from '@/lib/types';
 import { FilterControls } from '@/components/filter-controls';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -31,7 +31,8 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
     condition: searchParams.condition,
   };
 
-  const allItems: Item[] = await getMockItems(filters);
+  // Fetch items from Firestore
+  const allItems: Item[] = await getItemsFromFirestore(filters);
   const currentPage = parseInt(searchParams.page || '1');
   const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
   const paginatedItems = allItems.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -142,7 +143,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
       ) : (
         <div className="text-center py-10">
           <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
-          <p className="text-muted-foreground">Essayez d'ajuster vos filtres ou termes de recherche.</p>
+          <p className="text-muted-foreground">Essayez d'ajuster vos filtres ou termes de recherche. Assurez-vous que votre base de données Firestore contient des articles.</p>
         </div>
       )}
     </div>

@@ -1,7 +1,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { getMockItemById, getMockUserById } from '@/lib/mock-data';
+import { getItemByIdFromFirestore } from '@/services/itemService'; // Updated import
+import { getMockUserById } from '@/lib/mock-data'; // User data still mock for now
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,12 +14,14 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const item = await getMockItemById(params.id);
+  // Fetch item from Firestore
+  const item = await getItemByIdFromFirestore(params.id);
 
   if (!item) {
-    return <div className="text-center py-10">Article non trouvé.</div>;
+    return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
   }
 
+  // Seller info still comes from mock data for now
   const seller = await getMockUserById(item.sellerId);
 
   return (
@@ -38,7 +41,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{item.name}</h1>
-          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
+          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">

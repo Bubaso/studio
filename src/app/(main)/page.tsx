@@ -2,12 +2,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ItemCard } from '@/components/item-card';
-import { getMockItems } from '@/lib/mock-data';
+import { getItemsFromFirestore } from '@/services/itemService'; // Updated import
 import type { Item } from '@/lib/types';
 import { ArrowRight, Search, ShoppingCart } from 'lucide-react';
 
 export default async function HomePage() {
-  const featuredItems: Item[] = (await getMockItems()).slice(0, 4); 
+  // Fetch featured items from Firestore
+  const featuredItems: Item[] = await getItemsFromFirestore({ count: 4 }); 
 
   return (
     <div className="space-y-12">
@@ -41,7 +42,7 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-center text-muted-foreground">Aucun article à la une pour le moment.</p>
+          <p className="text-center text-muted-foreground">Aucun article à la une pour le moment. Vérifiez que Firestore est peuplé.</p>
         )}
         <div className="text-center mt-8">
           <Link href="/browse">

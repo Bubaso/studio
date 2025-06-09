@@ -1,5 +1,6 @@
 
-import { getMockUserById, getMockUserListings } from '@/lib/mock-data';
+import { getMockUserById } from '@/lib/mock-data'; // User data still mock for now
+import { getUserListingsFromFirestore } from '@/services/itemService'; // Updated import
 import type { User, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,14 +14,15 @@ interface UserProfilePageProps {
 }
 
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
-  const user = await getMockUserById(params.userId);
+  const user = await getMockUserById(params.userId); // User data still mock
 
   if (!user) {
     return <div className="text-center py-10">Utilisateur non trouvé.</div>;
   }
 
-  const listings = await getMockUserListings(user.id);
-  const reviews = user.reviews || [];
+  // Fetch user's listings from Firestore
+  const listings = await getUserListingsFromFirestore(user.id);
+  const reviews = user.reviews || []; // Reviews still mock
 
   return (
     <div className="space-y-8">
@@ -67,7 +69,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>{user.name} n'a pas encore mis d'articles en vente.</p>
+              <p>{user.name} n'a pas encore mis d'articles en vente. Vérifiez Firestore.</p>
             </CardContent>
           </Card>
         )}

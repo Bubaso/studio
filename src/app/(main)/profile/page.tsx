@@ -1,5 +1,6 @@
 
-import { getMockCurrentUser, getMockUserListings } from '@/lib/mock-data';
+import { getMockCurrentUser } from '@/lib/mock-data'; // User data still mock for now
+import { getUserListingsFromFirestore } from '@/services/itemService'; // Updated import
 import type { User, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,8 +11,9 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 async function UserProfileContent({ user }: { user: User }) {
-  const listings = await getMockUserListings(user.id);
-  const reviews = user.reviews || [];
+  // Fetch user's listings from Firestore
+  const listings = await getUserListingsFromFirestore(user.id);
+  const reviews = user.reviews || []; // Reviews still mock
 
   return (
     <div className="space-y-8">
@@ -56,10 +58,7 @@ async function UserProfileContent({ user }: { user: User }) {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>Vous n'avez pas encore mis d'articles en vente.</p>
-              <Link href="/sell">
-                <Button variant="link" className="mt-2 text-primary">Mettre un article en vente</Button>
-              </Link>
+              <p>Vous n'avez pas encore mis d'articles en vente. Vérifiez Firestore ou <Link href="/sell" className="text-primary hover:underline">mettez un article en vente</Link>.</p>
             </CardContent>
           </Card>
         )}
@@ -98,7 +97,7 @@ async function UserProfileContent({ user }: { user: User }) {
 
 
 export default async function ProfilePage() {
-  const currentUser = await getMockCurrentUser();
+  const currentUser = await getMockCurrentUser(); // User data still mock
 
   if (!currentUser) {
     return (
