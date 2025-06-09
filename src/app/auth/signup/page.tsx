@@ -33,10 +33,6 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Client-side diagnostics
-    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_API_KEY directly:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN directly:", process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN);
-    console.log("CLIENT-SIDE SIGNUP: Attempting to access NEXT_PUBLIC_FIREBASE_PROJECT_ID directly:", process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
     console.log("Client-side Firebase config being used by auth object:", auth.app.options);
 
     try {
@@ -58,8 +54,13 @@ export default function SignUpPage() {
         errorMessage = "Cette adresse e-mail est déjà utilisée.";
       } else if (error.code === 'auth/weak-password') {
         errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
-      } else if (error.code === 'auth/configuration-not-found') {
-        errorMessage = "Erreur de configuration Firebase. Vérifiez les logs et la configuration.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Format d'email invalide.";
+      } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN"))) {
+        // This can sometimes manifest if Email/Password sign-in isn't enabled or other project config issues.
+        errorMessage = "L'opération n'est pas autorisée. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans la console Firebase.";
+      } else if (error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
+         errorMessage = "Erreur de configuration ou requête invalide. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans les paramètres de votre projet Firebase et que votre configuration est correcte.";
       }
       toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
     } finally {
