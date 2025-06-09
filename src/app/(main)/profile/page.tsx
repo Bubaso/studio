@@ -56,8 +56,8 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
             <CardContent className="p-6 text-center text-muted-foreground">
               <p>Vous n'avez pas encore mis d'articles en vente.</p>
               <ul className="list-disc list-inside text-left my-2">
-                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ ` + "`sellerId`" + ` qui correspond à votre UID (${user.uid}).</li>
-                 <li>Le champ ` + "`postedDate`" + ` doit être un Timestamp valide.</li>
+                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ `sellerId` qui correspond à votre UID ({user.uid}).</li>
+                 <li>Le champ `postedDate` doit être un Timestamp valide.</li>
               </ul>
               <Link href="/sell" className="text-primary hover:underline">
                 Publiez votre premier article !
@@ -76,7 +76,7 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
                     {Array(5).fill(0).map((_, i) => (
-                        <Star key={i} className={` + "`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`" + `} />
+                        <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/50'}`} />
                     ))}
                     <span className="ml-2 text-sm font-semibold">{review.reviewerName}</span>
                   </div>
@@ -103,7 +103,7 @@ export default function ProfilePage() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<Item[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]); // Reviews are still mock/empty for now
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -115,12 +115,14 @@ export default function ProfilePage() {
         if (profile) {
           const userListings = await getUserListingsFromFirestore(profile.uid);
           setListings(userListings);
-          // Reviews are still mock for now
+          // Mock reviews or initialize as empty:
+          setReviews([]); // For now, no reviews are fetched from Firestore for this page.
         }
       } else {
         setFirebaseUser(null);
         setUserProfile(null);
         setListings([]);
+        setReviews([]);
       }
       setIsLoading(false);
     });
