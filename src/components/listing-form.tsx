@@ -19,18 +19,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ItemCategories, ItemConditions } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud, XCircle } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
-import { uploadImageAndGetURL } from "@/services/itemService"; // Import the upload service
+import { uploadImageAndGetURL } from "@/services/itemService"; 
+import Image from "next/image";
 
 const MAX_FILE_SIZE_MB = 5;
+const MAX_FILES = 5;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+const fileSchema = z
+  .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
+  .refine(
+    (file) => file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
+    `La taille maximale du fichier est de ${MAX_FILE_SIZE_MB}MB.`
+  )
+  .refine(
+    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    "Formats acceptés : .jpg, .jpeg, .png, .webp, .gif."
+  );
 
 const listingFormSchema = z.object({
   name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
@@ -39,17 +52,10 @@ const listingFormSchema = z.object({
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
-  imageFile: z
-    .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
-    .optional()
-    .refine(
-      (file) => !file || file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
-      `La taille maximale du fichier est de ${MAX_FILE_SIZE_MB}MB.`
-    )
-    .refine(
-      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
-      "Formats de fichiers acceptés : .jpg, .jpeg, .png, .webp, .gif."
-    ),
+  imageFiles: z
+    .array(fileSchema)
+    .max(MAX_FILES, `Vous ne pouvez télécharger que ${MAX_FILES} images au maximum.`)
+    .optional(),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
@@ -60,7 +66,7 @@ export function ListingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -69,7 +75,7 @@ export function ListingForm() {
       description: "",
       price: 0,
       location: "",
-      imageFile: undefined,
+      imageFiles: [],
     },
   });
 
@@ -87,6 +93,36 @@ export function ListingForm() {
     form.setValue("price", Math.round(price));
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const currentFiles = form.getValues("imageFiles") || [];
+      const newFiles = Array.from(files);
+      const combinedFiles = [...currentFiles, ...newFiles].slice(0, MAX_FILES);
+      form.setValue("imageFiles", combinedFiles, { shouldValidate: true });
+
+      const newPreviews = combinedFiles.map(file => URL.createObjectURL(file));
+      setImagePreviews(newPreviews);
+    }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    const currentFiles = form.getValues("imageFiles") || [];
+    const updatedFiles = currentFiles.filter((_, index) => index !== indexToRemove);
+    form.setValue("imageFiles", updatedFiles, { shouldValidate: true });
+
+    const updatedPreviews = updatedFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(updatedPreviews);
+  };
+  
+  // Clean up Object URLs
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [imagePreviews]);
+
+
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
     if (!currentUser) {
@@ -96,15 +132,16 @@ export function ListingForm() {
       return;
     }
 
-    let uploadedImageUrl = "https://placehold.co/600x400.png"; // Default placeholder
+    let uploadedImageUrls: string[] = ["https://placehold.co/600x400.png"];
     let dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase();
 
-
     try {
-      if (values.imageFile) {
-        uploadedImageUrl = await uploadImageAndGetURL(values.imageFile, currentUser.uid);
-        // Potentially derive a more specific hint if needed, e.g., from filename, but category/name is usually fine
-        dataAiHintForImage = `${values.category} ${values.imageFile.name.split('.')[0].split('_').pop() || values.name.split(" ")[0]}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0, 20);
+      if (values.imageFiles && values.imageFiles.length > 0) {
+        uploadedImageUrls = await Promise.all(
+          values.imageFiles.map(file => uploadImageAndGetURL(file, currentUser.uid))
+        );
+        // Hint based on the first uploaded image or kept generic
+        dataAiHintForImage = `${values.category} ${values.imageFiles[0].name.split('.')[0].split('_').pop() || values.name.split(" ")[0]}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0, 20);
       }
 
       const newItemData = {
@@ -114,7 +151,7 @@ export function ListingForm() {
         category: values.category,
         condition: values.condition,
         location: values.location || '',
-        imageUrl: uploadedImageUrl,
+        imageUrls: uploadedImageUrls, // Save array of URLs
         sellerId: currentUser.uid,
         sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
         postedDate: serverTimestamp(),
@@ -283,46 +320,64 @@ export function ListingForm() {
 
           <FormField
             control={form.control}
-            name="imageFile"
-            render={({ field }) => (
+            name="imageFiles"
+            render={() => ( // field is not directly used here as we manage array with custom logic
               <FormItem>
-                <FormLabel>Image de l'article (Optionnel)</FormLabel>
+                <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
                 <FormControl>
-                  <div className="flex items-center space-x-4">
-                    {imagePreview ? (
-                      <img src={imagePreview} alt="Aperçu de l'image" className="h-20 w-20 object-cover rounded-md border" />
-                    ) : (
-                      <div className="h-20 w-20 bg-muted rounded-md flex items-center justify-center border">
-                        <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                    )}
+                  <>
                     <Input
                       type="file"
                       accept="image/png, image/jpeg, image/gif, image/webp"
-                      onChange={(event) => {
-                        const file = event.target.files ? event.target.files[0] : null;
-                        field.onChange(file);
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setImagePreview(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        } else {
-                          setImagePreview(null);
-                        }
-                      }}
+                      multiple
+                      onChange={handleFileChange}
                       className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      disabled={(form.watch('imageFiles')?.length || 0) >= MAX_FILES}
                     />
-                  </div>
+                    {(form.watch('imageFiles')?.length || 0) >= MAX_FILES && (
+                        <FormDescription className="text-destructive">
+                            Vous avez atteint la limite de {MAX_FILES} images.
+                        </FormDescription>
+                    )}
+                  </>
                 </FormControl>
+                 {imagePreviews.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {imagePreviews.map((previewUrl, index) => (
+                        <div key={index} className="relative group aspect-square">
+                            <Image 
+                                src={previewUrl} 
+                                alt={`Aperçu ${index + 1}`} 
+                                fill
+                                className="object-cover rounded-md border"
+                            />
+                            <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(index)}
+                            >
+                            <XCircle className="h-4 w-4" />
+                            <span className="sr-only">Supprimer l'image {index + 1}</span>
+                            </Button>
+                        </div>
+                        ))}
+                    </div>
+                )}
+                {imagePreviews.length === 0 && (
+                     <div className="mt-2 h-20 w-full bg-muted rounded-md flex items-center justify-center border border-dashed">
+                        <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                )}
                 <FormDescription>
-                  Téléchargez une image pour votre article (Max {MAX_FILE_SIZE_MB}MB). Formats: PNG, JPG, GIF, WEBP.
+                  Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
 
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

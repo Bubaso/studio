@@ -14,6 +14,14 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 
 const mapDocToItem = (document: any): Item => {
   const data = document.data();
+  let imageUrls: string[] = ['https://placehold.co/600x400.png']; // Default placeholder
+
+  if (Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
+    imageUrls = data.imageUrls;
+  } else if (typeof data.imageUrl === 'string') { // Backward compatibility for old single imageUrl
+    imageUrls = [data.imageUrl];
+  }
+
   return {
     id: document.id,
     name: data.name || '',
@@ -21,7 +29,7 @@ const mapDocToItem = (document: any): Item => {
     price: data.price || 0,
     category: data.category || 'Autre',
     location: data.location || '',
-    imageUrl: data.imageUrl || 'https://placehold.co/600x400.png',
+    imageUrls: imageUrls,
     sellerId: data.sellerId || 'unknown',
     sellerName: data.sellerName || 'Vendeur inconnu',
     postedDate: convertTimestampToISO(data.postedDate),

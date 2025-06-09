@@ -2,8 +2,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { getItemByIdFromFirestore } from '@/services/itemService';
-import { getUserDocument } from '@/services/userService'; // Updated import for seller
-import type { UserProfile } from '@/lib/types'; // Using UserProfile for seller
+import { getUserDocument } from '@/services/userService'; 
+import type { UserProfile } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,21 +22,44 @@ export default async function ItemPage({ params }: ItemPageProps) {
   }
 
   const seller: UserProfile | null = await getUserDocument(item.sellerId);
+  const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
+  const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
+  const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
+
 
   return (
     <div className="max-w-6xl mx-auto">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        <Card className="shadow-lg rounded-lg overflow-hidden">
-          <div className="relative aspect-video">
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              fill
-              className="object-cover"
-              data-ai-hint={item.dataAiHint}
-            />
-          </div>
-        </Card>
+        <div className="space-y-4">
+          <Card className="shadow-lg rounded-lg overflow-hidden">
+            <div className="relative aspect-video">
+              <Image
+                src={primaryImageUrl}
+                alt={item.name}
+                fill
+                className="object-cover"
+                data-ai-hint={imageHint}
+                priority // Prioritize loading the main image
+              />
+            </div>
+          </Card>
+          {otherImageUrls.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {otherImageUrls.map((url, index) => (
+                <div key={index} className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity">
+                  {/* Consider using a Link to a larger view or a lightbox here */}
+                  <Image
+                    src={url}
+                    alt={`${item.name} - image ${index + 2}`}
+                    fill
+                    className="object-cover"
+                    data-ai-hint={imageHint}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{item.name}</h1>
@@ -84,13 +107,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     {seller.name || 'Vendeur Anonyme'}
                   </Link>
                    <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
-                  {/* Ratings are not part of UserProfile from Firestore
-                  {seller.ratings && ( 
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Star className="h-4 w-4 mr-1 text-yellow-400 fill-yellow-400" />
-                      {seller.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})} ({seller.ratings.count} évaluations)
-                    </div>
-                  )} */}
                 </div>
               </CardContent>
             </Card>

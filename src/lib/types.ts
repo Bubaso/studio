@@ -6,12 +6,12 @@ export interface Item {
   price: number;
   category: string;
   location?: string;
-  imageUrl: string;
+  imageUrls: string[]; // Changed from imageUrl: string
   sellerId: string; // This will be user.uid
   sellerName: string; // This can be user.name or user.displayName
   postedDate: string; // ISO date string
   condition?: 'new' | 'like new' | 'good' | 'fair' | 'poor';
-  dataAiHint?: string;
+  dataAiHint?: string; // Will refer to the primary image or item in general
 }
 
 // Represents the data structure for a user's profile stored in Firestore

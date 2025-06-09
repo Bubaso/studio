@@ -11,17 +11,20 @@ interface ItemCardProps {
 }
 
 export function ItemCard({ item }: ItemCardProps) {
+  const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
+  const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
+
   return (
     <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
       <Link href={`/items/${item.id}`} className="block group">
         <CardHeader className="p-0">
           <div className="aspect-[4/3] relative w-full overflow-hidden">
             <Image
-              src={item.imageUrl}
+              src={primaryImageUrl}
               alt={item.name}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={item.dataAiHint}
+              data-ai-hint={imageHint}
             />
           </div>
         </CardHeader>
