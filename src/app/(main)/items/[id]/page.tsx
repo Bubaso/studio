@@ -2,15 +2,17 @@
 import Image from 'next/image';
 import { getItemByIdFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, Review } from '@/lib/types'; // Added Review
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, ShoppingCart } from 'lucide-react';
+import { Package, MapPin, ShoppingCart, Star, MessageSquarePlus } from 'lucide-react'; // Added Star, MessageSquarePlus
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
-
+import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; // Added
+import { ReviewForm } from '@/components/review-form'; // Added
+import { auth } from '@/lib/firebase'; // Added for current user check
 
 interface ItemPageProps {
   params: { id: string };
@@ -31,19 +33,26 @@ export default async function ItemPage({ params }: ItemPageProps) {
       console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
     }
   } catch (error: any) {
-    if (error.code !== 'permission-denied') {
-      console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message);
+    if (error.code !== 'permission-denied') { // Don't log expected permission errors loudly
+        console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message);
     }
-    // Ensure seller is null in any error case, allowing the page to render gracefully.
     seller = null;
   }
+
+  const reviews: Review[] = await getReviewsForItem(item.id);
+  const currentUser = auth.currentUser; // This is null on server, client component will handle auth state
+  let hasUserAlreadyReviewed = false;
+  if (currentUser?.uid) { // This check will always be false on server, ReviewForm handles client side
+    hasUserAlreadyReviewed = await checkIfUserHasReviewedItem(currentUser.uid, item.id);
+  }
+
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto space-y-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div className="space-y-4">
           <Card className="shadow-lg rounded-lg overflow-hidden">
@@ -139,8 +148,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
-            {/* Use the client component for contact button logic */}
-            {/* Render button if item and item.id and item.sellerId exist */}
             {item && item.id && item.sellerId && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={item.id} />
             )}
@@ -151,6 +158,56 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <section className="space-y-6">
+        <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
+        {reviews.length > 0 ? (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <Card key={review.id} className="shadow-sm">
+                <CardHeader className="flex flex-row justify-between items-start pb-2">
+                    <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={review.reviewerAvatarUrl || undefined} alt={review.reviewerName} data-ai-hint="profil personne" />
+                            <AvatarFallback>{review.reviewerName.substring(0,2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-semibold">{review.reviewerName}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {new Date(review.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center">
+                        {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30'}`} />
+                        ))}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{review.comment}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+              <MessageSquarePlus className="h-12 w-12 mx-auto mb-3 text-primary/50" />
+              <p>Cet article n'a pas encore reçu d'avis.</p>
+              <p className="text-sm">Soyez le premier à partager votre expérience !</p>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* Review Form Section */}
+      <section className="space-y-4">
+         <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
+        <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewed} />
+      </section>
+
     </div>
   );
 }

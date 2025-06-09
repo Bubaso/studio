@@ -26,13 +26,15 @@ export interface UserProfile {
 }
 
 export interface Review {
-  id:string;
+  id: string; // Firestore document ID
+  itemId: string;
+  sellerId: string; // Added to know who the review is for (seller of the item)
   reviewerId: string;
   reviewerName: string;
-  rating: number;
+  reviewerAvatarUrl?: string | null; // Denormalized avatar of the reviewer
+  rating: number; // 1-5
   comment: string;
-  date: string;
-  itemId?: string;
+  createdAt: string; // ISO date string (Firestore ServerTimestamp on write)
 }
 
 export interface Message {
