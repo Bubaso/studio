@@ -1,4 +1,5 @@
-"use client"; // This page needs client-side interactions for sending messages
+
+"use client"; 
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -32,12 +33,10 @@ export default function MessageThreadPage() {
       setCurrentUser(user);
 
       if (!user) {
-        router.push('/auth/signin'); // Redirect if not logged in
+        router.push('/auth/signin'); 
         return;
       }
 
-      // In a real app, you'd fetch thread info and messages together or ensure thread info exists
-      // For mock, fetch all threads and find the current one to get participant info
       const allThreads = await getMockMessageThreads(user.id);
       const currentThread = allThreads.find(t => t.id === threadId);
       setThreadInfo(currentThread || null);
@@ -46,8 +45,7 @@ export default function MessageThreadPage() {
         const fetchedMessages = await getMockMessagesForThread(threadId);
         setMessages(fetchedMessages);
       } else {
-        // Handle case where thread doesn't exist or user isn't part of it
-        console.warn("Thread not found or user not a participant.");
+        console.warn("Fil de discussion non trouvé ou l'utilisateur n'est pas un participant.");
       }
       setIsLoading(false);
     }
@@ -64,7 +62,7 @@ export default function MessageThreadPage() {
     const messageData = {
       threadId: threadInfo.id,
       senderId: currentUser.id,
-      senderName: currentUser.name, // Denormalized for mock convenience
+      senderName: currentUser.name, 
       text: newMessage.trim(),
     };
     const sentMessage = await addMockMessage(messageData);
@@ -82,9 +80,9 @@ export default function MessageThreadPage() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <Info className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
+          <AlertTitle>Accès refusé</AlertTitle>
           <AlertDescription>
-            Please <Link href="/auth/signin" className="underline hover:text-primary">sign in</Link> to view this message thread.
+            Veuillez <Link href="/auth/signin" className="underline hover:text-primary">vous connecter</Link> pour voir ce fil de discussion.
           </AlertDescription>
         </Alert>
       </div>
@@ -92,21 +90,21 @@ export default function MessageThreadPage() {
   }
 
   if (!threadInfo) {
-    return <div className="text-center py-10">Thread not found or you do not have access.</div>;
+    return <div className="text-center py-10">Fil de discussion non trouvé ou vous n'y avez pas accès.</div>;
   }
   
   const otherParticipantIndex = threadInfo.participantIds.findIndex(id => id !== currentUser.id);
-  const otherParticipantName = threadInfo.participantNames[otherParticipantIndex] || 'User';
+  const otherParticipantName = threadInfo.participantNames[otherParticipantIndex] || 'Utilisateur';
   const otherParticipantAvatar = threadInfo.participantAvatars[otherParticipantIndex] || 'https://placehold.co/100x100.png?text=?';
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card">
       <header className="p-4 border-b flex items-center space-x-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="mr-2">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="mr-2" aria-label="Retour">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <Avatar>
-          <AvatarImage src={otherParticipantAvatar} alt={otherParticipantName} data-ai-hint="profile person" />
+          <AvatarImage src={otherParticipantAvatar} alt={otherParticipantName} data-ai-hint="profil personne" />
           <AvatarFallback>{otherParticipantName.substring(0,2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <h2 className="text-xl font-semibold font-headline">{otherParticipantName}</h2>
@@ -116,14 +114,14 @@ export default function MessageThreadPage() {
         {messages.map((msg) => {
           const isCurrentUserSender = msg.senderId === currentUser.id;
           const senderAvatar = isCurrentUserSender ? currentUser.avatarUrl : otherParticipantAvatar;
-          const senderName = isCurrentUserSender ? "You" : msg.senderName;
+          const senderNameDisplay = isCurrentUserSender ? "Vous" : msg.senderName;
           
           return (
             <div key={msg.id} className={cn("flex items-end space-x-2", isCurrentUserSender ? "justify-end" : "justify-start")}>
               {!isCurrentUserSender && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={senderAvatar} alt={senderName} data-ai-hint="profile person" />
-                  <AvatarFallback>{senderName.substring(0,2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
+                  <AvatarFallback>{senderNameDisplay.substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
               )}
               <div
@@ -136,13 +134,13 @@ export default function MessageThreadPage() {
               >
                 <p className="text-sm">{msg.text}</p>
                 <p className={cn("text-xs mt-1", isCurrentUserSender ? "text-primary-foreground/70 text-right" : "text-muted-foreground/70")}>
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
                {isCurrentUserSender && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={senderAvatar} alt={senderName} data-ai-hint="profile person" />
-                  <AvatarFallback>{senderName.substring(0,1).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
+                  <AvatarFallback>{senderNameDisplay.substring(0,1).toUpperCase()}</AvatarFallback>
                 </Avatar>
               )}
             </div>
@@ -154,7 +152,7 @@ export default function MessageThreadPage() {
       <footer className="p-4 border-t">
         <div className="flex items-center space-x-2">
           <Textarea
-            placeholder="Type your message..."
+            placeholder="Écrivez votre message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => {
@@ -167,9 +165,9 @@ export default function MessageThreadPage() {
             className="flex-1 resize-none min-h-[40px]"
             disabled={isSending}
           />
-          <Button onClick={handleSendMessage} disabled={isSending || !newMessage.trim()}>
+          <Button onClick={handleSendMessage} disabled={isSending || !newMessage.trim()} aria-label="Envoyer le message">
             {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            <span className="sr-only">Send</span>
+            <span className="sr-only">Envoyer</span>
           </Button>
         </div>
       </footer>

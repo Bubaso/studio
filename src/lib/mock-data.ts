@@ -1,31 +1,32 @@
-import type { Item, User, MessageThread, Message, Review, ItemCategory } from './types';
+
+import type { Item, User, MessageThread, Message, Review, ItemCategory, ItemCondition } from './types';
 
 const users: User[] = [
   {
     id: 'user1',
-    name: 'Alice Wonderland',
-    avatarUrl: 'https://placehold.co/100x100.png?text=AW',
-    dataAiHint: "profile woman",
+    name: 'Alice Dubois',
+    avatarUrl: 'https://placehold.co/100x100.png?text=AD',
+    dataAiHint: "profil femme",
     joinedDate: new Date(2023, 0, 15).toISOString(),
-    location: 'New York, NY',
+    location: 'Paris, FR',
     ratings: { value: 4.5, count: 20 },
   },
   {
     id: 'user2',
-    name: 'Bob The Builder',
-    avatarUrl: 'https://placehold.co/100x100.png?text=BB',
-    dataAiHint: "profile man",
+    name: 'Bob Martin',
+    avatarUrl: 'https://placehold.co/100x100.png?text=BM',
+    dataAiHint: "profil homme",
     joinedDate: new Date(2023, 2, 10).toISOString(),
-    location: 'San Francisco, CA',
+    location: 'Lyon, FR',
     ratings: { value: 4.8, count: 15 },
   },
   {
     id: 'user3',
-    name: 'Charlie Brown',
+    name: 'Charles Bernard',
     avatarUrl: 'https://placehold.co/100x100.png?text=CB',
-    dataAiHint: "profile person",
+    dataAiHint: "profil personne",
     joinedDate: new Date(2022, 5, 20).toISOString(),
-    location: 'Austin, TX',
+    location: 'Marseille, FR',
     ratings: { value: 4.2, count: 5 },
   },
 ];
@@ -33,87 +34,87 @@ const users: User[] = [
 const items: Item[] = [
   {
     id: 'item1',
-    name: 'Vintage Leather Jacket',
-    description: 'A stylish vintage leather jacket, barely worn. Size M. Great condition, classic look.',
+    name: 'Veste en Cuir Vintage',
+    description: 'Une veste en cuir vintage élégante, à peine portée. Taille M. Excellent état, look classique.',
     price: 75,
-    category: 'Clothing & Accessories' as ItemCategory,
-    location: 'New York, NY',
+    category: 'Vêtements et Accessoires' as ItemCategory,
+    location: 'Paris, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'leather jacket',
+    dataAiHint: 'veste cuir',
     sellerId: 'user1',
-    sellerName: 'Alice Wonderland',
+    sellerName: 'Alice Dubois',
     postedDate: new Date(2023, 5, 1).toISOString(),
-    condition: 'like new',
+    condition: 'comme neuf' as ItemCondition,
   },
   {
     id: 'item2',
-    name: 'Antique Wooden Chair',
-    description: 'Beautifully crafted antique wooden chair. Adds a rustic charm to any room. Solid oak.',
+    name: 'Chaise en Bois Antique',
+    description: 'Chaise en bois antique magnifiquement ouvragée. Ajoute un charme rustique à n\'importe quelle pièce. Chêne massif.',
     price: 120,
-    category: 'Furniture' as ItemCategory,
-    location: 'San Francisco, CA',
+    category: 'Mobilier' as ItemCategory,
+    location: 'Lyon, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'wooden chair',
+    dataAiHint: 'chaise bois',
     sellerId: 'user2',
-    sellerName: 'Bob The Builder',
+    sellerName: 'Bob Martin',
     postedDate: new Date(2023, 5, 5).toISOString(),
-    condition: 'good',
+    condition: 'bon' as ItemCondition,
   },
   {
     id: 'item3',
-    name: 'Retro Game Console',
-    description: 'Classic retro game console with 2 controllers and 5 popular games. Works perfectly.',
+    name: 'Console de Jeu Rétro',
+    description: 'Console de jeu rétro classique avec 2 manettes et 5 jeux populaires. Fonctionne parfaitement.',
     price: 90,
-    category: 'Electronics' as ItemCategory,
-    location: 'Austin, TX',
+    category: 'Électronique' as ItemCategory,
+    location: 'Marseille, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'game console',
+    dataAiHint: 'console jeu',
     sellerId: 'user3',
-    sellerName: 'Charlie Brown',
+    sellerName: 'Charles Bernard',
     postedDate: new Date(2023, 4, 20).toISOString(),
-    condition: 'good',
+    condition: 'bon' as ItemCondition,
   },
   {
     id: 'item4',
-    name: 'Designer Handbag',
-    description: 'Authentic designer handbag, gently used. Comes with original dust bag. Leather, black.',
+    name: 'Sac à Main de Créateur',
+    description: 'Authentique sac à main de créateur, légèrement utilisé. Livré avec son sac anti-poussière d\'origine. Cuir, noir.',
     price: 250,
-    category: 'Clothing & Accessories' as ItemCategory,
-    location: 'New York, NY',
+    category: 'Vêtements et Accessoires' as ItemCategory,
+    location: 'Paris, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'handbag fashion',
+    dataAiHint: 'sac main mode',
     sellerId: 'user1',
-    sellerName: 'Alice Wonderland',
+    sellerName: 'Alice Dubois',
     postedDate: new Date(2023, 5, 10).toISOString(),
-    condition: 'like new',
+    condition: 'comme neuf' as ItemCondition,
   },
   {
     id: 'item5',
-    name: 'Mountain Bike',
-    description: 'Durable mountain bike, suitable for all terrains. 21 speeds, front suspension. Recently serviced.',
+    name: 'VTT',
+    description: 'VTT robuste, adapté à tous les terrains. 21 vitesses, suspension avant. Récemment entretenu.',
     price: 180,
-    category: 'Sports & Outdoors' as ItemCategory,
-    location: 'San Francisco, CA',
+    category: 'Sports et Plein Air' as ItemCategory,
+    location: 'Lyon, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'mountain bike',
+    dataAiHint: 'vélo montagne',
     sellerId: 'user2',
-    sellerName: 'Bob The Builder',
+    sellerName: 'Bob Martin',
     postedDate: new Date(2023, 5, 12).toISOString(),
-    condition: 'good',
+    condition: 'bon' as ItemCondition,
   },
   {
     id: 'item6',
-    name: 'Signed First Edition Book',
-    description: 'Rare signed first edition of a popular novel. Excellent condition, a collector\'s dream.',
+    name: 'Livre Première Édition Signée',
+    description: 'Rare première édition signée d\'un roman populaire. Excellent état, le rêve d\'un collectionneur.',
     price: 300,
-    category: 'Books, Movies & Music' as ItemCategory,
-    location: 'New York, NY',
+    category: 'Livres, Films et Musique' as ItemCategory,
+    location: 'Paris, FR',
     imageUrl: 'https://placehold.co/600x400.png',
-    dataAiHint: 'book collection',
+    dataAiHint: 'livre collection',
     sellerId: 'user1',
-    sellerName: 'Alice Wonderland',
+    sellerName: 'Alice Dubois',
     postedDate: new Date(2023, 5, 15).toISOString(),
-    condition: 'new',
+    condition: 'neuf' as ItemCondition,
   },
 ];
 
@@ -121,42 +122,42 @@ const reviews: Review[] = [
     {
         id: 'review1',
         reviewerId: 'user2',
-        reviewerName: 'Bob The Builder',
+        reviewerName: 'Bob Martin',
         rating: 5,
-        comment: 'Great seller, item was exactly as described!',
+        comment: 'Excellent vendeur, article exactement comme décrit !',
         date: new Date(2023, 5, 2).toISOString(),
         itemId: 'item1',
     },
     {
         id: 'review2',
         reviewerId: 'user1',
-        reviewerName: 'Alice Wonderland',
+        reviewerName: 'Alice Dubois',
         rating: 4,
-        comment: 'Good communication, chair is lovely but had a small scratch not mentioned.',
+        comment: 'Bonne communication, la chaise est jolie mais avait une petite égratignure non mentionnée.',
         date: new Date(2023, 5, 6).toISOString(),
         itemId: 'item2',
     }
 ];
 
-users[0].reviews = [reviews[1]]; // Alice reviewed by Bob for item2 (Bob's item)
+users[0].reviews = [reviews[1]];
 users[0].listings = items.filter(item => item.sellerId === 'user1');
-users[1].reviews = [reviews[0]]; // Bob reviewed by Alice for item1 (Alice's item)
+users[1].reviews = [reviews[0]];
 users[1].listings = items.filter(item => item.sellerId === 'user2');
 users[2].listings = items.filter(item => item.sellerId === 'user3');
 
 
 const messages: Message[] = [
-    { id: 'msg1', threadId: 'thread1', senderId: 'user1', senderName: 'Alice', text: 'Hi Bob, is the chair still available?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-    { id: 'msg2', threadId: 'thread1', senderId: 'user2', senderName: 'Bob', text: 'Yes Alice, it is!', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString() },
-    { id: 'msg3', threadId: 'thread1', senderId: 'user1', senderName: 'Alice', text: 'Great! Could I pick it up tomorrow?', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
-    { id: 'msg4', threadId: 'thread2', senderId: 'user3', senderName: 'Charlie', text: 'Hello Alice, interested in the jacket.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
+    { id: 'msg1', threadId: 'thread1', senderId: 'user1', senderName: 'Alice', text: 'Bonjour Bob, la chaise est-elle toujours disponible ?', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+    { id: 'msg2', threadId: 'thread1', senderId: 'user2', senderName: 'Bob', text: 'Oui Alice, elle l\'est !', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString() },
+    { id: 'msg3', threadId: 'thread1', senderId: 'user1', senderName: 'Alice', text: 'Super ! Pourrais-je la récupérer demain ?', timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
+    { id: 'msg4', threadId: 'thread2', senderId: 'user3', senderName: 'Charles', text: 'Bonjour Alice, intéressé par la veste.', timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
 ];
 
 const messageThreads: MessageThread[] = [
     {
         id: 'thread1',
         participantIds: ['user1', 'user2'],
-        participantNames: ['Alice Wonderland', 'Bob The Builder'],
+        participantNames: ['Alice Dubois', 'Bob Martin'],
         participantAvatars: [users[0].avatarUrl, users[1].avatarUrl],
         lastMessage: messages[2],
         lastMessageAt: messages[2].timestamp,
@@ -165,7 +166,7 @@ const messageThreads: MessageThread[] = [
     {
         id: 'thread2',
         participantIds: ['user1', 'user3'],
-        participantNames: ['Alice Wonderland', 'Charlie Brown'],
+        participantNames: ['Alice Dubois', 'Charles Bernard'],
         participantAvatars: [users[0].avatarUrl, users[2].avatarUrl],
         lastMessage: messages[3],
         lastMessageAt: messages[3].timestamp,
@@ -174,13 +175,16 @@ const messageThreads: MessageThread[] = [
 ];
 
 
-export const getMockItems = async (filters?: { category?: string; priceMin?: number; priceMax?: number; location?: string; query?: string }): Promise<Item[]> => {
+export const getMockItems = async (filters?: { category?: ItemCategory; priceMin?: number; priceMax?: number; location?: string; query?: string; condition?: ItemCondition }): Promise<Item[]> => {
   return new Promise(resolve => {
     setTimeout(() => {
       let filteredItems = items;
       if (filters) {
         if (filters.category) {
           filteredItems = filteredItems.filter(item => item.category === filters.category);
+        }
+        if (filters.condition) {
+          filteredItems = filteredItems.filter(item => item.condition === filters.condition);
         }
         if (filters.priceMin !== undefined) {
           filteredItems = filteredItems.filter(item => item.price >= filters.priceMin!);
@@ -218,7 +222,6 @@ export const getMockUserById = async (id: string): Promise<User | undefined> => 
     setTimeout(() => {
       const user = users.find(user => user.id === id);
       if (user) {
-        // Attach reviews specific to this user profile being viewed
         user.reviews = reviews.filter(review => {
             const reviewedItem = items.find(item => item.id === review.itemId);
             return reviewedItem?.sellerId === user.id;
@@ -255,7 +258,7 @@ export const getMockMessagesForThread = async (threadId: string): Promise<Messag
     });
 };
 
-export const addMockItem = async (itemData: Omit<Item, 'id' | 'postedDate' | 'sellerName'>): Promise<Item> => {
+export const addMockItem = async (itemData: Omit<Item, 'id' | 'postedDate' | 'sellerName' | 'dataAiHint'> & { dataAiHint?: string }): Promise<Item> => {
     return new Promise(resolve => {
         setTimeout(() => {
             const seller = users.find(u => u.id === itemData.sellerId);
@@ -263,7 +266,8 @@ export const addMockItem = async (itemData: Omit<Item, 'id' | 'postedDate' | 'se
                 ...itemData,
                 id: `item${items.length + 1}`,
                 postedDate: new Date().toISOString(),
-                sellerName: seller?.name || 'Unknown Seller',
+                sellerName: seller?.name || 'Vendeur inconnu',
+                dataAiHint: itemData.dataAiHint || `${itemData.category} ${itemData.name.split(' ').slice(0,1).join('')}`.toLowerCase()
             };
             items.push(newItem);
             if (seller) {
@@ -293,8 +297,7 @@ export const addMockMessage = async (messageData: Omit<Message, 'id' | 'timestam
     });
 };
 
-// This is a simplified mock auth, in reality use Firebase Auth or NextAuth.js
-let currentMockUser: User | null = users[0]; // Alice is logged in by default
+let currentMockUser: User | null = users[0];
 
 export const getMockCurrentUser = async (): Promise<User | null> => {
     return new Promise(resolve => {

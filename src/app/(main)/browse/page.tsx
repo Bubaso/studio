@@ -1,3 +1,4 @@
+
 import { ItemCard } from '@/components/item-card';
 import { getMockItems } from '@/lib/mock-data';
 import type { Item, ItemCategory } from '@/lib/types';
@@ -39,7 +40,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
     <div className="flex-1">
       {allItems.length > 0 ? (
         <>
-          <p className="mb-4 text-muted-foreground">Showing {paginatedItems.length} of {allItems.length} items</p>
+          <p className="mb-4 text-muted-foreground">Affichage de {paginatedItems.length} sur {allItems.length} articles</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {paginatedItems.map((item) => (
               <ItemCard key={item.id} item={item} />
@@ -50,7 +51,10 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
               <PaginationContent>
                 {currentPage > 1 && (
                   <PaginationItem>
-                    <PaginationPrevious href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage - 1).toString()}).toString()}`} />
+                    <PaginationPrevious 
+                      href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage - 1).toString()}).toString()}`} 
+                      aria-label="Page précédente"
+                    />
                   </PaginationItem>
                 )}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNumber => (
@@ -65,7 +69,10 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                 ))}
                 {currentPage < totalPages && (
                   <PaginationItem>
-                    <PaginationNext href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage + 1).toString()}).toString()}`} />
+                    <PaginationNext 
+                      href={`/browse?${new URLSearchParams({...searchParams, page: (currentPage + 1).toString()}).toString()}`} 
+                      aria-label="Page suivante"
+                    />
                   </PaginationItem>
                 )}
               </PaginationContent>
@@ -74,8 +81,8 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
         </>
       ) : (
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold mb-2">No items found</h2>
-          <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
+          <p className="text-muted-foreground">Essayez d'ajuster vos filtres ou termes de recherche.</p>
         </div>
       )}
     </div>
@@ -111,10 +118,10 @@ function CardSkeleton() {
 
 export default function BrowsePage({ searchParams }: BrowsePageProps) {
   const pageTitle = searchParams.q 
-    ? `Search results for "${searchParams.q}"` 
+    ? `Résultats de recherche pour "${searchParams.q}"` 
     : searchParams.category 
-    ? `Browsing ${searchParams.category}`
-    : 'Browse All Items';
+    ? `Parcourir ${searchParams.category}`
+    : 'Parcourir tous les articles';
 
   return (
     <div className="space-y-8">

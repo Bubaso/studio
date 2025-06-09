@@ -1,3 +1,4 @@
+
 import { getMockUserById, getMockUserListings } from '@/lib/mock-data';
 import type { User, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,11 +16,10 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
   const user = await getMockUserById(params.userId);
 
   if (!user) {
-    return <div className="text-center py-10">User not found.</div>;
+    return <div className="text-center py-10">Utilisateur non trouvé.</div>;
   }
 
   const listings = await getMockUserListings(user.id);
-  // Reviews FOR this user are populated by getMockUserById
   const reviews = user.reviews || [];
 
   return (
@@ -38,18 +38,18 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
               </div>
             )}
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
-              <CalendarDays className="h-4 w-4 mr-2" /> Joined on {new Date(user.joinedDate).toLocaleDateString()}
+              <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
             {user.ratings && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
                 <Star className="h-5 w-5 mr-1 text-yellow-400 fill-yellow-400" />
-                <span className="font-semibold">{user.ratings.value.toFixed(1)}</span>
-                <span className="ml-1">({user.ratings.count} ratings)</span>
+                <span className="font-semibold">{user.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</span>
+                <span className="ml-1">({user.ratings.count} évaluations)</span>
               </div>
             )}
              <Link href={`/messages/new?userId=${user.id}`}>
                 <Button variant="outline">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Message {user.name.split(' ')[0]}
+                    <MessageSquare className="mr-2 h-4 w-4" /> Contacter {user.name.split(' ')[0]}
                 </Button>
             </Link>
           </div>
@@ -57,7 +57,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       </Card>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">{user.name.split(' ')[0]}'s Listings ({listings.length})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Annonces de {user.name.split(' ')[0]} ({listings.length})</h2>
         {listings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((item) => (
@@ -67,14 +67,14 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>{user.name} hasn't listed any items yet.</p>
+              <p>{user.name} n'a pas encore mis d'articles en vente.</p>
             </CardContent>
           </Card>
         )}
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">Reviews for {user.name.split(' ')[0]} ({reviews.length})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Évaluations pour {user.name.split(' ')[0]} ({reviews.length})</h2>
         {reviews.length > 0 ? (
           <div className="space-y-4">
             {reviews.map((review) => (
@@ -82,7 +82,6 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                 <CardContent className="p-4">
                   <div className="flex items-center mb-2">
                      <Avatar className="h-8 w-8 mr-3">
-                        {/* In real app, fetch reviewer avatar */}
                         <AvatarFallback>{review.reviewerName.substring(0,1).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -95,7 +94,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
                     </div>
                   </div>
                   <p className="text-muted-foreground mb-1 text-sm">{review.comment}</p>
-                  <p className="text-xs text-muted-foreground/80">{new Date(review.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground/80">{new Date(review.date).toLocaleDateString('fr-FR')}</p>
                 </CardContent>
               </Card>
             ))}
@@ -103,7 +102,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>{user.name} has no reviews yet.</p>
+              <p>{user.name} n'a pas encore d'évaluations.</p>
             </CardContent>
           </Card>
         )}

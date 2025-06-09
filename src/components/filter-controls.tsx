@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ItemCategories, ItemConditions } from '@/lib/types';
+import { ItemCategories, ItemConditions, ItemCondition } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
 import { X } from 'lucide-react';
 
@@ -24,7 +25,6 @@ export function FilterControls() {
   const [location, setLocation] = useState(searchParams.get('location') || '');
 
   useEffect(() => {
-    // Sync state with URL params on initial load or when params change
     setCategory(searchParams.get('category') || '');
     setCondition(searchParams.get('condition') || '');
     setPriceRange([
@@ -42,7 +42,6 @@ export function FilterControls() {
     params.set('maxPrice', priceRange[1].toString());
     if (location) params.set('location', location); else params.delete('location');
     
-    // Preserve search query if present
     const query = searchParams.get('q');
     if (query) {
       params.set('q', query);
@@ -55,10 +54,9 @@ export function FilterControls() {
     const params = new URLSearchParams();
     const query = searchParams.get('q');
     if (query) {
-      params.set('q', query); // Preserve search query
+      params.set('q', query); 
     }
     router.push(`${pathname}?${params.toString()}`);
-    // Reset local state, will be further synced by useEffect
     setCategory('');
     setCondition('');
     setPriceRange([0, 1000]);
@@ -67,16 +65,16 @@ export function FilterControls() {
 
   return (
     <aside className="w-full md:w-72 lg:w-80 space-y-6 p-4 border rounded-lg shadow-sm bg-card">
-      <h3 className="text-xl font-headline font-semibold">Filters</h3>
+      <h3 className="text-xl font-headline font-semibold">Filtres</h3>
       
       <div>
-        <Label htmlFor="category">Category</Label>
+        <Label htmlFor="category">Catégorie</Label>
         <Select value={category} onValueChange={setCategory}>
           <SelectTrigger id="category">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder="Toutes les catégories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="">Toutes les catégories</SelectItem>
             {ItemCategories.map(cat => (
               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
             ))}
@@ -85,25 +83,25 @@ export function FilterControls() {
       </div>
 
       <div>
-        <Label htmlFor="condition">Condition</Label>
+        <Label htmlFor="condition">État</Label>
         <Select value={condition} onValueChange={setCondition}>
           <SelectTrigger id="condition">
-            <SelectValue placeholder="Any Condition" />
+            <SelectValue placeholder="Tous les états" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Any Condition</SelectItem>
+            <SelectItem value="">Tous les états</SelectItem>
             {ItemConditions.map(cond => (
-              <SelectItem key={cond} value={cond} className="capitalize">{cond}</SelectItem>
+              <SelectItem key={cond} value={cond} className="capitalize">{cond.charAt(0).toUpperCase() + cond.slice(1)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <Label>Price Range</Label>
+        <Label>Fourchette de prix</Label>
         <div className="flex justify-between text-sm text-muted-foreground mb-2">
-          <span>${priceRange[0]}</span>
-          <span>${priceRange[1]}{priceRange[1] === 1000 ? '+' : ''}</span>
+          <span>{priceRange[0].toLocaleString('fr-FR')} €</span>
+          <span>{priceRange[1].toLocaleString('fr-FR')}{priceRange[1] === 1000 ? '+' : ''} €</span>
         </div>
         <Slider
           min={0}
@@ -116,19 +114,19 @@ export function FilterControls() {
       </div>
 
       <div>
-        <Label htmlFor="location">Location</Label>
+        <Label htmlFor="location">Lieu</Label>
         <Input 
           id="location" 
-          placeholder="e.g. New York, Zip Code" 
+          placeholder="ex: Paris, Code Postal" 
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
       </div>
 
       <div className="flex flex-col space-y-2">
-        <Button onClick={handleApplyFilters}>Apply Filters</Button>
+        <Button onClick={handleApplyFilters}>Appliquer les filtres</Button>
         <Button variant="outline" onClick={handleClearFilters} className="flex items-center justify-center">
-            <X className="h-4 w-4 mr-2" /> Clear Filters
+            <X className="h-4 w-4 mr-2" /> Effacer les filtres
         </Button>
       </div>
     </aside>

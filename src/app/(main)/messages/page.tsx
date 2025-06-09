@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { getMockMessageThreads, getMockCurrentUser } from '@/lib/mock-data';
 import type { MessageThread } from '@/lib/types';
@@ -15,9 +16,9 @@ export default async function MessagesPage() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <Info className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
+          <AlertTitle>Accès refusé</AlertTitle>
           <AlertDescription>
-            Please <Link href="/auth/signin" className="underline hover:text-primary">sign in</Link> to view your messages.
+            Veuillez <Link href="/auth/signin" className="underline hover:text-primary">vous connecter</Link> pour voir vos messages.
           </AlertDescription>
         </Alert>
       </div>
@@ -29,19 +30,19 @@ export default async function MessagesPage() {
   const getOtherParticipant = (thread: MessageThread) => {
     const otherParticipantIndex = thread.participantIds.findIndex(id => id !== currentUser.id);
     return {
-      name: thread.participantNames[otherParticipantIndex] || 'Unknown User',
+      name: thread.participantNames[otherParticipantIndex] || 'Utilisateur inconnu',
       avatar: thread.participantAvatars[otherParticipantIndex] || 'https://placehold.co/100x100.png?text=?',
-      dataAiHint: "profile person"
+      dataAiHint: "profil personne"
     };
   };
 
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold font-headline text-primary">Your Messages</h1>
+        <h1 className="text-4xl font-bold font-headline text-primary">Vos Messages</h1>
         <Link href="/messages/new">
           <Button variant="outline">
-            <MessageSquarePlus className="mr-2 h-4 w-4" /> New Message
+            <MessageSquarePlus className="mr-2 h-4 w-4" /> Nouveau Message
           </Button>
         </Link>
       </div>
@@ -62,13 +63,13 @@ export default async function MessagesPage() {
                     <p className="font-semibold text-lg">{otherParticipant.name}</p>
                     {thread.lastMessage && (
                       <p className={`text-sm truncate ${thread.unreadCount && thread.unreadCount > 0 ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
-                        {thread.lastMessage.senderId === currentUser.id ? "You: " : ""}
+                        {thread.lastMessage.senderId === currentUser.id ? "Vous : " : ""}
                         {thread.lastMessage.text}
                       </p>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground text-right">
-                    {thread.lastMessageAt && new Date(thread.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {thread.lastMessageAt && new Date(thread.lastMessageAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     {thread.unreadCount && thread.unreadCount > 0 && (
                       <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-primary-foreground bg-primary rounded-full">
                         {thread.unreadCount}
@@ -84,8 +85,8 @@ export default async function MessagesPage() {
         <Card>
           <CardContent className="p-10 text-center">
             <MessageSquarePlus className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold">No messages yet</h3>
-            <p className="text-muted-foreground">Start a conversation by contacting a seller or responding to an inquiry.</p>
+            <h3 className="text-xl font-semibold">Aucun message pour le moment</h3>
+            <p className="text-muted-foreground">Commencez une conversation en contactant un vendeur ou en répondant à une demande.</p>
           </CardContent>
         </Card>
       )}

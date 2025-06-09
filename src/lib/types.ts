@@ -11,12 +11,14 @@ export interface Item {
   sellerName: string;
   postedDate: string; // ISO date string
   condition?: 'new' | 'like new' | 'good' | 'fair' | 'poor';
+  dataAiHint?: string;
 }
 
 export interface User {
   id: string;
   name: string;
   avatarUrl: string;
+  dataAiHint?: string;
   joinedDate: string; // ISO date string
   ratings?: { value: number; count: number };
   reviews?: Review[];
@@ -54,19 +56,19 @@ export interface MessageThread {
 }
 
 export const ItemCategories = [
-  "Electronics",
-  "Furniture",
-  "Clothing & Accessories",
-  "Home & Garden",
-  "Books, Movies & Music",
-  "Sports & Outdoors",
-  "Toys & Games",
-  "Collectibles & Art",
-  "Vehicles",
-  "Other",
+  "Électronique",
+  "Mobilier",
+  "Vêtements et Accessoires",
+  "Maison et Jardin",
+  "Livres, Films et Musique",
+  "Sports et Plein Air",
+  "Jouets et Jeux",
+  "Objets de Collection et Art",
+  "Véhicules",
+  "Autre",
 ] as const;
 
 export type ItemCategory = typeof ItemCategories[number];
 
-export const ItemConditions = ['new', 'like new', 'good', 'fair', 'poor'] as const;
+export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];

@@ -1,3 +1,4 @@
+
 "use client";
 import Link from 'next/link';
 import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun } from 'lucide-react';
@@ -6,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@/lib/types';
-import { getMockCurrentUser, mockSignOut } from '@/lib/mock-data'; // Mock auth
+import { getMockCurrentUser, mockSignOut } from '@/lib/mock-data'; 
 import { useRouter } from 'next/navigation';
 
 export function Header() {
@@ -48,13 +49,13 @@ export function Header() {
   };
 
   const navLinks = [
-    { href: '/browse', label: 'Browse', icon: <Search className="h-4 w-4" /> },
-    { href: '/sell', label: 'Sell', icon: <PlusCircle className="h-4 w-4" /> },
+    { href: '/browse', label: 'Parcourir', icon: <Search className="h-4 w-4" /> },
+    { href: '/sell', label: 'Vendre', icon: <PlusCircle className="h-4 w-4" /> },
     { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
   ];
 
   if (!mounted) {
-    return ( // Skeleton or minimal header during SSR/hydration mismatch prevention
+    return ( 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
           <Link href="/" className="mr-6 flex items-center space-x-2">
@@ -92,7 +93,7 @@ export function Header() {
            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
            <Input
             type="search"
-            placeholder="Search items..."
+            placeholder="Rechercher des articles..."
             className="pl-8 h-9 w-full sm:w-[200px] lg:w-[250px] rounded-md"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -100,26 +101,26 @@ export function Header() {
         </form>
 
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Changer de thème">
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
           {currentUser ? (
             <>
               <Link href="/profile">
-                <Button variant="ghost" size="icon" aria-label="Profile">
+                <Button variant="ghost" size="icon" aria-label="Profil">
                   <UserIcon className="h-5 w-5" />
                 </Button>
               </Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="h-4 w-4 mr-1 md:mr-2" />
-                <span className="hidden md:inline">Sign Out</span>
+                <span className="hidden md:inline">Déconnexion</span>
               </Button>
             </>
           ) : (
             <Link href="/auth/signin">
               <Button variant="ghost" size="sm">
                 <LogIn className="h-4 w-4 mr-1 md:mr-2" />
-                Sign In
+                Connexion
               </Button>
             </Link>
           )}

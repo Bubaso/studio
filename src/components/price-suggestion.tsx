@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
 
   const handleSuggestPrice = async () => {
     if (!itemDescription.trim()) {
-      setError('Please provide an item description first.');
+      setError('Veuillez d\'abord fournir une description de l\'article.');
       return;
     }
     setIsLoading(true);
@@ -34,15 +35,15 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
     try {
       const input: SuggestPriceInput = {
         itemDescription,
-        similarItems: similarItems.trim() || 'No similar items provided.',
+        similarItems: similarItems.trim() || 'Aucun article similaire fourni.',
       };
       const result = await suggestPrice(input);
       setSuggestedPrice(result.suggestedPrice);
       setReasoning(result.reasoning);
       onPriceSuggested(result.suggestedPrice);
     } catch (e) {
-      console.error('Error suggesting price:', e);
-      setError('Failed to suggest a price. Please try again.');
+      console.error('Erreur lors de la suggestion de prix:', e);
+      setError('Impossible de suggérer un prix. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -53,35 +54,35 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
       <CardHeader>
         <CardTitle className="flex items-center font-headline">
           <Wand2 className="mr-2 h-5 w-5 text-primary" />
-          AI Price Suggestion
+          Suggestion de Prix par IA
         </CardTitle>
         <CardDescription>
-          Get an AI-powered price suggestion based on your item description and optionally, similar items.
+          Obtenez une suggestion de prix alimentée par l'IA basée sur la description de votre article et, éventuellement, des articles similaires.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-            <Label htmlFor="item-description-preview">Item Description (from above)</Label>
+            <Label htmlFor="item-description-preview">Description de l'article (ci-dessus)</Label>
             <Textarea
                 id="item-description-preview"
-                value={itemDescription || "Please fill item description in the main form."}
+                value={itemDescription || "Veuillez remplir la description de l'article dans le formulaire principal."}
                 readOnly
                 rows={3}
                 className="bg-muted"
             />
         </div>
         <div>
-          <Label htmlFor="similar-items">Similar Items (Optional)</Label>
+          <Label htmlFor="similar-items">Articles similaires (Optionnel)</Label>
           <Textarea
             id="similar-items"
-            placeholder="e.g., Brand X T-Shirt, size M, good condition - $15&#x0a;Another similar item - $20"
+            placeholder="ex: T-Shirt Marque X, taille M, bon état - 15 €&#x0a;Un autre article similaire - 20 €"
             value={similarItems}
             onChange={(e) => setSimilarItems(e.target.value)}
             rows={3}
             disabled={isLoading}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            List a few similar items and their prices to improve accuracy. One item per line.
+            Listez quelques articles similaires et leurs prix pour améliorer la précision. Un article par ligne.
           </p>
         </div>
       </CardContent>
@@ -92,17 +93,17 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           ) : (
             <Wand2 className="mr-2 h-4 w-4" />
           )}
-          Suggest Price
+          Suggérer un prix
         </Button>
         {error && (
           <Alert variant="destructive">
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Erreur</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         {suggestedPrice !== null && reasoning && (
           <Alert variant="default" className="bg-accent/10 border-accent/50">
-            <AlertTitle className="text-accent font-semibold">Suggested Price: ${suggestedPrice.toFixed(2)}</AlertTitle>
+            <AlertTitle className="text-accent font-semibold">Prix suggéré : {suggestedPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</AlertTitle>
             <AlertDescription className="text-accent/90">{reasoning}</AlertDescription>
           </Alert>
         )}

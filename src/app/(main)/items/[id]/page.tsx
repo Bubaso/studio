@@ -1,10 +1,11 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { getMockItemById, getMockUserById } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tag, MapPin, MessageSquare, Star, ShoppingCart, User as UserIcon } from 'lucide-react';
+import { Tag, MapPin, MessageSquare, Star, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface ItemPageProps {
@@ -15,7 +16,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const item = await getMockItemById(params.id);
 
   if (!item) {
-    return <div className="text-center py-10">Item not found.</div>;
+    return <div className="text-center py-10">Article non trouvé.</div>;
   }
 
   const seller = await getMockUserById(item.sellerId);
@@ -37,7 +38,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold font-headline text-primary">{item.name}</h1>
-          <p className="text-3xl font-bold text-foreground">${item.price.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">
@@ -46,7 +47,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </Badge>
             {item.condition && (
                  <Badge variant="outline" className="text-sm py-1 px-3 capitalize">
-                    Condition: {item.condition}
+                    État : {item.condition.charAt(0).toUpperCase() + item.condition.slice(1)}
                 </Badge>
             )}
             {item.location && (
@@ -59,7 +60,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Item Description</CardTitle>
+              <CardTitle className="font-headline text-xl">Description de l'article</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
@@ -69,7 +70,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           {seller && (
             <Card>
               <CardHeader>
-                <CardTitle className="font-headline text-xl">Seller Information</CardTitle>
+                <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
               </CardHeader>
               <CardContent className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
@@ -83,10 +84,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   {seller.ratings && (
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Star className="h-4 w-4 mr-1 text-yellow-400 fill-yellow-400" />
-                      {seller.ratings.value.toFixed(1)} ({seller.ratings.count} ratings)
+                      {seller.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})} ({seller.ratings.count} évaluations)
                     </div>
                   )}
-                   <p className="text-sm text-muted-foreground">Joined: {new Date(seller.joinedDate).toLocaleDateString()}</p>
+                   <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -94,17 +95,17 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
           <div className="flex space-x-4">
             <Button size="lg" className="flex-1">
-              <ShoppingCart className="mr-2 h-5 w-5" /> Buy Now
+              <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
             <Link href={`/messages/new?userId=${seller?.id}&itemId=${item.id}`} className="flex-1">
               <Button size="lg" variant="outline" className="w-full">
-                <MessageSquare className="mr-2 h-5 w-5" /> Message Seller
+                <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur
               </Button>
             </Link>
           </div>
           
            <div className="text-sm text-muted-foreground">
-            Posted on: {new Date(item.postedDate).toLocaleDateString()}
+            Publié le : {new Date(item.postedDate).toLocaleDateString('fr-FR')}
           </div>
         </div>
       </div>

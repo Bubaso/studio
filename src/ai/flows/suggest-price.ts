@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -24,7 +25,7 @@ export type SuggestPriceInput = z.infer<typeof SuggestPriceInputSchema>;
 const SuggestPriceOutputSchema = z.object({
   suggestedPrice: z
     .number()
-    .describe('The suggested price for the item, in US dollars.'),
+    .describe('The suggested price for the item, in US dollars. (Output as a number)'),
   reasoning: z
     .string()
     .describe('The reasoning behind the suggested price.'),
@@ -46,7 +47,11 @@ Similar Items: {{{similarItems}}}
 
 Consider the condition of the item, its brand, and its rarity when suggesting a price. Provide a brief reasoning for the suggested price.
 
-Output the suggested price as a number and the reasoning as a string.`,
+Output the suggested price as a number and the reasoning as a string.
+If the input language is French, provide the reasoning in French.
+The suggestedPrice should always be a number, regardless of input language.
+Example of French reasoning: "Basé sur des articles similaires et l'état de l'objet, un prix de X $ semble approprié."
+`,
 });
 
 const suggestPriceFlow = ai.defineFlow(
@@ -56,6 +61,8 @@ const suggestPriceFlow = ai.defineFlow(
     outputSchema: SuggestPriceOutputSchema,
   },
   async input => {
+    // If user provides similar items in French with EUR, try to adapt or inform model.
+    // For now, prompt assumes USD and numerical price.
     const {output} = await prompt(input);
     return output!;
   }

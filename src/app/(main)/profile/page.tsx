@@ -1,3 +1,4 @@
+
 import { getMockCurrentUser, getMockUserListings } from '@/lib/mock-data';
 import type { User, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,7 +11,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 async function UserProfileContent({ user }: { user: User }) {
   const listings = await getMockUserListings(user.id);
-  // Mock reviews for current user's profile are attached in getMockUserById, used here if user.reviews is populated
   const reviews = user.reviews || [];
 
   return (
@@ -29,24 +29,24 @@ async function UserProfileContent({ user }: { user: User }) {
               </div>
             )}
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
-              <CalendarDays className="h-4 w-4 mr-2" /> Joined on {new Date(user.joinedDate).toLocaleDateString()}
+              <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
             {user.ratings && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
                 <Star className="h-5 w-5 mr-1 text-yellow-400 fill-yellow-400" />
-                <span className="font-semibold">{user.ratings.value.toFixed(1)}</span>
-                <span className="ml-1">({user.ratings.count} ratings)</span>
+                <span className="font-semibold">{user.ratings.value.toLocaleString('fr-FR', {minimumFractionDigits: 1, maximumFractionDigits: 1})}</span>
+                <span className="ml-1">({user.ratings.count} évaluations)</span>
               </div>
             )}
             <Button variant="outline">
-              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+              <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
             </Button>
           </div>
         </CardContent>
       </Card>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">My Listings ({listings.length})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Mes annonces ({listings.length})</h2>
         {listings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((item) => (
@@ -56,9 +56,9 @@ async function UserProfileContent({ user }: { user: User }) {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>You haven't listed any items yet.</p>
+              <p>Vous n'avez pas encore mis d'articles en vente.</p>
               <Link href="/sell">
-                <Button variant="link" className="mt-2 text-primary">List an Item</Button>
+                <Button variant="link" className="mt-2 text-primary">Mettre un article en vente</Button>
               </Link>
             </CardContent>
           </Card>
@@ -66,7 +66,7 @@ async function UserProfileContent({ user }: { user: User }) {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">My Reviews ({reviews.length})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">Mes évaluations ({reviews.length})</h2>
         {reviews.length > 0 ? (
           <div className="space-y-4">
             {reviews.map((review) => (
@@ -79,7 +79,7 @@ async function UserProfileContent({ user }: { user: User }) {
                     <span className="ml-2 text-sm font-semibold">{review.reviewerName}</span>
                   </div>
                   <p className="text-muted-foreground mb-1 text-sm">{review.comment}</p>
-                  <p className="text-xs text-muted-foreground/80">{new Date(review.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground/80">{new Date(review.date).toLocaleDateString('fr-FR')}</p>
                 </CardContent>
               </Card>
             ))}
@@ -87,7 +87,7 @@ async function UserProfileContent({ user }: { user: User }) {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>You have no reviews yet.</p>
+              <p>Vous n'avez pas encore d'évaluations.</p>
             </CardContent>
           </Card>
         )}
@@ -105,10 +105,10 @@ export default async function ProfilePage() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <LogIn className="h-4 w-4" />
-          <AlertTitle>Please Sign In</AlertTitle>
+          <AlertTitle>Veuillez vous connecter</AlertTitle>
           <AlertDescription>
-            You need to be signed in to view your profile. 
-            <Link href="/auth/signin" className="font-bold text-primary hover:underline ml-1">Sign In</Link>
+            Vous devez être connecté pour voir votre profil.
+            <Link href="/auth/signin" className="font-bold text-primary hover:underline ml-1">Se connecter</Link>
           </AlertDescription>
         </Alert>
       </div>

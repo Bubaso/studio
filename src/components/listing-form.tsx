@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,13 +26,13 @@ import { addMockItem, getMockCurrentUser } from "@/lib/mock-data";
 import { Loader2 } from "lucide-react";
 
 const listingFormSchema = z.object({
-  name: z.string().min(3, "Item name must be at least 3 characters.").max(100),
-  description: z.string().min(10, "Description must be at least 10 characters.").max(1000),
-  price: z.coerce.number().positive("Price must be a positive number."),
-  category: z.enum(ItemCategories, { required_error: "Please select a category."}),
-  condition: z.enum(ItemConditions, { required_error: "Please select item condition."}),
-  location: z.string().min(2, "Location must be at least 2 characters.").max(100).optional(),
-  imageUrl: z.string().url("Please enter a valid image URL.").optional().or(z.literal('')), // Placeholder, actual upload later
+  name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
+  description: z.string().min(10, "La description doit comporter au moins 10 caractères.").max(1000),
+  price: z.coerce.number().positive("Le prix doit être un nombre positif."),
+  category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
+  condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
+  location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
+  imageUrl: z.string().url("Veuillez entrer une URL d'image valide.").optional().or(z.literal('')),
 });
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
@@ -47,7 +48,7 @@ export function ListingForm() {
       name: "",
       description: "",
       price: 0,
-      imageUrl: "https://placehold.co/600x400.png", // Default placeholder
+      imageUrl: "https://placehold.co/600x400.png",
       location: "",
     },
   });
@@ -63,32 +64,30 @@ export function ListingForm() {
     try {
       const currentUser = await getMockCurrentUser();
       if (!currentUser) {
-        toast({ title: "Error", description: "You must be logged in to create a listing.", variant: "destructive" });
-        router.push('/auth/signin'); // Redirect to sign-in if not logged in
+        toast({ title: "Erreur", description: "Vous devez être connecté pour créer une annonce.", variant: "destructive" });
+        router.push('/auth/signin');
         return;
       }
 
-      // In a real app, handle image upload here and get the URL
       const newItemData = {
         ...values,
-        imageUrl: values.imageUrl || 'https://placehold.co/600x400.png', // Fallback placeholder
+        imageUrl: values.imageUrl || 'https://placehold.co/600x400.png',
         sellerId: currentUser.id,
-        // sellerName will be added by addMockItem based on sellerId
-        dataAiHint: `${values.category} ${values.name.split(' ').slice(0,1).join('')}` // Basic AI hint
+        dataAiHint: `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase()
       };
 
-      const createdItem = await addMockItem(newItemData as any); // Type assertion for mock
+      const createdItem = await addMockItem(newItemData as any); 
       
       toast({
-        title: "Listing Created!",
-        description: `Your item "${createdItem.name}" has been listed successfully.`,
+        title: "Annonce créée !",
+        description: `Votre article "${createdItem.name}" a été mis en vente avec succès.`,
       });
       router.push(`/items/${createdItem.id}`);
     } catch (error) {
-      console.error("Failed to create listing:", error);
+      console.error("Échec de la création de l'annonce:", error);
       toast({
-        title: "Error",
-        description: "Failed to create listing. Please try again.",
+        title: "Erreur",
+        description: "Échec de la création de l'annonce. Veuillez réessayer.",
         variant: "destructive",
       });
     } finally {
@@ -105,9 +104,9 @@ export function ListingForm() {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Item Name</FormLabel>
+                <FormLabel>Nom de l'article</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Vintage Leather Jacket" {...field} />
+                  <Input placeholder="ex: Veste en cuir vintage" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -121,7 +120,7 @@ export function ListingForm() {
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe your item in detail..."
+                    placeholder="Décrivez votre article en détail..."
                     rows={5}
                     {...field}
                   />
@@ -136,9 +135,15 @@ export function ListingForm() {
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price ($)</FormLabel>
+                  <FormLabel>Prix (€)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="e.g., 25.99" {...field} />
+                    <Input type="number" step="0.01" placeholder="ex: 25,99" {...field} 
+                      onChange={e => field.onChange(parseFloat(e.target.value.replace(',', '.')))}
+                      onBlur={e => {
+                        const value = parseFloat(e.target.value.replace(',', '.'))
+                        if(!isNaN(value)) field.onChange(value)
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -149,11 +154,11 @@ export function ListingForm() {
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Catégorie</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Sélectionnez une catégorie" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -175,17 +180,17 @@ export function ListingForm() {
               name="condition"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Condition</FormLabel>
+                  <FormLabel>État</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select item condition" />
+                        <SelectValue placeholder="Sélectionnez l'état de l'article" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {ItemConditions.map((condition) => (
                         <SelectItem key={condition} value={condition} className="capitalize">
-                          {condition}
+                          {condition.charAt(0).toUpperCase() + condition.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -199,9 +204,9 @@ export function ListingForm() {
                 name="location"
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Location (Optional)</FormLabel>
+                    <FormLabel>Lieu (Optionnel)</FormLabel>
                     <FormControl>
-                    <Input placeholder="e.g., New York, NY" {...field} />
+                    <Input placeholder="ex: Paris, France" {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
@@ -213,12 +218,12 @@ export function ListingForm() {
             name="imageUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Image URL (Optional)</FormLabel>
+                <FormLabel>URL de l'image (Optionnel)</FormLabel>
                 <FormControl>
                   <Input placeholder="https://example.com/image.png" {...field} />
                 </FormControl>
                 <FormDescription>
-                  For now, please provide a URL. Image upload will be supported later. Defaults to a placeholder.
+                  Pour l'instant, veuillez fournir une URL. Le téléchargement d'images sera pris en charge ultérieurement. Par défaut, une image de remplacement est utilisée.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -226,7 +231,7 @@ export function ListingForm() {
           />
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Submitting..." : "Create Listing"}
+            {isSubmitting ? "Soumission..." : "Créer l'annonce"}
           </Button>
         </form>
       </Form>
