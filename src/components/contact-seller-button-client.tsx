@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useFormState } from 'react-dom'; 
+import { useActionState } from 'react'; // Changed from 'react-dom' and 'useFormState'
 import { auth } from '@/lib/firebase';
 import { createOrGetThreadAndRedirect } from '@/actions/messageActions';
 import { Button } from '@/components/ui/button';
@@ -39,9 +39,9 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   // Note: currentUser might be null initially, the action needs to handle this
   const actionWithArgs = createOrGetThreadAndRedirect.bind(null, currentUser?.uid || '', sellerId, itemId);
   
-  // useFormState returns [state, formActionFunction, isPending (optional)]
+  // useActionState returns [state, formActionFunction, isPending (optional)]
   // The 'pending' state can be used to disable the button while action is processing
-  const [state, formAction, isPending] = useFormState(
+  const [state, formAction, isPending] = useActionState( // Changed from useFormState
     (prevState: ActionState, formData: FormData) => actionWithArgs(), // formData is not directly used by createOrGetThreadAndRedirect
     initialState
   );
