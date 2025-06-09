@@ -51,31 +51,42 @@ export const createOrGetMessageThread = async (
   currentUserUid: string,
   otherUserUid: string,
   itemId?: string
-): Promise<string | null> => {
+): Promise<{ threadId: string | null; error?: string }> => {
   if (!currentUserUid || !otherUserUid) {
-    console.error("Both currentUserUid and otherUserUid are required.");
-    return null;
+    const errorMessage = "Both currentUserUid and otherUserUid are required for createOrGetMessageThread.";
+    console.error(errorMessage, { currentUserUid, otherUserUid });
+    return { threadId: null, error: "Les identifiants utilisateurs sont manquants pour créer le fil de discussion." };
   }
   if (currentUserUid === otherUserUid) {
-    console.error("Cannot create a message thread with oneself.");
-    return null;
+    const errorMessage = "Cannot create a message thread with oneself.";
+    console.error(errorMessage, { currentUserUid, otherUserUid });
+    return { threadId: null, error: "Vous ne pouvez pas créer un fil de discussion avec vous-même." };
   }
 
   const threadId = generateThreadId(currentUserUid, otherUserUid);
   const threadRef = doc(db, 'messageThreads', threadId);
-  
+
   try {
     const threadSnap = await getDoc(threadRef);
 
     if (!threadSnap.exists()) {
+      console.log(`Thread ${threadId} does not exist. Attempting to create...`);
       const currentUserProfile = await getUserDocument(currentUserUid);
-      const otherUserProfile = await getUserDocument(otherUserUid);
-
-      if (!currentUserProfile || !otherUserProfile) {
-        console.error("Could not find user profiles to create thread. currentUserUid:", currentUserUid, "otherUserUid:", otherUserUid);
-        return null;
+      if (!currentUserProfile) {
+        const errorMessage = `Failed to fetch current user profile (UID: ${currentUserUid}) for creating thread.`;
+        console.error(errorMessage);
+        return { threadId: null, error: "Impossible de récupérer le profil de l'utilisateur actuel." };
       }
-      
+      console.log(`Fetched current user profile: ${currentUserProfile.name || 'N/A'}`);
+
+      const otherUserProfile = await getUserDocument(otherUserUid);
+      if (!otherUserProfile) {
+        const errorMessage = `Failed to fetch other user profile (UID: ${otherUserUid}) for creating thread.`;
+        console.error(errorMessage);
+        return { threadId: null, error: "Impossible de récupérer le profil du vendeur." };
+      }
+      console.log(`Fetched other user profile: ${otherUserProfile.name || 'N/A'}`);
+
       const participantUidsSorted: [string, string] = currentUserUid < otherUserUid ? [currentUserUid, otherUserUid] : [otherUserUid, currentUserUid];
       const namesSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.name, otherUserProfile.name] : [otherUserProfile.name, currentUserProfile.name];
       const avatarsSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.avatarUrl, otherUserProfile.avatarUrl] : [otherUserProfile.avatarUrl, currentUserProfile.avatarUrl];
@@ -84,24 +95,27 @@ export const createOrGetMessageThread = async (
         participantIds: participantUidsSorted,
         participantNames: [namesSorted[0] || 'Utilisateur', namesSorted[1] || 'Utilisateur'],
         participantAvatars: [avatarsSorted[0] || 'https://placehold.co/100x100.png?text=?', avatarsSorted[1] || 'https://placehold.co/100x100.png?text=?'],
-        lastMessageAt: serverTimestamp(), // Initialize with current time
+        lastMessageAt: serverTimestamp(),
         lastMessageText: itemId ? "Conversation à propos d'un article" : "Début de la conversation",
-        lastMessageSenderId: '', // No sender for initial placeholder message
+        lastMessageSenderId: '',
         itemId: itemId || '',
       };
       await setDoc(threadRef, newThreadData);
-      return threadId;
+      console.log(`Successfully created new thread ${threadId}.`);
+      return { threadId: threadId, error: undefined };
     } else {
-      // If thread exists and itemId is provided, update it if not already set or different
+      console.log(`Thread ${threadId} already exists.`);
       const existingData = threadSnap.data();
       if (itemId && (!existingData.itemId || existingData.itemId !== itemId)) {
         await setDoc(threadRef, { itemId: itemId }, { merge: true });
+        console.log(`Updated itemId for existing thread ${threadId}.`);
       }
+      return { threadId: threadId, error: undefined };
     }
-    return threadId;
-  } catch (error) {
-    console.error("Error in createOrGetMessageThread: ", error);
-    return null;
+  } catch (error: any) {
+    const errorMessage = `Error in createOrGetMessageThread for thread ${threadId}: ${error.message}`;
+    console.error(errorMessage, error.stack);
+    return { threadId: null, error: "Une erreur technique est survenue lors de la création/récupération du fil de discussion." };
   }
 };
 
