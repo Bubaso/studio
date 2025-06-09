@@ -31,11 +31,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
       seller = await getUserDocument(item.sellerId);
     } else {
       console.warn(`Item ${item.id} has an invalid or missing sellerId: ${item.sellerId}`);
+      // seller remains null
     }
   } catch (error: any) {
-    if (error.code !== 'permission-denied') { // Don't log expected permission errors loudly
-        console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message);
+    // If it's specifically a permission error, we anticipate this might happen during SSR
+    // if the server-side client SDK call isn't authenticated as an end-user
+    // for Firestore rules that require request.auth.
+    // We set seller to null and let the page render with "seller info not available".
+    if (error.code !== 'permission-denied') {
+        // Log other unexpected errors more loudly.
+        console.error(`Unexpected error fetching seller (ID: ${item.sellerId}) for item ${item.id}:`, error.message, error);
     }
+    // For any error during seller fetch (permission-denied or other), ensure seller is null.
     seller = null;
   }
 
@@ -148,7 +155,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <Button size="lg" className="flex-1">
               <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
             </Button>
-            {item && item.id && item.sellerId && (
+            {/* Only render ContactSellerButtonClient if item.sellerId is available */}
+            {item && item.sellerId && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={item.id} />
             )}
           </div>
