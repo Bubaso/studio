@@ -46,7 +46,7 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
       <section>
         <h2 className="text-2xl font-bold font-headline mb-4">Mes annonces ({listings.length})</h2>
         {listings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 gap-6"> {/* Updated grid classes */}
             {listings.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
