@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, startTransition, useRef } from 'react'; // Added useRef
+import { useEffect, useState, startTransition, useRef } from 'react';
 import { useActionState } from 'react'; // React 19
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,12 +46,13 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
   const [state, formAction, isPending] = useActionState(submitReview, initialState);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const formRef = useRef<HTMLFormElement>(null);
+  // formRef is no longer needed with RHF's handleSubmit
+  // const formRef = useRef<HTMLFormElement>(null); 
 
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewFormSchema),
     defaultValues: {
-      rating: 0,
+      rating: 0, // Default to 0, validation will catch if not changed
       comment: '',
     },
   });
@@ -70,35 +71,46 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
         title: 'Avis soumis !',
         description: state.message || 'Votre avis a été enregistré.',
       });
-      form.reset(); 
-    } else if (state?.errors?.general) {
-      toast({
-        variant: "destructive",
-        title: 'Erreur',
-        description: state.errors.general.join(', '),
-      });
+      form.reset({ rating: 0, comment: '' });
     } else if (state?.errors) {
-        const fieldErrorMessages = Object.values(state.errors).flat().join(' ');
-        if (fieldErrorMessages) {
-            toast({
-                variant: "destructive",
-                title: 'Erreur de validation',
-                description: fieldErrorMessages || "Veuillez corriger les erreurs dans le formulaire.",
-            });
-        }
+      const generalError = state.errors.general?.join(', ');
+      const fieldErrorMessages = Object.entries(state.errors)
+        .filter(([key]) => key !== 'general')
+        .map(([, value]) => value?.join(', '))
+        .filter(Boolean)
+        .join(' \n');
+
+      if (generalError) {
+        toast({
+          variant: "destructive",
+          title: 'Erreur de soumission',
+          description: generalError,
+        });
+      }
+      // Only toast field errors if there's no general error, to avoid redundancy with FormMessage
+      else if (fieldErrorMessages && !generalError) {
+         toast({
+          variant: "destructive",
+          title: 'Erreur de validation du serveur',
+          description: fieldErrorMessages,
+        });
+      }
     }
   }, [state, toast, form]);
   
-  const handleFormSubmitAttempt = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission initially
-    const isValid = await form.trigger(); // Trigger RHF validation
-    if (isValid && formRef.current) {
-      // If RHF validation passes, programmatically submit the HTML form.
-      // This will invoke the `formAction` passed to the form's `action` prop.
-      // React should handle `isPending` and transitions correctly via this path.
-      formRef.current.requestSubmit();
-    }
+  const onValidSubmit = (data: ReviewFormValues) => {
+    const formData = new FormData();
+    formData.append('itemId', itemId);
+    formData.append('sellerId', sellerId);
+    // data.rating is already a number due to RHF schema coercion and Select's parseInt
+    formData.append('rating', data.rating.toString());
+    formData.append('comment', data.comment);
+
+    startTransition(() => {
+      formAction(formData);
+    });
   };
+
 
   if (isLoadingAuth) {
     return (
@@ -154,29 +166,21 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
   return (
     <Form {...form}> {/* RHF Provider */}
       <form
-        ref={formRef}
-        action={formAction} // Pass the action from useActionState here
-        onSubmit={handleFormSubmitAttempt} // RHF validation triggered here
+        onSubmit={form.handleSubmit(onValidSubmit)} // Use RHF's handleSubmit
         className="space-y-6 p-6 border rounded-lg shadow-sm bg-card"
       >
-        {/* Hidden fields are automatically included in FormData by the browser if they have `name` attributes */}
-        <input type="hidden" name="itemId" value={itemId} />
-        <input type="hidden" name="sellerId" value={sellerId} />
+        {/* Hidden fields are not needed here as itemId and sellerId are passed directly when constructing FormData */}
         
         <FormField
           control={form.control}
-          name="rating" // This name is for RHF
+          name="rating" 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Votre note (sur 5)</FormLabel>
-              {/* The Select component itself doesn't submit its value directly with FormData.
-                  We need a hidden input that RHF controls, or handle it in the action.
-                  For `action` prop to work, it must be in FormData.
-              */}
               <Select 
-                onValueChange={(value) => field.onChange(parseInt(value))} 
-                defaultValue={field.value?.toString() || "0"}
-                name="rating" // This name is for the actual form submission
+                onValueChange={(value) => field.onChange(parseInt(value, 10))} 
+                value={field.value?.toString() || "0"} // Ensure value is a string for Select
+                // name="rating" // Not needed for FormData when using RHF's handleSubmit
               >
                 <FormControl>
                   <SelectTrigger>
@@ -184,6 +188,7 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="0" disabled>Choisissez une note...</SelectItem>
                   {[1, 2, 3, 4, 5].map(num => (
                     <SelectItem key={num} value={num.toString()}>
                       <div className="flex items-center">
@@ -195,22 +200,15 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
                   ))}
                 </SelectContent>
               </Select>
-              {/* 
-                If ShadCN's Select doesn't render a native select with a name,
-                we need a hidden input synced by RHF to ensure 'rating' is in FormData.
-                The 'name="rating"' on Select might not be picked up by all browsers for FormData.
-                A hidden input is safer for FormData construction.
-              */}
-              <input type="hidden" {...form.register("rating")} />
-              {state?.errors?.rating && <FormMessage>{state.errors.rating.join(', ')}</FormMessage>}
-              <FormMessage /> 
+              {/* No hidden input needed here as RHF handles the value */}
+              <FormMessage /> {/* RHF will display "Note requise" if rating is 0 */}
             </FormItem>
           )}
         />
 
         <FormField
           control={form.control}
-          name="comment" // This name is for RHF and will be used for FormData
+          name="comment"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Votre commentaire</FormLabel>
@@ -218,17 +216,16 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
                 <Textarea
                   placeholder="Partagez votre expérience avec cet article et le vendeur..."
                   rows={4}
-                  {...field} // This spreads name="comment", value, onChange etc.
+                  {...field}
                 />
               </FormControl>
-               {state?.errors?.comment && <FormMessage>{state.errors.comment.join(', ')}</FormMessage>}
               <FormMessage />
             </FormItem>
           )}
         />
         
-        {state?.errors?.general && (
-          <Alert variant="destructive">
+        {state?.errors?.general && ( // Display general errors from server action
+          <Alert variant="destructive" className="mt-4">
             <Info className="h-4 w-4" />
             <AlertTitle>Erreur</AlertTitle>
             <AlertDescription>{state.errors.general.join(', ')}</AlertDescription>
@@ -247,4 +244,3 @@ export function ReviewForm({ itemId, sellerId, hasUserAlreadyReviewed }: ReviewF
     </Form>
   );
 }
-
