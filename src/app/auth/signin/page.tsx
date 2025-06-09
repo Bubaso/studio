@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, LogIn, Mail, Lock } from "lucide-react"; // Added Mail, Lock
+import { ShoppingBag, LogIn, Mail, Lock } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -12,10 +12,10 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Added Input
-import { Label } from "@/components/ui/label"; // Added Label
-import { useState, useEffect } from "react"; // Added useState, useEffect
-import { useRouter, useSearchParams } from "next/navigation"; // Added useRouter, useSearchParams
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged, User } from "firebase/auth";
@@ -37,12 +37,12 @@ export default function SignInPage() {
       setFirebaseUser(user);
       setAuthLoading(false);
       if (user) {
-        // If user is already logged in and tries to access signin, redirect them.
-        // This check can be useful if user navigates back to signin page.
         router.push(redirectTo);
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [router, redirectTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,9 +51,8 @@ export default function SignInPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Connexion réussie !", description: "Vous allez être redirigé." });
-      router.push(redirectTo); // Redirect to intended page or homepage
+      router.push(redirectTo);
     } catch (error: any) {
-      console.error("Error signing in:", error);
       let errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = "Adresse e-mail ou mot de passe incorrect.";
@@ -76,7 +75,6 @@ export default function SignInPage() {
     );
   }
 
-  // If user is already authenticated, don't show sign-in form (redirect happens in useEffect)
   if (firebaseUser) {
      return (
       <div className="flex items-center justify-center min-h-screen">
