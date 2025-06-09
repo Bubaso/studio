@@ -325,7 +325,7 @@ export function ListingForm() {
               <FormItem>
                 <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
                 <FormControl>
-                  <>
+                  <div> {/* Added div wrapper here */}
                     <Input
                       type="file"
                       accept="image/png, image/jpeg, image/gif, image/webp"
@@ -339,7 +339,7 @@ export function ListingForm() {
                             Vous avez atteint la limite de {MAX_FILES} images.
                         </FormDescription>
                     )}
-                  </>
+                  </div>
                 </FormControl>
                  {imagePreviews.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -394,3 +394,4 @@ export function ListingForm() {
     </div>
   );
 }
+
