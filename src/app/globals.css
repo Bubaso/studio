@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    --background: 60 56% 91.2%; /* Light Beige #F5F5DC */
-    --foreground: 30 10% 20%;   /* Dark Brownish Gray */
+    --background: 38 89% 91%;   /* #FDEBD0 (sandy beige) - Dominant */
+    --foreground: 25 30% 20%;   /* Dark, desaturated brown-orange, e.g., #4A3B31 */
 
-    --card: 60 30% 97%;         /* Very Light Beige/Off-white */
-    --card-foreground: 30 10% 20%;
+    --card: 38 89% 94%;         /* #FEF5E7 (Lighter sandy beige) - Dominant */
+    --card-foreground: 25 30% 20%;
 
-    --popover: 60 30% 97%;
-    --popover-foreground: 30 10% 20%;
+    --popover: 38 89% 94%;      /* Lighter sandy beige - Dominant */
+    --popover-foreground: 25 30% 20%;
 
-    --primary: 32 57% 53.7%;    /* Desaturated Earthy Orange #C48C4E */
-    --primary-foreground: 35 60% 96%; /* Light Warm Off-white */
+    --primary: 20 100% 41%;    /* #D35400 (burnt orange) - Secondary color for UI, used as Primary in ShadCN */
+    --primary-foreground: 20 80% 95%;  /* Very light, warm off-white, e.g., #FFF2E6 */
 
-    --secondary: 40 40% 85%;    /* Lighter, softer orange/beige */
-    --secondary-foreground: 30 10% 25%;
+    --secondary: 20 80% 55%;   /* #F08A5D (Lighter/softer burnt orange) - Also from Secondary color for UI */
+    --secondary-foreground: 20 100% 15%; /* Darker orange/brown, e.g., #6B2800 */
 
-    --muted: 60 30% 88%;        /* Muted beige */
-    --muted-foreground: 30 10% 45%;
+    --muted: 38 60% 85%;        /* #F7EEDB (Desaturated sandy beige) */
+    --muted-foreground: 25 25% 45%;  /* #7C6F66 (Darker muted foreground) */
 
-    --accent: 60 100% 25.1%;   /* Muted Olive Green #808000 */
-    --accent-foreground: 60 60% 93%; /* Light Greenish Off-white */
+    --accent: 278 35% 49%;      /* #884EA0 (deep violet) - Accent */
+    --accent-foreground: 278 30% 92%; /* #F3E9F7 (Very light violet) */
 
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 50%;    /* Standard red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* Light foreground for destructive */
 
-    --border: 30 20% 80%;       /* Soft, desaturated warm gray */
-    --input: 30 20% 80%;
-    --ring: 32 57% 53.7%;       /* Primary color for ring */
+    --border: 38 50% 80%;       /* #EBDCCB (Soft beige-gray for borders) */
+    --input: 38 50% 80%;        /* Same as border */
+    --ring: 20 100% 41%;       /* Primary color for focus rings (burnt orange) */
 
     --radius: 0.5rem;
 
-    --chart-1: 32 57% 53.7%; /* Primary */
-    --chart-2: 60 100% 25.1%; /* Accent */
-    --chart-3: 40 40% 85%;   /* Secondary */
-    --chart-4: 30 10% 45%;   /* Muted Foreground */
-    --chart-5: 30 10% 20%;   /* Foreground */
+    --chart-1: 20 100% 41%;   /* burnt orange */
+    --chart-2: 278 35% 49%;   /* deep violet */
+    --chart-3: 45 89% 50%;    /* #F1C40F (golden yellow) */
+    --chart-4: 20 80% 65%;    /* #F3A581 (Lighter orange) */
+    --chart-5: 38 30% 70%;    /* #C9C1B5 (Muted beige-gray) */
 
-    /* Sidebar variables can be kept or adjusted if sidebar component is heavily used with custom theme */
-    --sidebar-background: 60 40% 94%; /* Slightly darker beige */
-    --sidebar-foreground: 30 10% 25%;
-    --sidebar-primary: 32 57% 53.7%;
-    --sidebar-primary-foreground: 35 60% 96%;
-    --sidebar-accent: 60 100% 25.1%;
-    --sidebar-accent-foreground: 60 60% 93%;
-    --sidebar-border: 30 20% 75%;
-    --sidebar-ring: 32 57% 53.7%;
+    /* Sidebar variables adjusted for the new theme */
+    --sidebar-background: 38 80% 88%;        /* #F6E7D0 (Slightly different sandy beige) */
+    --sidebar-foreground: 25 30% 20%;        /* Same as main foreground */
+    --sidebar-primary: 20 100% 41%;          /* burnt orange */
+    --sidebar-primary-foreground: 20 80% 95%;/* Very light warm off-white */
+    --sidebar-accent: 278 35% 49%;           /* deep violet */
+    --sidebar-accent-foreground: 278 30% 92%;/* Very light violet */
+    --sidebar-border: 38 50% 75%;           /* Slightly darker beige-gray border */
+    --sidebar-ring: 20 100% 41%;            /* burnt orange */
   }
 
   .dark {
-    /* Keeping default dark theme from shadcn as it was not specified */
+    /* Keeping default dark theme from shadcn as it was not specified for dark mode */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
