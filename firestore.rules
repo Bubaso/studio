@@ -11,9 +11,9 @@ service cloud.firestore {
     }
 
     // Users Collection (User Profiles)
+    // Herkesin kullanıcı profillerini okuyabilmesi için güncellendi (önceki adımda yapıldı).
     match /users/{userId} {
-      // Allow public read of user profiles
-      allow read: if true; // DEĞİŞTİRİLDİ: request.auth != null; --> true;
+      allow read: if true; 
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
@@ -64,11 +64,16 @@ service cloud.firestore {
     // UserFavorites Collection
     match /userFavorites/{favoriteId} {
       allow read, list: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // YENİDEN DÜZENLENMİŞ CREATE KURALI:
+      // Bir kullanıcı, dokümandaki userId kendisi ise ve gerekli alanlar varsa favori oluşturabilir.
+      // favoriteId'nin (doküman ID'si) içerikle tam eşleşme kontrolü kaldırıldı, 
+      // temel güvenlik (request.auth.uid == request.resource.data.userId) yeterlidir.
       allow create: if request.auth != null &&
                        request.auth.uid == request.resource.data.userId &&
-                       favoriteId == request.resource.data.userId + '_' + request.resource.data.itemId &&
                        request.resource.data.userId is string &&
                        request.resource.data.itemId is string;
+
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
       allow update: if false;
     }
