@@ -17,12 +17,12 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="space-y-16 md:space-y-20">
+    <div className="space-y-12 md:space-y-16"> {/* Reduced spacing from space-y-16 md:space-y-20 */}
       {/* Hero Section */}
       <section className="text-center py-12 md:py-16">
         <ShoppingBag className="h-16 w-16 text-primary mx-auto mb-6" />
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline text-primary mb-6">
-          ReFind : Votre Marché d'Occasion de Confiance
+          Votre Marché d'Occasion
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground max-w-xl lg:max-w-2xl mx-auto mb-10">
           Découvrez des trésors uniques, vendez facilement les articles dont vous n'avez plus besoin et rejoignez une communauté passionnée par la seconde main.
@@ -63,13 +63,13 @@ export default async function HomePage() {
       {/* How it Works Section - App Introduction */}
       <section className="py-12 bg-card rounded-lg">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold font-headline text-center mb-10">Comment ça marche ?</h2>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
+          {/* "Comment ça marche ?" title removed */}
+          <div className="grid md:grid-cols-3 gap-8 text-center pt-6"> {/* Added pt-6 to compensate for removed title's mb-10 */}
             <div className="p-6 bg-background rounded-lg hover:shadow-xl transition-shadow">
               <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
                 <Search className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">1. Découvrez</h3>
+              <h3 className="text-xl font-semibold font-headline mb-2">Découvrez</h3> {/* Numbering removed */}
               <p className="text-sm text-muted-foreground">
                 Explorez des milliers d'articles uniques mis en vente par des vendeurs de votre communauté et d'ailleurs. Utilisez nos filtres pour affiner votre recherche.
               </p>
@@ -78,7 +78,7 @@ export default async function HomePage() {
               <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
                 <ShoppingBag className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">2. Vendez Facilement</h3>
+              <h3 className="text-xl font-semibold font-headline mb-2">Vendez Facilement</h3> {/* Numbering removed */}
               <p className="text-sm text-muted-foreground">
                 Mettez en vente vos articles en quelques clics. Ajoutez des photos de qualité, une description détaillée et fixez votre prix. C'est simple et rapide !
               </p>
@@ -87,7 +87,7 @@ export default async function HomePage() {
                <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
                 <MessageCircleHeart className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">3. Connectez-vous</h3>
+              <h3 className="text-xl font-semibold font-headline mb-2">Connectez-vous</h3> {/* Numbering removed */}
               <p className="text-sm text-muted-foreground">
                 Communiquez directement avec les acheteurs et vendeurs via notre messagerie sécurisée pour finaliser vos transactions en toute confiance.
               </p>
