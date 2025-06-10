@@ -38,7 +38,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
     const sellerIdString = String(item?.sellerId); 
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
         console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}. Check Firestore rules for 'users' collection.`);
-        seller = null;
+        seller = null; // Explicitly set to null on permission error
     } else {
         let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
         if (error instanceof Error) {
@@ -47,7 +47,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             errorMessageLog += ` Details: ${String(error)}.`;
         }
         console.error(errorMessageLog);
-        seller = null; 
+        seller = null; // Explicitly set to null on other errors
     }
   }
 
@@ -61,7 +61,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   
   // The `hasUserAlreadyReviewed` logic is best handled by the client-side ReviewForm 
   // and the server-side `submitReview` action.
-  // `auth.currentUser` is null in Server Components.
+  // `auth.currentUser` is null in Server Components, so this check was removed.
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
