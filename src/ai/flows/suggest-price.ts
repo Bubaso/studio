@@ -25,17 +25,17 @@ export type SuggestPriceInput = z.infer<typeof SuggestPriceInputSchema>;
 const SuggestPriceOutputSchema = z.object({
   suggestedPriceLow: z
     .number()
-    .describe('The lower bound of the suggested price range for the item, in FCFA (West African CFA franc). (Output as a number)'),
+    .describe('The lower bound of the suggested price range for the item, in XOF (West African CFA franc). (Output as a number)'),
   suggestedPriceOptimal: z
     .number()
-    .describe('The optimal suggested price for the item, in FCFA (West African CFA franc). (Output as a number)'),
+    .describe('The optimal suggested price for the item, in XOF (West African CFA franc). (Output as a number)'),
   suggestedPriceHigh: z
     .number()
-    .describe('The upper bound of the suggested price range for the item, in FCFA (West African CFA franc). (Output as a number)'),
+    .describe('The upper bound of the suggested price range for the item, in XOF (West African CFA franc). (Output as a number)'),
   reasoning: z
     .string()
     .describe('The reasoning behind the suggested price range and optimal price.'),
-  currency: z.string().default('FCFA').describe('The currency of the suggested price. Always FCFA for this context.'),
+  currency: z.string().default('XOF').describe('The currency of the suggested price. Always XOF (West African CFA franc) for this context.'),
 });
 export type SuggestPriceOutput = z.infer<typeof SuggestPriceOutputSchema>;
 
@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
   name: 'suggestPriceRangePrompt',
   input: {schema: SuggestPriceInputSchema},
   output: {schema: SuggestPriceOutputSchema},
-  prompt: `You are an expert in pricing secondhand items in West Africa. Given the description of the item and an optional list of similar items and their prices, you will suggest a realistic price range (low, optimal, high) for the item in FCFA (West African CFA franc).
+  prompt: `You are an expert in pricing secondhand items in West Africa. Given the description of the item and an optional list of similar items and their prices, you will suggest a realistic price range (low, optimal, high) for the item in XOF (West African CFA franc).
 
 Item Description: {{{itemDescription}}}
 Similar Items (if provided): {{{similarItems}}}
@@ -58,9 +58,9 @@ The optimal price should generally be within the low and high bounds.
 
 If the input language of the item description is French, provide the reasoning in French.
 All price outputs (suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh) should always be numbers.
-The currency field in the output should always be "FCFA".
+The currency field in the output should always be "XOF".
 
-Example of French reasoning: "Basé sur des articles similaires et l'état de l'objet, une fourchette de X à Y FCFA semble appropriée, avec un prix optimal de Z FCFA. Le prix optimal tient compte de la demande potentielle."
+Example of French reasoning: "Basé sur des articles similaires et l'état de l'objet, une fourchette de X à Y XOF semble appropriée, avec un prix optimal de Z XOF. Le prix optimal tient compte de la demande potentielle."
 If no similar items are provided, base your suggestion primarily on the item description.
 If the description is too vague to make a reasonable suggestion, indicate this in the reasoning and suggest a very broad range or default values like 0 for prices.
 Ensure suggestedPriceLow is less than or equal to suggestedPriceOptimal, and suggestedPriceOptimal is less than or equal to suggestedPriceHigh.
@@ -87,7 +87,7 @@ const suggestPriceFlow = ai.defineFlow(
          if (suggestedPriceLow > suggestedPriceOptimal) { // Check again after potential swap
             suggestedPriceLow = suggestedPriceOptimal;
         }
-        return { ...output, suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh, currency: 'FCFA' };
+        return { ...output, suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh, currency: 'XOF' };
     }
     // Fallback if AI output is null, though schema validation should prevent this.
     return {
@@ -95,7 +95,7 @@ const suggestPriceFlow = ai.defineFlow(
         suggestedPriceOptimal: 0,
         suggestedPriceHigh: 0,
         reasoning: "Impossible de générer une suggestion de prix pour le moment.",
-        currency: "FCFA",
+        currency: "XOF",
     };
   }
 );
