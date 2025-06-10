@@ -2,17 +2,19 @@
 import Image from 'next/image';
 import { getItemByIdFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
-import type { UserProfile, Review } from '@/lib/types'; // Added Review
+import type { UserProfile, Review } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, ShoppingCart, Star, MessageSquarePlus } from 'lucide-react'; // Added Star, MessageSquarePlus
+import { Package, MapPin, Star, MessageSquarePlus, Clock } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
-import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; // Added
-import { ReviewForm } from '@/components/review-form'; // Added
-import { auth } from '@/lib/firebase'; // Added for current user check
+import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; 
+import { ReviewForm } from '@/components/review-form'; 
+// import { auth } from '@/lib/firebase'; // Removed server-side auth.currentUser
+import { EditItemButtonClient } from '@/components/edit-item-button-client';
+import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client'; // New component
 
 interface ItemPageProps {
   params: { id: string };
@@ -31,37 +33,30 @@ export default async function ItemPage({ params }: ItemPageProps) {
       seller = await getUserDocument(item.sellerId);
     } else {
       console.warn(`Item ${item.id} has an invalid or missing sellerId: ${String(item.sellerId)}`);
-      // seller remains null
     }
   } catch (error: any) {
-    const sellerIdString = String(item?.sellerId); // Ensure sellerId is a string for logging
-    // Check if it's a Firebase error object and specifically 'permission-denied'
+    const sellerIdString = String(item?.sellerId); 
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
-        // Anticipated error if server-side client SDK call isn't authenticated for rules requiring request.auth
-        // Set seller to null and let the page render with "seller info not available".
-        // No console.error for this specific, handled case to potentially reduce Next.js overlay noise.
         seller = null;
     } else {
-        // Log other unexpected errors.
-        // Construct a safe string message for logging.
         let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
         if (error instanceof Error) {
             errorMessageLog += ` Message: ${error.message}.`;
-            // Avoid logging the full error object or stack if it might cause serialization issues for Next.js overlay
         } else {
             errorMessageLog += ` Details: ${String(error)}.`;
         }
         console.error(errorMessageLog);
-        seller = null; // Ensure seller is null on any error during fetch
+        seller = null; 
     }
   }
 
   const reviews: Review[] = await getReviewsForItem(item.id);
-  const currentUser = auth.currentUser; // This is null on server, client component will handle auth state
+  // const currentUser = auth.currentUser; // Removed: auth.currentUser is null on server
   let hasUserAlreadyReviewed = false;
-  if (currentUser?.uid) { // This check will always be false on server, ReviewForm handles client side
-    hasUserAlreadyReviewed = await checkIfUserHasReviewedItem(currentUser.uid, item.id);
-  }
+  // Client-side component ReviewForm will handle auth check for hasUserAlreadyReviewed
+  // if (currentUser?.uid) { 
+  //   hasUserAlreadyReviewed = await checkIfUserHasReviewedItem(currentUser.uid, item.id);
+  // }
 
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
@@ -161,23 +156,33 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </Card>
           )}
 
-          <div className="flex space-x-4">
-            <Button size="lg" className="flex-1">
-              <ShoppingCart className="mr-2 h-5 w-5" /> Acheter maintenant
-            </Button>
-            {/* Only render ContactSellerButtonClient if item.sellerId is available */}
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+            {item && item.sellerId && (
+                <PurchaseItemButtonClient sellerId={item.sellerId} itemId={item.id} />
+            )}
             {item && item.sellerId && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={item.id} />
             )}
+             {item && item.sellerId && (
+                <EditItemButtonClient sellerId={item.sellerId} itemId={item.id} />
+            )}
           </div>
           
-           <div className="text-sm text-muted-foreground">
-            Publié le : {new Date(item.postedDate).toLocaleDateString('fr-FR')}
+           <div className="text-sm text-muted-foreground space-y-1">
+            <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
+                <span>Publié le : {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
+            </div>
+            {item.lastUpdated && (
+                 <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
+                    <span>Dernière modification : {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Reviews Section */}
       <section className="space-y-6">
         <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
         {reviews.length > 0 ? (
@@ -220,7 +225,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
         )}
       </section>
 
-      {/* Review Form Section */}
       <section className="space-y-4">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
         <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewed} />
