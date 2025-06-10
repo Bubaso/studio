@@ -3,8 +3,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Item } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, MapPin } from 'lucide-react'; // Changed Tag to Package
+import { Package, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { FavoriteButtonClient } from './favorite-button-client'; // Import FavoriteButtonClient
 
 interface ItemCardProps {
   item: Item;
@@ -15,9 +16,9 @@ export function ItemCard({ item }: ItemCardProps) {
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
+    <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg group/itemcard">
       <Link href={`/items/${item.id}`} className="block group">
-        <CardHeader className="p-0">
+        <CardHeader className="p-0 relative"> {/* Added relative for positioning favorite button */}
           <div className="aspect-[4/3] relative w-full overflow-hidden">
             <Image
               src={primaryImageUrl}
@@ -27,6 +28,9 @@ export function ItemCard({ item }: ItemCardProps) {
               data-ai-hint={imageHint}
             />
           </div>
+          <div className="absolute top-2 right-2 z-10 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
+            <FavoriteButtonClient itemId={item.id} className="bg-background/70 hover:bg-background/90" />
+          </div>
         </CardHeader>
       </Link>
       <CardContent className="p-4 flex-grow">
@@ -35,7 +39,7 @@ export function ItemCard({ item }: ItemCardProps) {
         </Link>
         <p className="text-2xl font-bold text-primary mb-2">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
         <div className="flex items-center text-sm text-muted-foreground mb-1">
-          <Package className="h-4 w-4 mr-1 flex-shrink-0" /> {/* Changed Tag to Package */}
+          <Package className="h-4 w-4 mr-1 flex-shrink-0" />
           <span className="truncate" title={item.category}>{item.category}</span>
         </div>
         {item.location && (

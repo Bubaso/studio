@@ -10,11 +10,11 @@ import { Package, MapPin, Star, MessageSquarePlus, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
-import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; 
+import { getReviewsForItem } from '@/services/reviewService'; 
 import { ReviewForm } from '@/components/review-form'; 
-// import { auth } from '@/lib/firebase'; // Removed server-side auth.currentUser
 import { EditItemButtonClient } from '@/components/edit-item-button-client';
-import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client'; // New component
+import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client';
+import { FavoriteButtonClient } from '@/components/favorite-button-client';
 
 interface ItemPageProps {
   params: { id: string };
@@ -37,6 +37,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   } catch (error: any) {
     const sellerIdString = String(item?.sellerId); 
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
+        console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}. Check Firestore rules for 'users' collection.`);
         seller = null;
     } else {
         let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
@@ -50,14 +51,17 @@ export default async function ItemPage({ params }: ItemPageProps) {
     }
   }
 
-  const reviews: Review[] = await getReviewsForItem(item.id);
-  // const currentUser = auth.currentUser; // Removed: auth.currentUser is null on server
-  let hasUserAlreadyReviewed = false;
-  // Client-side component ReviewForm will handle auth check for hasUserAlreadyReviewed
-  // if (currentUser?.uid) { 
-  //   hasUserAlreadyReviewed = await checkIfUserHasReviewedItem(currentUser.uid, item.id);
-  // }
-
+  let reviews: Review[] = [];
+  try {
+    reviews = await getReviewsForItem(item.id);
+  } catch (error: any) {
+    console.error(`Error fetching reviews for item ${item.id}. Check Firestore rules for 'reviews' collection.`, error);
+    // reviews will remain an empty array, page can still render
+  }
+  
+  // The `hasUserAlreadyReviewed` logic is best handled by the client-side ReviewForm 
+  // and the server-side `submitReview` action.
+  // `auth.currentUser` is null in Server Components.
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
@@ -97,7 +101,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
         </div>
 
         <div className="space-y-6">
-          <h1 className="text-4xl font-bold font-headline text-primary">{item.name}</h1>
+          <div className="flex justify-between items-start">
+            <h1 className="text-4xl font-bold font-headline text-primary flex-1_">{item.name}</h1>
+            <FavoriteButtonClient itemId={item.id} size="lg" className="ml-4" />
+          </div>
           <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
           <div className="flex flex-wrap gap-2">
@@ -227,7 +234,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
       <section className="space-y-4">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewed} />
+        {/* Passing false as ReviewForm will handle client-side checks */}
+        <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={false} />
       </section>
 
     </div>

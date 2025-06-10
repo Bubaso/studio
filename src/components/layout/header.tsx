@@ -1,13 +1,13 @@
 
 "use client";
 import Link from 'next/link';
-import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun } from 'lucide-react';
+import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart } from 'lucide-react'; // Added Heart icon
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase'; // Import Firebase auth
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; // Import Firebase auth types
+import { auth } from '@/lib/firebase'; 
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; 
 
 export function Header() {
   const pathname = usePathname();
@@ -31,7 +31,7 @@ export function Header() {
       setIsLoadingAuth(false);
     });
 
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe(); 
   }, []);
 
   const handleSignOut = async () => {
@@ -41,7 +41,6 @@ export function Header() {
       router.push('/');
     } catch (error) {
       console.error("Error signing out: ", error);
-      // Optionally show a toast message for sign-out error
     }
   };
 
@@ -62,8 +61,13 @@ export function Header() {
   const navLinks = [
     { href: '/browse', label: 'Parcourir', icon: <Search className="h-4 w-4" /> },
     { href: '/sell', label: 'Vendre', icon: <PlusCircle className="h-4 w-4" /> },
-    { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
   ];
+
+  const userNavLinks = [ // Links to show only if user is logged in
+    { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
+    { href: '/favorites', label: 'Favoris', icon: <Heart className="h-4 w-4" /> },
+  ];
+
 
   if (!mounted || isLoadingAuth) {
     return ( 
@@ -73,7 +77,6 @@ export function Header() {
             <ShoppingBag className="h-6 w-6 text-primary" />
             <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
           </Link>
-          {/* Basic navigation could be shown here, or a loading skeleton for auth buttons */}
         </div>
       </header>
     );
@@ -96,7 +99,19 @@ export function Header() {
               }`}
             >
               <span className="hidden md:inline">{link.label}</span>
-              <span className="md:hidden">{link.icon}</span>
+              <span className="md:hidden" title={link.label}>{link.icon}</span>
+            </Link>
+          ))}
+          {currentUser && userNavLinks.map((link) => (
+             <Link
+              key={link.href}
+              href={link.href}
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              <span className="hidden md:inline">{link.label}</span>
+              <span className="md:hidden" title={link.label}>{link.icon}</span>
             </Link>
           ))}
         </nav>
