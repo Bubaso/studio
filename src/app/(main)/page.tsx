@@ -4,50 +4,41 @@ import Link from 'next/link';
 import { ItemCard } from '@/components/item-card';
 import { getItemsFromFirestore } from '@/services/itemService';
 import type { Item } from '@/lib/types';
-import { ShoppingBag, Search, MessageCircleHeart, Sparkles, UploadCloud } from 'lucide-react';
+import { CategoryCarousel } from '@/components/category-carousel'; // Yeni bileşen import edildi
+import { Search, ShoppingBag, MessageCircleHeart } from 'lucide-react';
+
+const carouselCategories = [
+  { name: 'Électronique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Électronique', dataAiHint: 'electronics gadgets' },
+  { name: 'Mode', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Vêtements%20et%20Accessoires', dataAiHint: 'fashion clothing' },
+  { name: 'Maison', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Maison%20et%20Jardin', dataAiHint: 'home decor' },
+  { name: 'Sport', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Sports%20et%20Plein%20Air', dataAiHint: 'sports equipment' },
+  { name: 'Livres', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Livres,%20Films%20et%20Musique', dataAiHint: 'books media' },
+  { name: 'Véhicules', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Véhicules', dataAiHint: 'vehicles cars' },
+];
 
 export default async function HomePage() {
   let featuredItems: Item[] = [];
   try {
-    // Récupérer les 4 articles les plus récents pour les afficher
     featuredItems = await getItemsFromFirestore({ count: 4, query: '' });
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
-    // Gérer l'erreur gracieusement, par exemple en n'affichant aucun article ou un message
   }
 
   return (
-    <div className="space-y-12 md:space-y-16"> {/* Reduced spacing from space-y-16 md:space-y-20 */}
-      {/* Hero Section */}
-      <section className="text-center py-12 md:py-16">
-        <ShoppingBag className="h-16 w-16 text-primary mx-auto mb-6" />
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-headline text-primary mb-6">
-          Votre Marché d'Occasion
-        </h1>
-        <p className="text-lg sm:text-xl text-muted-foreground max-w-xl lg:max-w-2xl mx-auto mb-10">
-          Découvrez des trésors uniques, vendez facilement les articles dont vous n'avez plus besoin et rejoignez une communauté passionnée par la seconde main.
-        </p>
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-          <Link href="/browse">
-            <Button size="lg" className="font-semibold text-base">
-              <Search className="mr-2 h-5 w-5" /> Explorer les Articles
-            </Button>
-          </Link>
-          <Link href="/sell">
-            <Button size="lg" variant="outline" className="font-semibold text-base">
-              <UploadCloud className="mr-2 h-5 w-5" /> Commencer à Vendre
-            </Button>
-          </Link>
-        </div>
+    <div className="space-y-8 md:space-y-10">
+      {/* New Category Carousel Section */}
+      <section className="mb-8 md:mb-12">
+        <h2 className="text-2xl font-bold font-headline text-primary mb-4 px-1">Explorer par Catégorie</h2>
+        <CategoryCarousel categories={carouselCategories} />
       </section>
 
       {/* Featured Items Section */}
       {featuredItems.length > 0 && (
-        <section className="py-12">
-          <h2 className="text-3xl font-bold font-headline text-center mb-8">
+        <section className="py-8">
+          <h2 className="text-3xl font-bold font-headline text-center mb-8 text-primary">
             Dernières trouvailles sur ReFind
           </h2>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {featuredItems.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
@@ -61,35 +52,34 @@ export default async function HomePage() {
       )}
 
       {/* How it Works Section - App Introduction */}
-      <section className="py-12 bg-card rounded-lg">
+      <section className="py-8 bg-card/50 rounded-lg">
         <div className="container mx-auto px-4">
-          {/* "Comment ça marche ?" title removed */}
-          <div className="grid md:grid-cols-3 gap-8 text-center pt-6"> {/* Added pt-6 to compensate for removed title's mb-10 */}
+          <div className="grid md:grid-cols-3 gap-6 text-center">
             <div className="p-6 bg-background rounded-lg hover:shadow-xl transition-shadow">
-              <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
-                <Search className="h-8 w-8 text-primary" />
+              <div className="p-3 bg-primary/10 rounded-full inline-block mb-3">
+                <Search className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">Découvrez</h3> {/* Numbering removed */}
+              <h3 className="text-xl font-semibold font-headline mb-1">Découvrez</h3>
               <p className="text-sm text-muted-foreground">
-                Explorez des milliers d'articles uniques mis en vente par des vendeurs de votre communauté et d'ailleurs. Utilisez nos filtres pour affiner votre recherche.
+                Explorez des milliers d'articles uniques mis en vente par des vendeurs de votre communauté et d'ailleurs.
               </p>
             </div>
             <div className="p-6 bg-background rounded-lg hover:shadow-xl transition-shadow">
-              <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
-                <ShoppingBag className="h-8 w-8 text-primary" />
+              <div className="p-3 bg-primary/10 rounded-full inline-block mb-3">
+                <ShoppingBag className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">Vendez Facilement</h3> {/* Numbering removed */}
+              <h3 className="text-xl font-semibold font-headline mb-1">Vendez Facilement</h3>
               <p className="text-sm text-muted-foreground">
-                Mettez en vente vos articles en quelques clics. Ajoutez des photos de qualité, une description détaillée et fixez votre prix. C'est simple et rapide !
+                Mettez en vente vos articles en quelques clics. Ajoutez des photos, une description et fixez votre prix.
               </p>
             </div>
             <div className="p-6 bg-background rounded-lg hover:shadow-xl transition-shadow">
-               <div className="p-4 bg-primary/10 rounded-full inline-block mb-4">
-                <MessageCircleHeart className="h-8 w-8 text-primary" />
+               <div className="p-3 bg-primary/10 rounded-full inline-block mb-3">
+                <MessageCircleHeart className="h-7 w-7 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold font-headline mb-2">Connectez-vous</h3> {/* Numbering removed */}
+              <h3 className="text-xl font-semibold font-headline mb-1">Connectez-vous</h3>
               <p className="text-sm text-muted-foreground">
-                Communiquez directement avec les acheteurs et vendeurs via notre messagerie sécurisée pour finaliser vos transactions en toute confiance.
+                Communiquez directement avec les acheteurs et vendeurs via notre messagerie sécurisée.
               </p>
             </div>
           </div>
