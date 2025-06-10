@@ -7,13 +7,19 @@ import type { Item, ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
 
+// Updated to include new categories and ensure diversity
 const carouselCategories = [
   { name: 'Électronique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Électronique', dataAiHint: 'electronics gadgets' },
+  { name: 'Téléphones et Portables', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Téléphones%20et%20Portables', dataAiHint: 'smartphones mobiles' },
   { name: 'Vêtements et Accessoires', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Vêtements%20et%20Accessoires', dataAiHint: 'fashion clothing' },
   { name: 'Mobilier', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Mobilier', dataAiHint: 'furniture home' },
+  { name: 'Meubles', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Meubles', dataAiHint: 'household furniture' },
   { name: 'Maison et Jardin', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Maison%20et%20Jardin', dataAiHint: 'home garden' },
+  { name: 'Santé et Beauté', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Santé%20et%20Beauté', dataAiHint: 'health beauty' },
+  { name: 'Bébés et Enfants', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Bébés%20et%20Enfants', dataAiHint: 'baby kids' },
   { name: 'Sports et Plein Air', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Sports%20et%20Plein%20Air', dataAiHint: 'sports equipment' },
   { name: 'Livres, Films et Musique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Livres%2C%20Films%20et%20Musique', dataAiHint: 'books media' },
+  { name: 'Équipement et Outils', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Équipement%20et%20Outils', dataAiHint: 'tools equipment' },
   { name: 'Véhicules', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Véhicules', dataAiHint: 'vehicles cars' },
   { name: 'Autre', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Autre', dataAiHint: 'various items' },
 ];

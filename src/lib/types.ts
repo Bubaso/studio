@@ -60,16 +60,21 @@ export interface MessageThread {
 }
 
 export const ItemCategories = [
-  "Électronique",
-  "Mobilier",
-  "Vêtements et Accessoires",
-  "Maison et Jardin",
-  "Livres, Films et Musique",
-  "Sports et Plein Air",
-  "Jouets et Jeux",
-  "Objets de Collection et Art",
-  "Véhicules",
   "Autre",
+  "Bébés et Enfants",
+  "Électronique",
+  "Équipement et Outils",
+  "Jouets et Jeux",
+  "Livres, Films et Musique",
+  "Maison et Jardin",
+  "Meubles",
+  "Mobilier",
+  "Objets de Collection et Art",
+  "Santé et Beauté",
+  "Sports et Plein Air",
+  "Téléphones et Portables",
+  "Véhicules",
+  "Vêtements et Accessoires",
 ] as const;
 
 export type ItemCategory = typeof ItemCategories[number];
@@ -77,3 +82,4 @@ export type ItemCategory = typeof ItemCategories[number];
 // Updated ItemConditions to French and consistent casing
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];
+
