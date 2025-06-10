@@ -35,11 +35,11 @@ export function EditItemButtonClient({ sellerId, itemId }: EditItemButtonClientP
 
   if (currentUser && currentUser.uid === sellerId) {
     return (
-      <Link href={`/items/${itemId}/edit`} passHref legacyBehavior>
-        <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto flex-1">
-          <a><Edit3 className="mr-2 h-5 w-5" /> Modifier l'annonce</a>
-        </Button>
-      </Link>
+      <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto flex-1">
+        <Link href={`/items/${itemId}/edit`}>
+          <Edit3 className="mr-2 h-5 w-5" /> Modifier l'annonce
+        </Link>
+      </Button>
     );
   }
 
