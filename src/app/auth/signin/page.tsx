@@ -18,7 +18,16 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import { createUserDocument } from "@/services/userService";
+
+// Initialize OAuth providers
+const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+const appleProvider = new OAuthProvider('apple.com');
+// For Apple, you might need to add custom scopes if required:
+// appleProvider.addScope('email');
+// appleProvider.addScope('name');
 
 export default function SignInPage() {
   const router = useRouter();
@@ -45,13 +54,13 @@ export default function SignInPage() {
     };
   }, [router, redirectTo]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Connexion réussie !", description: "Vous allez être redirigé." });
-      // The useEffect hook will handle the redirect if user state changes successfully
+      // The useEffect hook will handle the redirect
     } catch (error: any) {
       let errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -64,6 +73,46 @@ export default function SignInPage() {
         errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
       }
       toast({ title: "Erreur de connexion", description: errorMessage, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
+    setIsLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      await createUserDocument(user, {
+        name: user.displayName, 
+        avatarUrl: user.photoURL,
+      });
+
+      toast({
+        title: "Connexion réussie !",
+        description: `Bienvenue, ${user.displayName || user.email}!`,
+      });
+      // Redirect is handled by the useEffect watching firebaseUser
+    } catch (error: any) {
+      console.error("OAuth Sign-in Error:", error);
+      let errorMessage = "Une erreur s'est produite lors de la connexion avec le fournisseur OAuth.";
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = "Un compte existe déjà avec la même adresse e-mail mais des identifiants de connexion différents. Essayez de vous connecter avec le fournisseur utilisé à l'origine.";
+      } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "La fenêtre de connexion a été fermée avant la fin de l'opération.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = "La connexion avec ce fournisseur n'est pas activée. Veuillez vérifier la configuration Firebase.";
+      } else if (error.code === 'auth/network-request-failed') {
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet et réessayez.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+          errorMessage = "Ce domaine n'est pas autorisé pour les opérations OAuth. Vérifiez votre configuration Firebase.";
+      }
+      toast({
+        title: "Erreur de connexion OAuth",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +144,7 @@ export default function SignInPage() {
         <CardDescription>Accédez à votre compte pour acheter et vendre.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -133,8 +182,33 @@ export default function SignInPage() {
             Se connecter
           </Button>
         </form>
+
+        <div className="my-6 flex items-center">
+          <div className="flex-grow border-t border-muted-foreground/30"></div>
+          <span className="mx-4 text-xs text-muted-foreground">OU</span>
+          <div className="flex-grow border-t border-muted-foreground/30"></div>
+        </div>
+
+        <div className="space-y-3">
+          <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn(googleProvider)} disabled={isLoading}>
+            {/* TODO: Add Google Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Se connecter avec Google
+          </Button>
+          <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignIn(facebookProvider)} disabled={isLoading}>
+            {/* TODO: Add Facebook Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Se connecter avec Facebook
+          </Button>
+          <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignIn(appleProvider)} disabled={isLoading}>
+            {/* TODO: Add Apple Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Se connecter avec Apple
+          </Button>
+        </div>
+
       </CardContent>
-      <CardFooter className="flex flex-col items-center space-y-2">
+      <CardFooter className="flex flex-col items-center space-y-2 pt-6">
          <p className="text-sm text-muted-foreground">
           Mot de passe oublié ? {/* <Link href="/auth/forgot-password" className="font-semibold text-primary hover:underline">Réinitialiser</Link> */}
         </p>

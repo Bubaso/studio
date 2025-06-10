@@ -14,42 +14,62 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShoppingBag, UserPlus, LogIn } from "lucide-react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { createUserDocument } from "@/services/userService"; // Import service to create user doc
+import { auth } from "@/lib/firebase"; 
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import { createUserDocument } from "@/services/userService"; 
+
+// Initialize OAuth providers
+const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+const appleProvider = new OAuthProvider('apple.com');
+// For Apple, you might need to add custom scopes if required:
+// appleProvider.addScope('email');
+// appleProvider.addScope('name');
+
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const redirectTo = searchParams.get('redirect') || '/';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setAuthLoading(false);
+      if (user) {
+        // If user is already logged in (e.g. signed up via OAuth or had a session), redirect
+        router.push(redirectTo);
+      }
+    });
+    return () => unsubscribe();
+  }, [router, redirectTo]);
+
+  const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // This log will show the config the 'auth' object is using on the client-side
-    // console.log("Client-side Firebase config being used by auth object:", auth.app.options);
-
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
+      const fbUser = userCredential.user;
 
-      // Update Firebase Auth profile with the name
-      await updateProfile(firebaseUser, { displayName: name });
-
-      // Create a user document in Firestore
-      await createUserDocument(firebaseUser, { name }); // Pass name from form to ensure it's set
+      await updateProfile(fbUser, { displayName: name });
+      await createUserDocument(fbUser, { name }); 
       
       toast({ title: "Compte créé !", description: `Bienvenue sur ReFind, ${name} !` });
-      router.push("/"); // Redirect to homepage or profile after signup
+      router.push(redirectTo); 
     } catch (error: any) {
-      console.error("Error signing up:", error);
+      console.error("Error signing up with email/password:", error);
       let errorMessage = "Échec de la création du compte. Veuillez réessayer.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "Cette adresse e-mail est déjà utilisée.";
@@ -66,6 +86,65 @@ export default function SignUpPage() {
     }
   };
 
+  const handleOAuthSignUp = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
+    setIsLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Ensure user document exists in Firestore.
+      // For OAuth, displayName and photoURL from user object are good defaults.
+      // Name from form is not used here as OAuth provides it.
+      await createUserDocument(user, {
+        name: user.displayName, 
+        avatarUrl: user.photoURL,
+      });
+
+      toast({
+        title: "Inscription réussie !",
+        description: `Bienvenue, ${user.displayName || user.email}!`,
+      });
+      // Redirect is handled by the useEffect watching firebaseUser
+    } catch (error: any) {
+      console.error("OAuth Sign-up Error:", error);
+      let errorMessage = "Une erreur s'est produite lors de l'inscription avec le fournisseur OAuth.";
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = "Un compte existe déjà avec la même adresse e-mail mais des identifiants de connexion différents. Essayez de vous connecter avec le fournisseur utilisé à l'origine.";
+      } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "La fenêtre d'inscription a été fermée avant la fin de l'opération.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+          errorMessage = "L'inscription avec ce fournisseur n'est pas activée. Veuillez vérifier la configuration Firebase.";
+      } else if (error.code === 'auth/network-request-failed') {
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet et réessayez.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+          errorMessage = "Ce domaine n'est pas autorisé pour les opérations OAuth. Vérifiez votre configuration Firebase.";
+      }
+      toast({
+        title: "Erreur d'inscription OAuth",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  if (firebaseUser && !authLoading) { 
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Vous êtes déjà connecté. Redirection...</p>
+      </div>
+    );
+  }
+
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
@@ -76,7 +155,7 @@ export default function SignUpPage() {
         <CardDescription>Créez votre compte pour commencer à acheter et vendre des articles uniques.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Nom complet</Label>
             <Input 
@@ -119,11 +198,36 @@ export default function SignUpPage() {
             Créer un compte
           </Button>
         </form>
+
+        <div className="my-6 flex items-center">
+          <div className="flex-grow border-t border-muted-foreground/30"></div>
+          <span className="mx-4 text-xs text-muted-foreground">OU</span>
+          <div className="flex-grow border-t border-muted-foreground/30"></div>
+        </div>
+
+        <div className="space-y-3">
+          <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
+            {/* TODO: Add Google Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            S'inscrire avec Google
+          </Button>
+          <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignUp(facebookProvider)} disabled={isLoading}>
+            {/* TODO: Add Facebook Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            S'inscrire avec Facebook
+          </Button>
+          <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignUp(appleProvider)} disabled={isLoading}>
+            {/* TODO: Add Apple Icon */}
+            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            S'inscrire avec Apple
+          </Button>
+        </div>
+
       </CardContent>
-      <CardFooter className="flex flex-col items-center">
+      <CardFooter className="flex flex-col items-center pt-6">
         <p className="text-sm text-muted-foreground">
           Vous avez déjà un compte ?{" "}
-          <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
+          <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
              Se connecter <LogIn className="inline ml-1 h-4 w-4" />
           </Link>
         </p>
