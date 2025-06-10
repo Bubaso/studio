@@ -5,11 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 interface CarouselCategory {
   name: string;
-  imageUrl: string; // Should be 400x300 for consistency
+  imageUrl: string;
   link: string;
   dataAiHint?: string;
 }
@@ -20,26 +20,47 @@ interface CategoryCarouselProps {
 
 export function CategoryCarousel({ categories }: CategoryCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
+
+  useEffect(() => {
+    const checkScrollability = () => {
+      if (scrollContainerRef.current) {
+        const { scrollWidth, clientWidth } = scrollContainerRef.current;
+        setShowScrollButtons(scrollWidth > clientWidth);
+      }
+    };
+
+    checkScrollability();
+    // Add event listener for window resize to re-check scrollability
+    window.addEventListener('resize', checkScrollability);
+    // Check again after a short delay for initial render and dynamic content
+    const timeoutId = setTimeout(checkScrollability, 100);
+
+    return () => {
+      window.removeEventListener('resize', checkScrollability);
+      clearTimeout(timeoutId);
+    };
+  }, [categories]); // Re-check if categories change
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -250 : 250; // Adjusted scroll amount
+      const scrollAmount = direction === 'left' ? -250 : 250;
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
   return (
-    <div className="relative group/carousel"> {/* Added group/carousel for button visibility on hover */}
+    <div className="relative group/carousel">
       <div
         ref={scrollContainerRef}
-        className="flex space-x-3 sm:space-x-4 overflow-x-auto py-2 sm:py-4 px-1 scrollbar-hide" // Reduced py for tighter look
+        className="flex space-x-3 sm:space-x-4 overflow-x-auto py-2 sm:py-4 px-1 scrollbar-hide overscroll-x-contain"
       >
         {categories.map((category, index) => (
-          <Link href={category.link} key={index} className="block flex-shrink-0 w-32 sm:w-36 md:w-40 group"> {/* Adjusted widths */}
+          <Link href={category.link} key={index} className="block flex-shrink-0 w-32 sm:w-36 md:w-40 group">
             <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow duration-200 border-border hover:border-primary/50">
-              <div className="relative w-full aspect-[4/3]"> {/* Enforces 4:3 aspect ratio */}
+              <div className="relative w-full aspect-[4/3]">
                 <Image
-                  src={category.imageUrl} // Expecting 400x300 URL
+                  src={category.imageUrl}
                   alt={category.name}
                   fill
                   sizes="(max-width: 640px) 128px, (max-width: 768px) 144px, 160px"
@@ -56,7 +77,7 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
           </Link>
         ))}
       </div>
-      {categories.length > Math.floor(typeof window !== 'undefined' ? window.innerWidth / 150 : 3) && ( // Show scroll buttons if items exceed viewport (approx)
+      {showScrollButtons && (
         <>
           <button
             onClick={() => scroll('left')}
