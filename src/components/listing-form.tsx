@@ -19,13 +19,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService"; 
+import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
+import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -46,12 +47,12 @@ const fileSchema = z
 
 const listingFormSchema = z.object({
   name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
-  description: z.string().min(10, "La description doit comporter au moins 10 caractères.").max(1000),
+  description: z.string().min(20, "La description doit comporter au moins 20 caractères.").max(500, "La description ne peut pas dépasser 500 caractères."),
   price: z.coerce.number().positive("Le prix doit être un nombre positif.").int("Le prix doit être un nombre entier pour FCFA."),
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
-  imageFiles: z // This field will store NEWLY selected File objects
+  imageFiles: z
     .array(fileSchema)
     .max(MAX_FILES, `Vous ne pouvez télécharger que ${MAX_FILES} images au maximum.`)
     .optional(),
@@ -69,11 +70,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
+  const [categorySuggestion, setCategorySuggestion] = useState<{ category: ItemCategory; confidence: number } | null>(null);
+  const [isCategorySuggestionApplied, setIsCategorySuggestionApplied] = useState(false);
+
 
   const isEditMode = !!initialItemData?.id;
 
   const [imagePreviews, setImagePreviews] = useState<string[]>(initialItemData?.imageUrls || []);
-  // objectUrlToFileMap helps manage removal of new files by linking their blob URL to the File object
   const [objectUrlToFileMap, setObjectUrlToFileMap] = useState<Map<string, File>>(new Map());
 
 
@@ -86,10 +90,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       category: initialItemData?.category as ItemCategory | undefined,
       condition: initialItemData?.condition as ItemCondition | undefined,
       location: initialItemData?.location || "",
-      imageFiles: [], // RHF imageFiles is always for new uploads
+      imageFiles: [],
     },
   });
-  
+
   useEffect(() => {
     if (initialItemData) {
         form.reset({
@@ -103,7 +107,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         });
         setImagePreviews(initialItemData.imageUrls || []);
     }
-  }, [initialItemData, form.reset, form]);
+  }, [initialItemData, form]);
 
 
   useEffect(() => {
@@ -111,7 +115,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       setCurrentUser(user);
       setIsLoadingAuth(false);
     });
-    // Cleanup Object URLs from map and previews
     return () => {
       unsubscribe();
       objectUrlToFileMap.forEach((_file, url) => URL.revokeObjectURL(url));
@@ -119,12 +122,53 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
       });
     };
-  }, [objectUrlToFileMap, imagePreviews]); // imagePreviews added
+  }, [objectUrlToFileMap, imagePreviews]);
 
   const itemDescriptionForAISuggestion = form.watch("description");
 
+  // Debounce category suggestion
+  useEffect(() => {
+    if (itemDescriptionForAISuggestion && itemDescriptionForAISuggestion.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
+      const handler = setTimeout(async () => {
+        setIsSuggestingCategory(true);
+        try {
+          const suggestion = await suggestItemCategory({ itemDescription: itemDescriptionForAISuggestion });
+          if (suggestion.suggestedCategory && ItemCategories.includes(suggestion.suggestedCategory as ItemCategory)) {
+            setCategorySuggestion({ category: suggestion.suggestedCategory as ItemCategory, confidence: suggestion.confidence });
+          } else {
+            setCategorySuggestion(null);
+          }
+        } catch (error) {
+          console.error("Error suggesting category:", error);
+          setCategorySuggestion(null);
+        } finally {
+          setIsSuggestingCategory(false);
+        }
+      }, 1000); // 1 second delay
+
+      return () => {
+        clearTimeout(handler);
+      };
+    } else {
+      setCategorySuggestion(null); // Clear suggestion if description is too short or already applied
+    }
+  }, [itemDescriptionForAISuggestion, isCategorySuggestionApplied, isEditMode]);
+
+
   const handlePriceSuggested = (price: number) => {
     form.setValue("price", Math.round(price));
+  };
+
+  const applyCategorySuggestion = () => {
+    if (categorySuggestion) {
+      form.setValue("category", categorySuggestion.category, { shouldValidate: true });
+      setCategorySuggestion(null); // Hide suggestion after applying
+      setIsCategorySuggestionApplied(true);
+      toast({
+        title: "Catégorie Appliquée",
+        description: `La catégorie "${categorySuggestion.category}" a été sélectionnée.`,
+      });
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,14 +177,12 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
     const currentRHFNewFiles = form.getValues("imageFiles") || [];
     
-    // Filter out files that might already be in currentRHFImageFiles
     const newFilesToAdd = filesFromInput.filter(
         f_input => !currentRHFNewFiles.some(
             f_rhf => f_rhf.name === f_input.name && f_rhf.size === f_input.size && f_rhf.lastModified === f_input.lastModified
         )
     );
 
-    // Calculate how many new files can be added
     const existingHttpUrlsCount = imagePreviews.filter(url => url.startsWith("http")).length;
     const slotsAvailableForNew = MAX_FILES - existingHttpUrlsCount - currentRHFNewFiles.length;
     
@@ -149,7 +191,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     if (filesToActuallyProcess.length < newFilesToAdd.length) {
         toast({ description: `Limite de ${MAX_FILES} images atteinte. Certaines images n'ont pas été ajoutées.`});
     }
-    if (!filesToActuallyProcess.length && newFilesToAdd.length > 0) { // No slots but tried to add
+    if (!filesToActuallyProcess.length && newFilesToAdd.length > 0) {
         toast({ description: `Limite de ${MAX_FILES} images atteinte.`});
         return;
     }
@@ -191,7 +233,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       }
       URL.revokeObjectURL(urlToRemove);
     }
-    // If it's an http URL, it's just removed from previews. The final URL list will be built on submit.
   };
   
 
@@ -199,18 +240,15 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     setIsSubmitting(true);
     if (!currentUser) {
       toast({ title: "Erreur", description: "Vous devez être connecté.", variant: "destructive" });
-      router.push('/auth/signin'); // or appropriate redirect
+      router.push('/auth/signin');
       setIsSubmitting(false);
       return;
     }
 
     let finalImageUrls: string[] = [];
-
-    // 1. Get existing URLs that are still in imagePreviews (i.e., not removed by the user)
     const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
     finalImageUrls.push(...keptExistingUrls);
 
-    // 2. Upload NEW files (from RHF's imageFiles field)
     const newFilesForUpload = values.imageFiles || [];
     if (newFilesForUpload.length > 0) {
       try {
@@ -227,7 +265,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     }
     
     if (finalImageUrls.length === 0) {
-      finalImageUrls.push("https://placehold.co/600x400.png"); // Default placeholder if no images
+      finalImageUrls.push("https://placehold.co/600x400.png");
     }
     
     const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
@@ -352,7 +390,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Catégorie</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionnez une catégorie" />
@@ -366,6 +404,35 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {isSuggestingCategory && !categorySuggestion && (
+                    <div className="mt-1 text-xs text-muted-foreground flex items-center">
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie...
+                    </div>
+                  )}
+                  {categorySuggestion && !isCategorySuggestionApplied && (
+                    <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                            <Sparkles className="h-3 w-3 mr-1 inline-block text-accent" />
+                            Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)
+                        </div>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-accent hover:underline"
+                          onClick={applyCategorySuggestion}
+                        >
+                          Accepter
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {isCategorySuggestionApplied && form.getValues("category") && (
+                     <div className="mt-1 text-xs text-green-600 flex items-center">
+                        <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée.
+                     </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -413,8 +480,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
           <FormField
             control={form.control}
-            name="imageFiles" // This name is for RHF's validation of new files
-            render={({ fieldState }) => ( // field not directly used, but fieldState for error
+            name="imageFiles"
+            render={({ fieldState }) => (
               <FormItem>
                 <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
                 <FormControl>
@@ -437,10 +504,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                  {imagePreviews.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {imagePreviews.map((previewUrl, index) => (
-                        <div key={previewUrl} className="relative group aspect-square"> {/* Use URL as key for stability */}
-                            <Image 
-                                src={previewUrl} 
-                                alt={`Aperçu ${index + 1}`} 
+                        <div key={previewUrl} className="relative group aspect-square">
+                            <Image
+                                src={previewUrl}
+                                alt={`Aperçu ${index + 1}`}
                                 fill
                                 className="object-cover rounded-md border"
                             />
@@ -488,3 +555,5 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     </div>
   );
 }
+
+    

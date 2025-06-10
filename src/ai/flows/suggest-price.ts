@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that suggests a price for an item based on its description and similar items listed.
+ * @fileOverview An AI agent that suggests a price range for an item based on its description and similar items listed.
  *
  * - suggestPrice - A function that handles the price suggestion process.
  * - SuggestPriceInput - The input type for the suggestPrice function.
@@ -23,12 +23,19 @@ const SuggestPriceInputSchema = z.object({
 export type SuggestPriceInput = z.infer<typeof SuggestPriceInputSchema>;
 
 const SuggestPriceOutputSchema = z.object({
-  suggestedPrice: z
+  suggestedPriceLow: z
     .number()
-    .describe('The suggested price for the item, in FCFA (West African CFA franc). (Output as a number)'),
+    .describe('The lower bound of the suggested price range for the item, in FCFA (West African CFA franc). (Output as a number)'),
+  suggestedPriceOptimal: z
+    .number()
+    .describe('The optimal suggested price for the item, in FCFA (West African CFA franc). (Output as a number)'),
+  suggestedPriceHigh: z
+    .number()
+    .describe('The upper bound of the suggested price range for the item, in FCFA (West African CFA franc). (Output as a number)'),
   reasoning: z
     .string()
-    .describe('The reasoning behind the suggested price.'),
+    .describe('The reasoning behind the suggested price range and optimal price.'),
+  currency: z.string().default('FCFA').describe('The currency of the suggested price. Always FCFA for this context.'),
 });
 export type SuggestPriceOutput = z.infer<typeof SuggestPriceOutputSchema>;
 
@@ -37,20 +44,26 @@ export async function suggestPrice(input: SuggestPriceInput): Promise<SuggestPri
 }
 
 const prompt = ai.definePrompt({
-  name: 'suggestPricePrompt',
+  name: 'suggestPriceRangePrompt',
   input: {schema: SuggestPriceInputSchema},
   output: {schema: SuggestPriceOutputSchema},
-  prompt: `You are an expert in pricing secondhand items. Given the description of the item and a list of similar items and their prices, you will suggest a price for the item in FCFA (West African CFA franc).
+  prompt: `You are an expert in pricing secondhand items in West Africa. Given the description of the item and an optional list of similar items and their prices, you will suggest a realistic price range (low, optimal, high) for the item in FCFA (West African CFA franc).
 
 Item Description: {{{itemDescription}}}
-Similar Items: {{{similarItems}}}
+Similar Items (if provided): {{{similarItems}}}
 
-Consider the condition of the item, its brand, and its rarity when suggesting a price. Provide a brief reasoning for the suggested price.
+Consider the condition of the item implied by the description, its brand (if mentioned), and its rarity when suggesting a price range.
+Provide a brief reasoning for the suggested price range and optimal price.
+The optimal price should generally be within the low and high bounds.
 
-Output the suggested price as a number and the reasoning as a string.
-If the input language is French, provide the reasoning in French.
-The suggestedPrice should always be a number, regardless of input language.
-Example of French reasoning: "Basé sur des articles similaires et l'état de l'objet, un prix de X FCFA semble approprié."
+If the input language of the item description is French, provide the reasoning in French.
+All price outputs (suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh) should always be numbers.
+The currency field in the output should always be "FCFA".
+
+Example of French reasoning: "Basé sur des articles similaires et l'état de l'objet, une fourchette de X à Y FCFA semble appropriée, avec un prix optimal de Z FCFA. Le prix optimal tient compte de la demande potentielle."
+If no similar items are provided, base your suggestion primarily on the item description.
+If the description is too vague to make a reasonable suggestion, indicate this in the reasoning and suggest a very broad range or default values like 0 for prices.
+Ensure suggestedPriceLow is less than or equal to suggestedPriceOptimal, and suggestedPriceOptimal is less than or equal to suggestedPriceHigh.
 `,
 });
 
@@ -62,6 +75,29 @@ const suggestPriceFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (output) {
+        // Ensure logical price ordering if AI doesn't strictly follow it
+        let { suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh } = output;
+        if (suggestedPriceLow > suggestedPriceOptimal) {
+            [suggestedPriceLow, suggestedPriceOptimal] = [suggestedPriceOptimal, suggestedPriceLow];
+        }
+        if (suggestedPriceOptimal > suggestedPriceHigh) {
+            [suggestedPriceOptimal, suggestedPriceHigh] = [suggestedPriceHigh, suggestedPriceOptimal];
+        }
+         if (suggestedPriceLow > suggestedPriceOptimal) { // Check again after potential swap
+            suggestedPriceLow = suggestedPriceOptimal;
+        }
+        return { ...output, suggestedPriceLow, suggestedPriceOptimal, suggestedPriceHigh, currency: 'FCFA' };
+    }
+    // Fallback if AI output is null, though schema validation should prevent this.
+    return {
+        suggestedPriceLow: 0,
+        suggestedPriceOptimal: 0,
+        suggestedPriceHigh: 0,
+        reasoning: "Impossible de générer une suggestion de prix pour le moment.",
+        currency: "FCFA",
+    };
   }
 );
+
+    

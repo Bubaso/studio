@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2 } from 'lucide-react';
+import { Wand2, Loader2, CheckCircle } from 'lucide-react';
 import { suggestPrice, SuggestPriceInput } from '@/ai/flows/suggest-price';
 import { Label } from './ui/label';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -17,7 +17,7 @@ interface PriceSuggestionProps {
 
 export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSuggestionProps) {
   const [similarItems, setSimilarItems] = useState('');
-  const [suggestedPrice, setSuggestedPrice] = useState<number | null>(null);
+  const [priceRange, setPriceRange] = useState<{ low: number; optimal: number; high: number; currency: string } | null>(null);
   const [reasoning, setReasoning] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +29,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
     }
     setIsLoading(true);
     setError(null);
-    setSuggestedPrice(null);
+    setPriceRange(null);
     setReasoning(null);
 
     try {
@@ -38,16 +38,36 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
         similarItems: similarItems.trim() || 'Aucun article similaire fourni.',
       };
       const result = await suggestPrice(input);
-      const roundedPrice = Math.round(result.suggestedPrice); // FCFA generally doesn't use decimals
-      setSuggestedPrice(roundedPrice);
+      const optimalPriceRounded = Math.round(result.suggestedPriceOptimal);
+      
+      setPriceRange({
+        low: Math.round(result.suggestedPriceLow),
+        optimal: optimalPriceRounded,
+        high: Math.round(result.suggestedPriceHigh),
+        currency: result.currency,
+      });
       setReasoning(result.reasoning);
-      onPriceSuggested(roundedPrice);
+      // Automatically call onPriceSuggested with the optimal price if user wants to apply it later
+      // onPriceSuggested(optimalPriceRounded); // Or let user click apply
     } catch (e) {
       console.error('Erreur lors de la suggestion de prix:', e);
       setError('Impossible de suggérer un prix. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleApplyOptimalPrice = () => {
+    if (priceRange) {
+      onPriceSuggested(priceRange.optimal);
+      // Optionally, provide feedback that price was applied
+      // setError(null); // Clear previous errors
+      // setReasoning("Prix optimal appliqué au formulaire !"); // Example feedback
+    }
+  };
+
+  const formatCurrency = (value: number, currencyCode: string) => {
+    return value.toLocaleString('fr-FR', { style: 'currency', currency: currencyCode, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
   return (
@@ -58,7 +78,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           Suggestion de Prix par IA
         </CardTitle>
         <CardDescription>
-          Obtenez une suggestion de prix alimentée par l'IA basée sur la description de votre article et, éventuellement, des articles similaires. Le prix sera en FCFA.
+          Obtenez une suggestion de prix et une fourchette réaliste (en {priceRange?.currency || 'FCFA'}) basée sur la description et articles similaires.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -94,7 +114,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           ) : (
             <Wand2 className="mr-2 h-4 w-4" />
           )}
-          Suggérer un prix (FCFA)
+          Suggérer une fourchette de prix
         </Button>
         {error && (
           <Alert variant="destructive">
@@ -102,13 +122,30 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        {suggestedPrice !== null && reasoning && (
+        {priceRange && reasoning && (
           <Alert variant="default" className="bg-accent/10 border-accent/50">
-            <AlertTitle className="text-accent font-semibold">Prix suggéré : {suggestedPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</AlertTitle>
-            <AlertDescription className="text-accent/90">{reasoning}</AlertDescription>
+            <AlertTitle className="text-accent font-semibold">
+              Fourchette Suggérée : {formatCurrency(priceRange.low, priceRange.currency)} - {formatCurrency(priceRange.high, priceRange.currency)}
+            </AlertTitle>
+            <AlertDescription className="text-accent/90 mb-2">{reasoning}</AlertDescription>
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-2 pt-2 border-t border-accent/20">
+              <p className="text-sm text-accent font-medium">
+                Optimal : {formatCurrency(priceRange.optimal, priceRange.currency)}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleApplyOptimalPrice}
+                className="mt-2 sm:mt-0 border-accent text-accent hover:bg-accent/20 hover:text-accent"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" /> Appliquer ce prix
+              </Button>
+            </div>
           </Alert>
         )}
       </CardFooter>
     </Card>
   );
 }
+
+    
