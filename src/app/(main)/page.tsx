@@ -7,7 +7,7 @@ import type { Item, ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
 
-// Updated to include new categories and ensure diversity
+// Updated to include new categories and ensure diversity, with specific data-ai-hints
 const carouselCategories = [
   { name: 'Électronique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Électronique', dataAiHint: 'electronics gadgets' },
   { name: 'Téléphones et Portables', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Téléphones%20et%20Portables', dataAiHint: 'smartphones mobiles' },
