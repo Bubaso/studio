@@ -30,10 +30,12 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
       }
     };
 
+    // Check on mount and on window resize
     checkScrollability();
-    // Add event listener for window resize to re-check scrollability
     window.addEventListener('resize', checkScrollability);
-    // Check again after a short delay for initial render and dynamic content
+    
+    // Sometimes, the scrollWidth might not be immediately available on mount,
+    // especially with dynamic content or images. A small timeout can help.
     const timeoutId = setTimeout(checkScrollability, 100);
 
     return () => {
@@ -44,7 +46,7 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === 'left' ? -250 : 250;
+      const scrollAmount = direction === 'left' ? -250 : 250; // Adjust scroll amount as needed
       scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -53,7 +55,7 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
     <div className="relative group/carousel">
       <div
         ref={scrollContainerRef}
-        className="flex space-x-3 sm:space-x-4 overflow-x-auto py-2 sm:py-4 px-1 scrollbar-hide overscroll-x-contain"
+        className="flex space-x-3 sm:space-x-4 overflow-x-auto py-2 sm:py-4 px-1 scrollbar-hide overscroll-x-contain" // overscroll-x-contain should prevent page scroll
       >
         {categories.map((category, index) => (
           <Link href={category.link} key={index} className="block flex-shrink-0 w-32 sm:w-36 md:w-40 group">
@@ -95,6 +97,7 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
           </button>
         </>
       )}
+      {/* CSS to hide scrollbar (works in most modern browsers) */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;

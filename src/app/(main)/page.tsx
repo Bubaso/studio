@@ -62,6 +62,7 @@ export default async function HomePage() {
           <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
             Dernières trouvailles sur ReFind
           </h2>
+          {/* Added gap-3 for mobile and md:gap-4 for medium screens and up */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {featuredItems.map((item) => (
               <ItemCard key={item.id} item={item} />
