@@ -1,8 +1,8 @@
 
 import Image from 'next/image';
-import { getItemByIdFromFirestore } from '@/services/itemService';
+import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
-import type { UserProfile, Review } from '@/lib/types'; 
+import type { UserProfile, Review, Item, ItemCategory } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { ReviewForm } from '@/components/review-form';
 import { EditItemButtonClient } from '@/components/edit-item-button-client';
 import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
+import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
 
 interface ItemPageProps {
   params: { id: string };
@@ -38,7 +39,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
     const sellerIdString = String(item?.sellerId); 
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
         console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}. Check Firestore rules for 'users' collection.`);
-        seller = null; // Explicitly set to null on permission error
+        seller = null; 
     } else {
         let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
         if (error instanceof Error) {
@@ -47,7 +48,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             errorMessageLog += ` Details: ${String(error)}.`;
         }
         console.error(errorMessageLog);
-        seller = null; // Explicitly set to null on other errors
+        seller = null; 
     }
   }
 
@@ -56,16 +57,25 @@ export default async function ItemPage({ params }: ItemPageProps) {
     reviews = await getReviewsForItem(item.id);
   } catch (error: any) {
     console.error(`Error fetching reviews for item ${item.id}. Check Firestore rules for 'reviews' collection.`, error);
-    // reviews will remain an empty array, page can still render
   }
   
-  // The `hasUserAlreadyReviewed` logic is best handled by the client-side ReviewForm 
-  // and the server-side `submitReview` action.
-  // `auth.currentUser` is null in Server Components, so this check was removed.
-
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
+
+  let similarItems: Item[] = [];
+  if (item) {
+    const priceMin = Math.round(item.price * 0.8);
+    const priceMax = Math.round(item.price * 1.2);
+
+    const fetchedSimilarItems = await getItemsFromFirestore({
+      category: item.category as ItemCategory,
+      priceMin: priceMin,
+      priceMax: priceMax,
+      count: 10, 
+    });
+    similarItems = fetchedSimilarItems.filter(si => si.id !== item.id).slice(0, 7);
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
@@ -189,8 +199,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </div>
         </div>
       </div>
+      
+      {similarItems.length > 0 && (
+        <section className="space-y-4 pt-8 border-t">
+          <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
+          <SimilarListingsCarousel items={similarItems} />
+        </section>
+      )}
 
-      <section className="space-y-6">
+      <section className="space-y-6 pt-8 border-t">
         <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
         {reviews.length > 0 ? (
           <div className="space-y-4">
@@ -232,9 +249,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-4 pt-8 border-t">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        {/* Passing false as ReviewForm will handle client-side checks */}
         <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={false} />
       </section>
 
