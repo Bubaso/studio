@@ -10,12 +10,13 @@ import { Package, MapPin, Star, MessageSquarePlus, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
-import { getReviewsForItem } from '@/services/reviewService'; 
+import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; 
 import { ReviewForm } from '@/components/review-form'; 
 import { EditItemButtonClient } from '@/components/edit-item-button-client';
 import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
+import { auth } from '@/lib/firebase'; // For hasUserAlreadyReviewed check
 
 interface ItemPageProps {
   params: { id: string };
@@ -59,6 +60,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
     console.error(`Error fetching reviews for item ${item.id}. Check Firestore rules for 'reviews' collection.`, error);
   }
   
+  const currentUser = auth.currentUser; // Will be null on server
+  let hasUserAlreadyReviewedInitial = false;
+  if (currentUser?.uid && item?.id) { // This check will likely always be false on server
+    hasUserAlreadyReviewedInitial = await checkIfUserHasReviewedItem(currentUser.uid, item.id);
+  }
+  
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
@@ -80,6 +87,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   return (
     <div className="max-w-6xl mx-auto space-y-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        {/* Left Column: Image Gallery */}
         <div className="space-y-4">
           <Card className="shadow-lg rounded-lg overflow-hidden">
             <div className="relative aspect-video">
@@ -110,6 +118,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           )}
         </div>
 
+        {/* Right Column: Item Details, Seller Info, Actions */}
         <div className="space-y-6">
           <div className="flex justify-between items-start">
             <h1 className="text-4xl font-bold font-headline text-primary flex-1_">{item.name}</h1>
@@ -143,6 +152,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
             </CardContent>
           </Card>
+          
+          {/* ----- Similar Listings Carousel - MOVED HERE ----- */}
+          {similarItems.length > 0 && (
+            <section className="space-y-4"> {/* Removed pt-8 and border-t as it's now inline */}
+              <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
+              <SimilarListingsCarousel items={similarItems} />
+            </section>
+          )}
+          {/* ----- End Similar Listings Carousel ----- */}
           
           {seller ? (
             <Card>
@@ -198,15 +216,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
         </div>
-      </div>
+      </div> {/* End of main two-column grid */}
       
-      {similarItems.length > 0 && (
-        <section className="space-y-4 pt-8 border-t">
-          <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
-          <SimilarListingsCarousel items={similarItems} />
-        </section>
-      )}
-
+      {/* Reviews Section - Remains outside the grid */}
       <section className="space-y-6 pt-8 border-t">
         <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
         {reviews.length > 0 ? (
@@ -249,11 +261,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
         )}
       </section>
 
+      {/* Review Form Section - Remains outside the grid */}
       <section className="space-y-4 pt-8 border-t">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={false} />
+        {/* The hasUserAlreadyReviewed prop is an initial hint; ReviewForm and submitReview action handle the definitive check */}
+        <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewedInitial} />
       </section>
 
     </div>
   );
 }
+
