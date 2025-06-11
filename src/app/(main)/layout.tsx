@@ -13,7 +13,7 @@ export default function MainLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 md:mb-0">{children}</main> {/* Added mb-16 for mobile to avoid overlap with bottom nav */}
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-20 md:mb-0">{/* Adjusted mb-16 to mb-20 for taller bottom nav */}</main>
       <Footer />
       <BottomTabNavigator /> {/* Add the bottom tab navigator */}
       <Toaster />
