@@ -1,11 +1,11 @@
 
 import { ItemCard } from '@/components/item-card';
-import type { Item, ItemCategory, ItemCondition } from '@/lib/types'; // ItemCondition was missing
+import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
-import { getItemsFromFirestore } from '@/services/itemService'; // To fetch actual items
+import { getItemsFromFirestore } from '@/services/itemService';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -16,31 +16,44 @@ interface BrowsePageProps {
     minPrice?: string;
     maxPrice?: string;
     location?: string;
-    condition?: ItemCondition; // Changed from string
+    condition?: ItemCondition;
     page?: string;
   };
 }
 
 async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
-  const queryParam = searchParams.q; // Assign searchParams.q to a variable
+  const queryParam = searchParams.q;
+  const categoryParam = searchParams.category;
+  const minPriceParam = searchParams.minPrice;
+  const maxPriceParam = searchParams.maxPrice;
+  const locationParam = searchParams.location;
+  const conditionParam = searchParams.condition;
+  const pageParam = searchParams.page;
 
-  // For now, ItemGrid will fetch all items based on filters, pagination is illustrative
-  // Actual pagination would require more complex server-side logic or client-side slicing
   const items = await getItemsFromFirestore({
-    query: queryParam, // Use the variable
-    category: searchParams.category,
-    priceMin: searchParams.minPrice ? parseInt(searchParams.minPrice) : undefined,
-    priceMax: searchParams.maxPrice ? parseInt(searchParams.maxPrice) : undefined,
-    location: searchParams.location,
-    condition: searchParams.condition,
-    // count: ITEMS_PER_PAGE, // Removed for now, full pagination is more complex
-    // page: searchParams.page ? parseInt(searchParams.page) : 1
+    query: queryParam,
+    category: categoryParam,
+    priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
+    priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
+    location: locationParam,
+    condition: conditionParam,
   });
 
-  const currentPage = parseInt(searchParams.page || '1');
-  // Since we are fetching all matching items for now, pagination logic below is for display structure
+  const currentPage = parseInt(pageParam || '1');
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
   const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  const buildPageUrl = (pageNumber: number) => {
+    const newParams = new URLSearchParams();
+    if (queryParam) newParams.set('q', queryParam);
+    if (categoryParam) newParams.set('category', categoryParam);
+    if (minPriceParam) newParams.set('minPrice', minPriceParam);
+    if (maxPriceParam) newParams.set('maxPrice', maxPriceParam);
+    if (locationParam) newParams.set('location', locationParam);
+    if (conditionParam) newParams.set('condition', conditionParam);
+    newParams.set('page', pageNumber.toString());
+    return `/browse?${newParams.toString()}`;
+  };
 
   return (
     <div className="flex-1">
@@ -48,9 +61,9 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
         <>
           <p className="mb-4 text-muted-foreground">
             Affichage de {paginatedItems.length} sur {items.length} articles
-            {queryParam && ` pour "${queryParam}"`} {/* Use the variable */}
+            {queryParam && ` pour "${queryParam}"`}
           </p>
-          <div className="grid grid-cols-2 gap-6"> {/* Updated grid classes */}
+          <div className="grid grid-cols-2 gap-6">
             {paginatedItems.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
@@ -59,12 +72,12 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
             <Pagination className="mt-8">
               <PaginationContent>
                 {currentPage > 1 && (
-                  <PaginationPrevious href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: (currentPage - 1).toString()})}`} />
+                  <PaginationPrevious href={buildPageUrl(currentPage - 1)} />
                 )}
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <PaginationItem key={page}>
                     <PaginationLink
-                      href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: page.toString()})}`}
+                      href={buildPageUrl(page)}
                       isActive={currentPage === page}
                     >
                       {page}
@@ -72,7 +85,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
                   </PaginationItem>
                 ))}
                 {currentPage < totalPages && (
-                  <PaginationNext href={`/browse?${new URLSearchParams({...searchParams, q: queryParam || undefined, page: (currentPage + 1).toString()})}`} />
+                  <PaginationNext href={buildPageUrl(currentPage + 1)} />
                 )}
               </PaginationContent>
             </Pagination>
@@ -92,7 +105,7 @@ function ItemGridSkeleton() {
   return (
     <div className="flex-1">
       <Skeleton className="h-6 w-1/4 mb-4" />
-      <div className="grid grid-cols-2 gap-6"> {/* Updated grid classes for skeleton */}
+      <div className="grid grid-cols-2 gap-6">
         {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
           <CardSkeleton key={index} />
         ))}
@@ -116,10 +129,13 @@ function CardSkeleton() {
 
 
 export default function BrowsePage({ searchParams }: BrowsePageProps) {
-  const pageTitle = searchParams.q
-    ? `Résultats pour "${searchParams.q}"`
-    : searchParams.category
-    ? `Parcourir ${searchParams.category}`
+  const queryParam = searchParams.q;
+  const categoryParam = searchParams.category;
+
+  const pageTitle = queryParam
+    ? `Résultats pour "${queryParam}"`
+    : categoryParam
+    ? `Parcourir ${categoryParam}`
     : 'Parcourir tous les articles';
 
   return (

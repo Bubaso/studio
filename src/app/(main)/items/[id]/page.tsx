@@ -16,7 +16,7 @@ import { EditItemButtonClient } from '@/components/edit-item-button-client';
 import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
-import { auth } from '@/lib/firebase'; // For hasUserAlreadyReviewed check
+import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
 import { ItemStatsDisplay } from '@/components/item-stats-display';
 
@@ -26,6 +26,7 @@ interface ItemPageProps {
 
 export default async function ItemPage({ params }: ItemPageProps) {
   const itemId = params.id; // Assign params.id to a variable at the top
+  
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {
@@ -58,7 +59,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   let reviews: Review[] = [];
   try {
-    reviews = await getReviewsForItem(itemId); // Use itemId
+    reviews = await getReviewsForItem(itemId);
   } catch (error: any) {
     console.error(`Error fetching reviews for item ${itemId}. Check Firestore rules for 'reviews' collection.`, error);
   }
@@ -84,12 +85,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
       priceMax: priceMax,
       count: 10, 
     });
-    similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7); // Use itemId
+    similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
   }
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
-      <ItemViewLogger itemId={itemId} /> {/* Use itemId */}
+      <ItemViewLogger itemId={itemId} />
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery */}
         <div className="space-y-4">
@@ -128,7 +129,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
         <div className="space-y-6">
           <div className="flex justify-between items-start">
             <h1 className="text-4xl font-bold font-headline text-primary flex-1_">{item.name}</h1>
-            <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" /> {/* Use itemId */}
+            <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
           </div>
           <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
@@ -150,7 +151,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
-          <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} /> {/* Use itemId */}
+          <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
           <Card>
             <CardHeader>
@@ -199,13 +200,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             {item && item.sellerId && (
-                <PurchaseItemButtonClient sellerId={item.sellerId} itemId={itemId} /> /* Use itemId */
+                <PurchaseItemButtonClient sellerId={item.sellerId} itemId={itemId} />
             )}
             {item && item.sellerId && (
-                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} /> /* Use itemId */
+                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
             )}
              {item && item.sellerId && (
-                <EditItemButtonClient sellerId={item.sellerId} itemId={itemId} /> /* Use itemId */
+                <EditItemButtonClient sellerId={item.sellerId} itemId={itemId} />
             )}
           </div>
           
@@ -268,7 +269,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
       <section className="space-y-4 pt-8 border-t">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        <ReviewForm itemId={itemId} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewedInitial} /> {/* Use itemId */}
+        <ReviewForm itemId={itemId} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewedInitial} />
       </section>
 
     </div>
