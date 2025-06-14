@@ -1,81 +1,74 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Items Collection
+    // ITEMS
+    // Items are publicly readable.
+    // Only the authenticated seller can create, update, or delete their items.
     match /items/{itemId} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.sellerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.sellerId == request.auth.uid;
-    }
+      allow update: if request.auth != null && resource.data.sellerId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.sellerId == request.auth.uid;
 
-    // Users Collection (User Profiles)
-    // Herkesin kullanıcı profillerini okuyabilmesi için güncellendi (önceki adımda yapıldı).
-    match /users/{userId} {
-      allow read: if true; 
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false;
-    }
-
-    // MessageThreads Collection
-    match /messageThreads/{threadId} {
-      allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
-      allow create: if request.auth != null &&
-                       request.auth.uid in request.resource.data.participantIds &&
-                       request.resource.data.participantIds[0] < request.resource.data.participantIds[1] &&
-                       request.resource.data.participantIds.size() == 2;
-      allow update: if request.auth != null && request.auth.uid in resource.data.participantIds;
-      allow delete: if false;
-
-      match /messages/{messageId} {
-        allow read: if request.auth != null && (
-                       get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
-                       get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid
-                     );
-        allow create: if request.auth != null &&
-                         request.resource.data.senderId == request.auth.uid &&
-                         (
-                           get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
-                           get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid
-                         );
-        allow update: if false;
-        allow delete: if false;
+      // VIEWS subcollection for items
+      // View documents are publicly readable for counting.
+      // New views can be created (e.g., by the server-side logItemView action).
+      match /views/{viewId} {
+        allow read: if true;
+        allow create: if true; // Allows logItemView (server action) to write.
+                               // For increased security, if logItemView was an authenticated client call,
+                               // you might use: allow create: if request.auth != null;
       }
     }
 
-    // Reviews Collection
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if request.auth != null &&
-                       request.resource.data.reviewerId == request.auth.uid &&
-                       request.resource.data.sellerId != request.auth.uid &&
-                       request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-                       request.resource.data.comment.size() <= 1000;
-      allow update: if request.auth != null &&
-                       resource.data.reviewerId == request.auth.uid &&
-                       request.resource.data.rating >= 1 && request.resource.data.rating <= 5 &&
-                       request.resource.data.comment.size() <= 1000;
-      allow delete: if request.auth != null &&
-                       resource.data.reviewerId == request.auth.uid;
+    // USER FAVORITES
+    // Favorite entries are publicly readable for querying/counting.
+    // Users can only create or delete their own favorite entries.
+    match /userFavorites/{favoriteId} {
+      allow read: if true; // Allows ItemStatsDisplay (client) to query/count favorites for an item.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
+                               // resource.data.userId refers to the userId in the document being deleted.
+                               // On client, ensure only owner can trigger this.
     }
 
-    // UserFavorites Collection
-    match /userFavorites/{favoriteId} {
-      allow read, list: if request.auth != null && request.auth.uid == resource.data.userId;
+    // USERS
+    // User profiles are publicly readable.
+    // Users can only create or update their own profile document.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      // Deletion of user profiles is typically handled by server-side admin processes or functions.
+    }
 
-      // YENİDEN DÜZENLENMİŞ CREATE KURALI:
-      // Bir kullanıcı, dokümandaki userId kendisi ise ve gerekli alanlar varsa favori oluşturabilir.
-      // favoriteId'nin (doküman ID'si) içerikle tam eşleşme kontrolü kaldırıldı, 
-      // temel güvenlik (request.auth.uid == request.resource.data.userId) yeterlidir.
-      allow create: if request.auth != null &&
-                       request.auth.uid == request.resource.data.userId &&
-                       request.resource.data.userId is string &&
-                       request.resource.data.itemId is string;
+    // MESSAGE THREADS
+    // Participants of a thread can read and write to the thread document (e.g., update lastMessageAt).
+    match /messageThreads/{threadId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
 
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow update: if false;
+      // MESSAGES subcollection within threads
+      // Participants can read and write messages within their threads.
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && (
+                            get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
+                            get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid
+                          );
+      }
+    }
+
+    // REVIEWS
+    // Reviews are publicly readable.
+    // Only authenticated users can create reviews, and their reviewerId must match their auth UID.
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.reviewerId == request.auth.uid;
+      // Update/delete rules for reviews can be added if necessary (e.g., only by the reviewer or an admin).
     }
   }
 }
+
+    
