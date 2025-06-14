@@ -6,8 +6,8 @@ import { Eye, Heart, ListChecks } from 'lucide-react';
 import { getUserListingsFromFirestore } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { db } from '@/lib/firebase'; // Import db
-import { collection, query, where, onSnapshot, Timestamp, Unsubscribe } from 'firebase/firestore'; // Import necessary Firestore functions
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Timestamp, Unsubscribe } from 'firebase/firestore';
 
 interface ItemStatsDisplayProps {
   itemId: string;
@@ -86,9 +86,8 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
         </div>
       );
     }
-    // Only hide if explicitly 0 for views or favorites. Seller listings can be 0.
-    if (count === 0 && (text.includes("vu cet article") || text.includes("sauvegardé cet article"))) return null;
-
+    // Removed the condition that hid the stat if count was 0 for views or favorites.
+    // Now, it will render "0 personnes ont vu..." or "0 personnes ont sauvegardé..."
     return (
       <div className="flex items-center text-xs text-muted-foreground mr-3 last:mr-0">
         <Icon className="h-3.5 w-3.5 mr-1" />
@@ -97,21 +96,36 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
     );
   };
   
-  const noMeaningfulStats = (viewCount === 0 || viewCount === null) && 
-                           (favoriteCount === 0 || favoriteCount === null) && 
-                           (activeListingsCount === 0 || activeListingsCount === null);
+  const allStatsLoaded = viewCount !== null && favoriteCount !== null && activeListingsCount !== null;
+  const noMeaningfulStats = allStatsLoaded && viewCount === 0 && favoriteCount === 0 && activeListingsCount === 0;
 
+  // If all stats are loaded and all are 0, then we hide the entire block.
+  // Otherwise, we attempt to render stats. Individual stats (like views) will show even if 0,
+  // unless this condition hides the whole block.
   if (noMeaningfulStats) {
       return null;
   }
 
+  // If not all stats are loaded yet, and some might be 0 already, we still might want to show skeletons or early-loaded stats.
+  // The noMeaningfulStats check is primarily for the case where *everything* is definitively 0.
+
   return (
     <div className="flex flex-wrap items-center mt-2 mb-3">
-      <StatItem icon={Eye} count={viewCount} text="personnes ont vu cet article aujourd'hui" />
-      <StatItem icon={Heart} count={favoriteCount} text="personnes ont sauvegardé cet article" />
-      {sellerId && (
+      {/* Render view count if loaded (not null), even if 0 */}
+      {(viewCount !== null) && <StatItem icon={Eye} count={viewCount} text="personnes ont vu cet article aujourd'hui" />}
+      
+      {/* Render favorite count if loaded (not null), even if 0 */}
+      {(favoriteCount !== null) && <StatItem icon={Heart} count={favoriteCount} text="personnes ont sauvegardé cet article" />}
+      
+      {/* Render active listings if loaded (not null), even if 0 */}
+      {(activeListingsCount !== null && sellerId) && (
         <StatItem icon={ListChecks} count={activeListingsCount} text={`annonce(s) active(s) par ce vendeur`} />
       )}
+
+      {/* Show skeletons for stats that are still loading */}
+      {(viewCount === null) && <StatItem icon={Eye} count={null} text="personnes ont vu cet article aujourd'hui" />}
+      {(favoriteCount === null) && <StatItem icon={Heart} count={null} text="personnes ont sauvegardé cet article" />}
+      {(activeListingsCount === null && sellerId) && <StatItem icon={ListChecks} count={null} text="annonce(s) active(s) par ce vendeur" />}
     </div>
   );
 }
