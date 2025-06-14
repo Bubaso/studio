@@ -17,6 +17,8 @@ import { PurchaseItemButtonClient } from '@/components/purchase-item-button-clie
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
 import { auth } from '@/lib/firebase'; // For hasUserAlreadyReviewed check
+import { ItemViewLogger } from '@/components/item-view-logger'; // New
+import { ItemStatsDisplay } from '@/components/item-stats-display'; // New
 
 interface ItemPageProps {
   params: { id: string };
@@ -86,6 +88,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
+      <ItemViewLogger itemId={item.id} /> {/* Log view */}
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery */}
         <div className="space-y-4">
@@ -143,6 +146,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
               </Badge>
             )}
           </div>
+          
+          {/* Social Proof Stats Display */}
+          <ItemStatsDisplay itemId={item.id} sellerId={item.sellerId} />
 
           <Card>
             <CardHeader>
@@ -153,14 +159,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </CardContent>
           </Card>
           
-          {/* ----- Similar Listings Carousel - MOVED HERE ----- */}
           {similarItems.length > 0 && (
-            <section className="space-y-4"> {/* Removed pt-8 and border-t as it's now inline */}
+            <section className="space-y-4"> 
               <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
               <SimilarListingsCarousel items={similarItems} />
             </section>
           )}
-          {/* ----- End Similar Listings Carousel ----- */}
           
           {seller ? (
             <Card>
@@ -216,9 +220,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
         </div>
-      </div> {/* End of main two-column grid */}
-      
-      {/* Reviews Section - Remains outside the grid */}
+      </div> 
+
       <section className="space-y-6 pt-8 border-t">
         <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
         {reviews.length > 0 ? (
@@ -261,14 +264,11 @@ export default async function ItemPage({ params }: ItemPageProps) {
         )}
       </section>
 
-      {/* Review Form Section - Remains outside the grid */}
       <section className="space-y-4 pt-8 border-t">
          <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        {/* The hasUserAlreadyReviewed prop is an initial hint; ReviewForm and submitReview action handle the definitive check */}
         <ReviewForm itemId={item.id} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewedInitial} />
       </section>
 
     </div>
   );
 }
-
