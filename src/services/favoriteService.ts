@@ -16,8 +16,8 @@ import {
   Timestamp,
   orderBy,
   limit,
-  onSnapshot, // Added for real-time count
-  Unsubscribe, // Added for real-time count
+  // onSnapshot, // Removed as real-time count moves to client
+  // Unsubscribe, // Removed
 } from 'firebase/firestore';
 import { getItemByIdFromFirestore } from './itemService';
 
@@ -115,23 +115,4 @@ export async function getUserFavoriteItems(userId: string): Promise<Item[]> {
   }
 }
 
-export async function getFavoriteCountForItem(itemId: string, onUpdate: (count: number) => void): Promise<Unsubscribe> {
-  if (!itemId) {
-    console.warn('getFavoriteCountForItem called without itemId.');
-    onUpdate(0);
-    return Promise.resolve(() => {}); // No-op unsubscribe, wrapped in Promise
-  }
-  const favoritesQuery = query(collection(db, 'userFavorites'), where('itemId', '==', itemId));
-
-  const unsubscribe = onSnapshot(
-    favoritesQuery,
-    (snapshot) => {
-      onUpdate(snapshot.size);
-    },
-    (error) => {
-      console.error(`Error fetching favorite count for item ${itemId}:`, error);
-      onUpdate(0);
-    }
-  );
-  return Promise.resolve(unsubscribe); // Return the unsubscribe function wrapped in a Promise
-}
+// Removed getFavoriteCountForItem as its real-time logic moves to ItemStatsDisplay component

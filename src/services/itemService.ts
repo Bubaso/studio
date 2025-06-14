@@ -1,18 +1,18 @@
 
 import { db, storage } from '@/lib/firebase'; // Added storage
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, onSnapshot, Timestamp, Unsubscribe } from 'firebase/firestore'; // Added updateDoc, addDoc, serverTimestamp, onSnapshot, Timestamp, Unsubscribe
-import type { Timestamp as FirestoreTimestamp } from 'firebase/firestore'; // Explicit import for clarity
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore'; // Removed onSnapshot, Unsubscribe
+import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore'; // Explicit import for clarity
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
 
 // Helper to convert Firestore Timestamp to ISO string
-const convertTimestampToISO = (timestamp: FirestoreTimestamp | undefined | string): string => {
+const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
   if (!timestamp) return new Date().toISOString(); // Default for missing
   if (typeof timestamp === 'string') return timestamp; // Already a string
   // Check if it's a Firestore Timestamp-like object with a toDate method
-  if (timestamp && typeof (timestamp as FirestoreTimestamp).toDate === 'function') {
+  if (timestamp && typeof (timestamp as FirebaseTimestampType).toDate === 'function') {
     try {
-      return (timestamp as FirestoreTimestamp).toDate().toISOString();
+      return (timestamp as FirebaseTimestampType).toDate().toISOString();
     } catch (e) {
       console.warn('Error converting timestamp toDate:', timestamp, e);
       return new Date().toISOString(); // Fallback on conversion error
@@ -49,10 +49,10 @@ const mapDocToItem = (document: any): Item => {
     imageUrls: imageUrls,
     sellerId: data.sellerId || 'unknown',
     sellerName: data.sellerName || 'Vendeur inconnu',
-    postedDate: convertTimestampToISO(data.postedDate as FirestoreTimestamp),
+    postedDate: convertTimestampToISO(data.postedDate as FirebaseTimestampType),
     condition: data.condition,
     dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20),
-    lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated as FirestoreTimestamp) : undefined,
+    lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated as FirebaseTimestampType) : undefined,
   };
 };
 
@@ -221,33 +221,4 @@ export async function logItemView(itemId: string): Promise<void> {
   }
 }
 
-export function getTodaysItemViewCount(itemId: string, onUpdate: (count: number) => void): Unsubscribe {
-  if (!itemId) {
-    console.warn('getTodaysItemViewCount called without itemId.');
-    onUpdate(0);
-    return () => {};
-  }
-
-  const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-
-  const viewsCollectionRef = collection(db, 'items', itemId, 'views');
-  const q = query(
-    viewsCollectionRef,
-    where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-    where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-  );
-
-  const unsubscribe = onSnapshot(
-    q,
-    (snapshot) => {
-      onUpdate(snapshot.size);
-    },
-    (error) => {
-      console.error(`Error fetching today's view count for item ${itemId}:`, error);
-      onUpdate(0);
-    }
-  );
-  return unsubscribe;
-}
+// Removed getTodaysItemViewCount as its real-time logic moves to ItemStatsDisplay component
