@@ -1,4 +1,6 @@
 
+'use server'; // Ensure this file's functions run as server actions
+
 import { db, storage } from '@/lib/firebase'; // Added storage
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore'; // Removed onSnapshot, Unsubscribe
@@ -173,9 +175,10 @@ export async function createItemInFirestore(
       ...itemData,
       postedDate: serverTimestamp(),
     });
+    console.log("SERVER: Item created successfully in Firestore with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating item in Firestore: ", error);
+    console.error("SERVER: Error creating item in Firestore: ", error);
     throw error;
   }
 }
@@ -198,27 +201,26 @@ export async function updateItemInFirestore(
 
   try {
     await updateDoc(itemRef, dataToUpdate);
+    console.log(`SERVER: Item ${itemId} updated successfully in Firestore.`);
   } catch (error) {
-    console.error("Error updating item in Firestore: ", error);
+    console.error(`SERVER: Error updating item ${itemId} in Firestore: `, error);
     throw error;
   }
 }
 
 export async function logItemView(itemId: string): Promise<void> {
   if (!itemId) {
-    console.warn('logItemView called without itemId');
+    console.warn('SERVER: logItemView called without itemId');
     return;
   }
   try {
     const viewsCollectionRef = collection(db, 'items', itemId, 'views');
     await addDoc(viewsCollectionRef, {
       timestamp: serverTimestamp(),
-      // Optionally, add viewerId if user is logged in:
-      // viewerId: auth.currentUser?.uid || 'anonymous',
     });
+    console.log(`SERVER: View logged successfully for item ${itemId} in Firestore.`);
   } catch (error) {
-    console.error(`Error logging view for item ${itemId}:`, error);
+    console.error(`SERVER: Error logging view for item ${itemId}:`, error);
+    // Potentially re-throw or handle more gracefully if specific errors are expected
   }
 }
-
-// Removed getTodaysItemViewCount as its real-time logic moves to ItemStatsDisplay component

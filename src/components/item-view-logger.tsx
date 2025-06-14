@@ -11,9 +11,16 @@ interface ItemViewLoggerProps {
 export function ItemViewLogger({ itemId }: ItemViewLoggerProps) {
   useEffect(() => {
     if (itemId) {
-      // Basic check to prevent logging if component re-renders rapidly without itemId changing.
-      // More sophisticated view logging (e.g., once per user session) would require more state.
-      logItemView(itemId);
+      console.log(`CLIENT: ItemViewLogger attempting to log view for itemId: ${itemId}`);
+      logItemView(itemId)
+        .then(() => {
+          console.log(`CLIENT: logItemView call completed for ${itemId}. Check server logs for confirmation.`);
+        })
+        .catch(error => {
+          console.error(`CLIENT: Error calling logItemView for ${itemId}:`, error);
+        });
+    } else {
+      console.warn("CLIENT: ItemViewLogger - itemId is missing, view not logged.");
     }
   }, [itemId]);
 
