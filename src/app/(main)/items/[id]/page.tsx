@@ -25,7 +25,7 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const itemId = params.id; // Assign params.id to a variable
+  const itemId = params.id; // Assign params.id to a variable at the top
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {
@@ -37,15 +37,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
     if (item.sellerId && typeof item.sellerId === 'string' && item.sellerId.trim() !== '' && !item.sellerId.includes('/')) {
       seller = await getUserDocument(item.sellerId);
     } else {
-      console.warn(`Item ${item.id} has an invalid or missing sellerId: ${String(item.sellerId)}`);
+      console.warn(`Item ${itemId} has an invalid or missing sellerId: ${String(item.sellerId)}`);
     }
   } catch (error: any) {
     const sellerIdString = String(item?.sellerId); 
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
-        console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}. Check Firestore rules for 'users' collection.`);
+        console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${itemId}. Check Firestore rules for 'users' collection.`);
         seller = null; 
     } else {
-        let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${item?.id || 'unknown'}.`;
+        let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${itemId}.`;
         if (error instanceof Error) {
             errorMessageLog += ` Message: ${error.message}.`;
         } else {
@@ -99,6 +99,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 src={primaryImageUrl}
                 alt={item.name}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="object-cover"
                 data-ai-hint={imageHint}
                 priority
@@ -113,6 +114,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     src={url}
                     alt={`${item.name} - image ${index + 2}`}
                     fill
+                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
                     className="object-cover"
                     data-ai-hint={imageHint}
                   />
