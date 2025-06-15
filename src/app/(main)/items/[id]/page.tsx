@@ -27,10 +27,35 @@ interface ItemPageProps {
 export default async function ItemPage({ params }: ItemPageProps) {
   const itemId = params.id; // Assign params.id to a variable at the top
   
+  if (!itemId) {
+    // This case should ideally not be hit if the route segment is always present
+    return <div className="text-center py-10">ID d'article manquant.</div>;
+  }
+
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {
-    return <div className="text-center py-10">Article non trouvé ou ID invalide. Vérifiez Firestore.</div>;
+    // This UI error is likely due to Firestore permission issues if itemId is valid.
+    // The custom error message "Permissions Firestore insuffisantes" from your screenshot
+    // suggests this is happening.
+    return (
+        <Card className="max-w-xl mx-auto my-10">
+            <CardHeader>
+                <CardTitle className="text-destructive text-center">Erreur de chargement de l'article</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+                <p className="text-muted-foreground mb-2">
+                    L'article avec l'ID "{itemId}" n'a pas pu être chargé.
+                </p>
+                <p className="text-red-500 font-semibold">
+                    Cause probable : Permissions Firestore insuffisantes.
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Veuillez vérifier vos règles de sécurité Firestore dans la console Firebase.
+                </p>
+            </CardContent>
+        </Card>
+    );
   }
 
   let seller: UserProfile | null = null;
@@ -75,7 +100,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   let similarItems: Item[] = [];
-  if (item) {
+  // Ensure item is not null before accessing its properties for similar items query
+  if (item && item.price !== undefined && item.category) {
     const priceMin = Math.round(item.price * 0.8);
     const priceMax = Math.round(item.price * 1.2);
 

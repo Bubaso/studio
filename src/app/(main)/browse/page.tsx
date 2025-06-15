@@ -22,13 +22,16 @@ interface BrowsePageProps {
 }
 
 async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
-  const queryParam = searchParams.q;
-  const categoryParam = searchParams.category;
-  const minPriceParam = searchParams.minPrice;
-  const maxPriceParam = searchParams.maxPrice;
-  const locationParam = searchParams.location;
-  const conditionParam = searchParams.condition;
-  const pageParam = searchParams.page;
+  // Destructure searchParams properties at the beginning
+  const {
+    q: queryParam,
+    category: categoryParam,
+    minPrice: minPriceParam,
+    maxPrice: maxPriceParam,
+    location: locationParam,
+    condition: conditionParam,
+    page: pageParam,
+  } = searchParams;
 
   const items = await getItemsFromFirestore({
     query: queryParam,
@@ -129,8 +132,8 @@ function CardSkeleton() {
 
 
 export default function BrowsePage({ searchParams }: BrowsePageProps) {
-  const queryParam = searchParams.q;
-  const categoryParam = searchParams.category;
+  // Destructure relevant searchParams for title generation
+  const { q: queryParam, category: categoryParam } = searchParams;
 
   const pageTitle = queryParam
     ? `Résultats pour "${queryParam}"`
@@ -144,6 +147,7 @@ export default function BrowsePage({ searchParams }: BrowsePageProps) {
       <div className="flex flex-col md:flex-row gap-8">
         <FilterControls />
         <Suspense fallback={<ItemGridSkeleton />}>
+          {/* Pass the original searchParams object to ItemGrid */}
           <ItemGrid searchParams={searchParams} />
         </Suspense>
       </div>
