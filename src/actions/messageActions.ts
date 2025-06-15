@@ -4,6 +4,7 @@
 import { createOrGetMessageThread as serviceCreateOrGetMessageThread } from '@/services/messageService';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+// import { auth } from '@/lib/firebase'; // Explicit server-side auth check removed for now
 
 // Top-level log to ensure this file is processed by Next.js runtime
 console.log("GLOBAL LOG: src/actions/messageActions.ts is active and processed by Next.js.");
@@ -30,15 +31,19 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
     return { error: "Vous ne pouvez pas créer de fil de discussion avec vous-même." };
   }
 
+  // NOTE: The explicit server-side auth check that returned "Erreur d'authentification côté serveur (auth object)"
+  // has been removed. If auth.currentUser is null on the server (which is typical for client SDK in server actions),
+  // then Firestore rules relying on 'request.auth' will be the ones to deny permission.
+  // This means the error should now more directly come from Firestore as "Permissions Firestore insuffisantes."
+
   try {
     console.log("ACTION: TRY_BLOCK --- Attempting to call serviceCreateOrGetMessageThread with:", { currentUserId, otherUserId, itemId });
-    // Corrected variable from otherUserUid to otherUserId
-    const result = await serviceCreateOrGetMessageThread(currentUserId, otherUserId, itemId); 
+    const result = await serviceCreateOrGetMessageThread(currentUserId, otherUserId, itemId);
     console.log("ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread successfully returned:", JSON.stringify(result, null, 2));
 
     if (result.threadId && result.threadData) {
       console.log(`ACTION: TRY_BLOCK --- Thread operation successful. Thread ID: ${result.threadId}. Attempting redirect...`);
-      revalidatePath('/messages'); 
+      revalidatePath('/messages');
       redirect(`/messages/${result.threadId}`);
       // Note: redirect() throws an error that Next.js handles, so code after it might not run.
     } else {
@@ -57,9 +62,9 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
 
     if (error.message === 'NEXT_REDIRECT') {
       console.log("ACTION: CATCH_BLOCK --- NEXT_REDIRECT error caught, re-throwing for Next.js to handle.");
-      throw error; 
+      throw error;
     }
-    
+
     let clientErrorMessage = "Une erreur serveur inattendue s'est produite lors de la création de la discussion.";
     if (typeof error.message === 'string') {
         // Check for permission-denied related messages from the service layer or Firestore directly
@@ -69,10 +74,11 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
             clientErrorMessage = error.message; // Pass service-level validation errors directly
         }
     }
-    
+
     console.log("ACTION: CATCH_BLOCK --- Returning structured error to client:", { error: clientErrorMessage });
     console.log("ACTION: createOrGetThreadAndRedirect === ACTION END (ERROR PATH) ===");
     console.log("=====================================================");
     return { error: clientErrorMessage };
   }
 }
+    
