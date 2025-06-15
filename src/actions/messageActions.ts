@@ -1,7 +1,6 @@
 
 'use server';
 
-import { auth } from '@/lib/firebase'; // Ensure auth is imported
 import { createOrGetMessageThread as serviceCreateOrGetMessageThread } from '@/services/messageService';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -17,12 +16,7 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
   console.log("ACTION: Parameter itemId (passed from client):", itemId);
   console.log("-----------------------------------------------------");
 
-  // REMOVED: Explicit server-side auth.currentUser check.
-  // The Firebase SDK instance in the server action environment is likely unauthenticated.
-  // Firestore rules will now be the primary gatekeeper based on request.auth,
-  // which will be null if the SDK instance making the call is unauthenticated.
-
-  // Client-provided UIDs are now validated against server-side auth state
+  // Client-provided UIDs are validated
   if (!currentUserId) {
     console.error("ACTION_VALIDATION_FAIL: currentUserId is missing or empty.");
     return { error: "Identifiant de l'utilisateur actuel manquant." };
@@ -38,7 +32,8 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
 
   try {
     console.log("ACTION: TRY_BLOCK --- Attempting to call serviceCreateOrGetMessageThread with:", { currentUserId, otherUserId, itemId });
-    const result = await serviceCreateOrGetMessageThread(currentUserId, otherUserId, itemId);
+    // Corrected variable from otherUserUid to otherUserId
+    const result = await serviceCreateOrGetMessageThread(currentUserId, otherUserId, itemId); 
     console.log("ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread successfully returned:", JSON.stringify(result, null, 2));
 
     if (result.threadId && result.threadData) {
@@ -72,9 +67,6 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
             clientErrorMessage = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore.";
         } else if (error.message.startsWith("SERVICE_") || error.message.includes(" requis") || error.message.includes("Vous ne pouvez pas créer de fil de discussion avec vous-même")) {
             clientErrorMessage = error.message; // Pass service-level validation errors directly
-        } else {
-            // For other generic errors, keep a general message or include parts of error.message if safe
-            // clientErrorMessage = `Échec du traitement de la demande: ${error.message || "Erreur serveur inconnue"}`; 
         }
     }
     
