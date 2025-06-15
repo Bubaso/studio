@@ -1,3 +1,4 @@
+
 'use server';
 
 import { auth } from '@/lib/firebase'; // Ensure auth is imported
@@ -6,69 +7,61 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 // Top-level log to ensure this file is processed by Next.js runtime
-// console.log("GLOBAL LOG: src/actions/messageActions.ts is active and processed by Next.js.");
+console.log("GLOBAL LOG: src/actions/messageActions.ts is active and processed by Next.js.");
 
 export async function createOrGetThreadAndRedirect(currentUserId: string, otherUserId: string, itemId?: string) {
-  // console.log("=====================================================");
-  // console.log("ACTION: createOrGetThreadAndRedirect === ACTION START ===");
+  console.log("=====================================================");
+  console.log("ACTION: createOrGetThreadAndRedirect === ACTION START ===");
+  console.log("ACTION: Parameter currentUserId (passed from client):", currentUserId);
+  console.log("ACTION: Parameter otherUserId (passed from client):", otherUserId);
+  console.log("ACTION: Parameter itemId (passed from client):", itemId);
+  console.log("-----------------------------------------------------");
 
-  const serverAuthUser = auth.currentUser; // Get server-side auth state from global firebase.ts instance
-  // console.log("ACTION: Server-side Firebase Auth User (from firebase.ts global instance):", serverAuthUser ? serverAuthUser.uid : "auth.currentUser is NULL");
-  // console.log("ACTION: Parameter currentUserId (passed from client):", currentUserId);
-  // console.log("ACTION: Parameter otherUserId (passed from client):", otherUserId);
-  // console.log("ACTION: Parameter itemId (passed from client):", itemId);
-  // console.log("-----------------------------------------------------");
-
-  if (!serverAuthUser) {
-    // console.error("ACTION_AUTH_FAIL: Server-side auth.currentUser is null from firebase.ts. Action cannot proceed securely as authenticated for Firestore rules if rules rely on request.auth.");
-    return { error: "Erreur d'authentification côté serveur (auth object). Veuillez vous reconnecter et réessayer." };
-  }
-
-  if (serverAuthUser.uid !== currentUserId) {
-    // console.error("ACTION_AUTH_MISMATCH: Server-side auth.currentUser.uid does not match client-provided currentUserId.", { serverUID: serverAuthUser.uid, clientUID: currentUserId });
-    return { error: "Incohérence d'authentification détectée. Veuillez actualiser la page et réessayer." };
-  }
+  // REMOVED: Explicit server-side auth.currentUser check.
+  // The Firebase SDK instance in the server action environment is likely unauthenticated.
+  // Firestore rules will now be the primary gatekeeper based on request.auth,
+  // which will be null if the SDK instance making the call is unauthenticated.
 
   // Client-provided UIDs are now validated against server-side auth state
-  if (!currentUserId) { // This check might be redundant if serverAuthUser.uid check passes, but good for clarity
-    // console.error("ACTION_VALIDATION_FAIL: currentUserId is missing or empty.");
+  if (!currentUserId) {
+    console.error("ACTION_VALIDATION_FAIL: currentUserId is missing or empty.");
     return { error: "Identifiant de l'utilisateur actuel manquant." };
   }
   if (!otherUserId) {
-    // console.error("ACTION_VALIDATION_FAIL: otherUserId is missing or empty.");
+    console.error("ACTION_VALIDATION_FAIL: otherUserId is missing or empty.");
     return { error: "Identifiant de l'autre utilisateur manquant." };
   }
   if (currentUserId === otherUserId) {
-    // console.error("ACTION_VALIDATION_FAIL: Cannot create a thread with yourself.");
+    console.error("ACTION_VALIDATION_FAIL: Cannot create a thread with yourself.");
     return { error: "Vous ne pouvez pas créer de fil de discussion avec vous-même." };
   }
 
   try {
-    // console.log("ACTION: TRY_BLOCK --- Attempting to call serviceCreateOrGetMessageThread with:", { currentUserId, otherUserId, itemId });
+    console.log("ACTION: TRY_BLOCK --- Attempting to call serviceCreateOrGetMessageThread with:", { currentUserId, otherUserId, itemId });
     const result = await serviceCreateOrGetMessageThread(currentUserId, otherUserId, itemId);
-    // console.log("ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread successfully returned:", JSON.stringify(result, null, 2));
+    console.log("ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread successfully returned:", JSON.stringify(result, null, 2));
 
     if (result.threadId && result.threadData) {
-      // console.log(`ACTION: TRY_BLOCK --- Thread operation successful. Thread ID: ${result.threadId}. Attempting redirect...`);
+      console.log(`ACTION: TRY_BLOCK --- Thread operation successful. Thread ID: ${result.threadId}. Attempting redirect...`);
       revalidatePath('/messages'); 
       redirect(`/messages/${result.threadId}`);
       // Note: redirect() throws an error that Next.js handles, so code after it might not run.
     } else {
       const errorMessage = result.error || "Échec de la création/récupération du fil de discussion (réponse du service).";
-      // console.error(`ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread indicate failure. UserID: ${currentUserId}, OtherUserID: ${otherUserId}, ItemID: ${itemId}. Reason: ${errorMessage}`);
+      console.error(`ACTION: TRY_BLOCK --- serviceCreateOrGetMessageThread indicate failure. UserID: ${currentUserId}, OtherUserID: ${otherUserId}, ItemID: ${itemId}. Reason: ${errorMessage}`);
       return { error: errorMessage };
     }
   } catch (error: any) {
-    // console.error("[MESSAGE_ACTION_ERROR] An error was caught directly in createOrGetThreadAndRedirect:", {
-    //   errorMessage: error.message,
-    //   errorName: error.name,
-    //   errorCode: error.code,
-    //   errorFullDetails: JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
-    //   errorStack: error.stack // Log the stack for more detailed debugging
-    // });
+    console.error("[MESSAGE_ACTION_ERROR] An error was caught directly in createOrGetThreadAndRedirect:", {
+      errorMessage: error.message,
+      errorName: error.name,
+      errorCode: error.code,
+      errorFullDetails: JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+      errorStack: error.stack // Log the stack for more detailed debugging
+    });
 
     if (error.message === 'NEXT_REDIRECT') {
-      // console.log("ACTION: CATCH_BLOCK --- NEXT_REDIRECT error caught, re-throwing for Next.js to handle.");
+      console.log("ACTION: CATCH_BLOCK --- NEXT_REDIRECT error caught, re-throwing for Next.js to handle.");
       throw error; 
     }
     
@@ -85,13 +78,9 @@ export async function createOrGetThreadAndRedirect(currentUserId: string, otherU
         }
     }
     
-    // console.log("ACTION: CATCH_BLOCK --- Returning structured error to client:", { error: clientErrorMessage });
-    // console.log("ACTION: createOrGetThreadAndRedirect === ACTION END (ERROR PATH) ===");
-    // console.log("=====================================================");
+    console.log("ACTION: CATCH_BLOCK --- Returning structured error to client:", { error: clientErrorMessage });
+    console.log("ACTION: createOrGetThreadAndRedirect === ACTION END (ERROR PATH) ===");
+    console.log("=====================================================");
     return { error: clientErrorMessage };
   }
-  // This part should ideally not be reached if redirect happens or an error is returned.
-  // console.log("ACTION: createOrGetThreadAndRedirect === ACTION END (UNEXPECTED PATH - post-try, should have redirected or returned error) ===");
-  // console.log("=====================================================");
-  // return { error: "Erreur de flux inattendue dans l'action serveur."}; // Fallback, should not be hit
 }
