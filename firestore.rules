@@ -4,73 +4,78 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Items:
-    // - Anyone can read items.
-    // - Authenticated users can create, update, and delete their own items.
     match /items/{itemId} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.sellerId == request.auth.uid;
       allow update: if request.auth != null && resource.data.sellerId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.sellerId == request.auth.uid;
 
-      // Subcollection for item views
-      // - Anyone can read (for view counts by client-side ItemStatsDisplay).
-      // - Server action (logItemView) can create new view documents.
       match /views/{viewId} {
-        allow read: if true;
-        allow create: if true; // Server action is trusted to write here.
-                               // Consider adding if request.auth != null; if server action uses user auth.
+        allow read: if true; 
+        allow create: if true; // Server action (authenticated) writes this
       }
     }
 
-    // User Profiles:
-    // - Anyone can read user profiles.
-    // - Authenticated users can create and update their own profile.
+    match /userFavorites/{favoriteId} {
+      allow read: if true; 
+      // Document ID is userId_itemId
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid && favoriteId.startsWith(request.auth.uid + '_');
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid && favoriteId.startsWith(request.auth.uid + '_');
+    }
+
     match /users/{userId} {
       allow read: if true;
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // User Favorites:
-    // - Clients can query/read to count favorites (e.g., ItemStatsDisplay).
-    // - Authenticated users can create/delete their own favorite entries.
-    match /userFavorites/{favoriteId} {
-      allow read: if true; // Allows anyone to read, e.g., for counts.
-
-      // User can create a favorite if:
-      // 1. They are logged in.
-      // 2. The 'userId' field in the new favorite document matches their auth UID.
-      // 3. The document ID (favoriteId) starts with their auth UID followed by an underscore.
-      allow create: if request.auth != null &&
-                       request.resource.data.userId == request.auth.uid &&
-                       favoriteId.startsWith(request.auth.uid + '_');
-
-      // User can delete a favorite if they are logged in and the existing favorite's userId matches their auth uid.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
-    }
-
-    // Message Threads and Messages:
-    // - Authenticated users can read/write threads and messages they are participants in.
     match /messageThreads/{threadId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow read: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participantIds;
+      allow update: if request.auth != null && request.auth.uid in resource.data.participantIds; // For updating lastMessage, item context etc.
 
       match /messages/{messageId} {
-        // Allow read/write if user is one of the participants of the parent thread
-        allow read, write: if request.auth != null &&
-                              (get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
-                               get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid);
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        allow create: if request.auth != null && 
+                        request.resource.data.senderId == request.auth.uid && 
+                        request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        // Allow authenticated participants to update the readBy field of any message in the thread
+        allow update: if request.auth != null && 
+                        request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds &&
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']);
       }
     }
 
-    // Reviews:
-    // - Anyone can read reviews.
-    // - Authenticated users can create reviews if the reviewerId matches their auth UID.
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.reviewerId == request.auth.uid;
-      // Consider adding update/delete rules for reviews if needed, e.g.:
-      // allow update, delete: if request.auth != null && resource.data.reviewerId == request.auth.uid;
+      // Add update/delete rules for reviews if needed (e.g., by reviewer or admin)
     }
   }
 }
+
+// Storage Rules (add to your Firebase Storage rules)
+/*
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User Avatars: Only authenticated user can write to their own avatar path
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Item Images: Only authenticated user (seller) can write to their item image path
+    match /items/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Chat Attachments: Authenticated users can write to a path scoped by threadId and their userId
+    match /chatAttachments/{threadId}/{userId}/{fileName} {
+        allow read: if true; // Or restrict to participants of the thread if metadata is available
+        allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+*/

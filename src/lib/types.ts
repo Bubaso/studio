@@ -44,7 +44,9 @@ export interface Message {
   senderId: string;
   senderName: string; // Denormalized for display
   text: string;
+  imageUrl?: string; // For image attachments
   timestamp: string; // ISO date string (will be Firestore ServerTimestamp on write, converted on read)
+  readBy?: string[]; // Array of user UIDs who have read the message
 }
 
 export interface MessageThread {
@@ -55,8 +57,10 @@ export interface MessageThread {
   lastMessageText?: string; // Denormalized for list display
   lastMessageSenderId?: string;
   lastMessageAt: string; // ISO date string (Firestore ServerTimestamp on write)
+  createdAt: string; // ISO date string (Firestore ServerTimestamp on write)
   itemId?: string; // Optional: if the conversation is about a specific item
-  // unreadCount can be complex; omitting for now for client-side simplicity
+  itemTitle?: string; // Denormalized item title
+  itemImageUrl?: string; // Denormalized item primary image URL
 }
 
 export const ItemCategories = [
@@ -79,7 +83,5 @@ export const ItemCategories = [
 
 export type ItemCategory = typeof ItemCategories[number];
 
-// Updated ItemConditions to French and consistent casing
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];
-

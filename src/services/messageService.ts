@@ -1,8 +1,8 @@
 
 // Can be called from client components if needed, though actions are preferred for mutations
 
-import { db } from '@/lib/firebase';
-import type { Message, MessageThread, UserProfile } from '@/lib/types';
+import { db, storage } from '@/lib/firebase';
+import type { Message, MessageThread, UserProfile, Item } from '@/lib/types';
 import {
   collection,
   query,
@@ -13,32 +13,33 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
+  arrayUnion,
   serverTimestamp,
   Timestamp,
   Unsubscribe,
   writeBatch,
   limit
 } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getUserDocument } from './userService';
+import { getItemByIdFromFirestore } from './itemService'; // To fetch item details
 
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
-  if (!timestamp) return new Date().toISOString(); // Default for missing
-  if (typeof timestamp === 'string') return timestamp; // Already a string
-  // Check if it's a Firestore Timestamp-like object with a toDate method
+  if (!timestamp) return new Date().toISOString();
+  if (typeof timestamp === 'string') return timestamp;
   if (timestamp && typeof (timestamp as Timestamp).toDate === 'function') {
     try {
       return (timestamp as Timestamp).toDate().toISOString();
     } catch (e) {
       console.warn('Error converting timestamp toDate:', timestamp, e);
-      return new Date().toISOString(); // Fallback on conversion error
+      return new Date().toISOString();
     }
   }
-  // If it's not a string, not undefined, and not a valid Timestamp, it's malformed.
   console.warn('Invalid timestamp format encountered in messageService:', timestamp);
-  return new Date().toISOString(); // Fallback for malformed
+  return new Date().toISOString();
 };
 
-// Generates a deterministic thread ID from two user UIDs
 const generateThreadId = (uid1: string, uid2: string): string => {
   if (!uid1 || !uid2) {
     console.error("UIDs cannot be empty for generating thread ID");
@@ -47,11 +48,29 @@ const generateThreadId = (uid1: string, uid2: string): string => {
   return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 };
 
+export const uploadChatImageAndGetURL = async (file: File, threadId: string, userId: string): Promise<string> => {
+  if (!file || !threadId || !userId) {
+    throw new Error("File, thread ID, and user ID are required for chat image upload.");
+  }
+  const uniqueFileName = `${userId}_${Date.now()}_${file.name}`;
+  const imagePath = `chatAttachments/${threadId}/${uniqueFileName}`;
+  const imageRef = storageRef(storage, imagePath);
+
+  try {
+    const snapshot = await uploadBytes(imageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading chat image: ", error);
+    throw error;
+  }
+};
+
 export const createOrGetMessageThread = async (
   currentUserUid: string,
   otherUserUid: string,
   itemId?: string
-): Promise<{ threadId: string | null; error?: string }> => {
+): Promise<{ threadId: string | null; error?: string; threadData?: MessageThread | null }> => {
   if (!currentUserUid || !otherUserUid) {
     const errorMessage = "Both currentUserUid and otherUserUid are required for createOrGetMessageThread.";
     console.error(errorMessage, { currentUserUid, otherUserUid });
@@ -68,6 +87,10 @@ export const createOrGetMessageThread = async (
 
   try {
     const threadSnap = await getDoc(threadRef);
+    let itemDetails: Item | null = null;
+    if (itemId) {
+        itemDetails = await getItemByIdFromFirestore(itemId);
+    }
 
     if (!threadSnap.exists()) {
       console.log(`Thread ${threadId} does not exist. Attempting to create...`);
@@ -91,31 +114,64 @@ export const createOrGetMessageThread = async (
       const namesSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.name, otherUserProfile.name] : [otherUserProfile.name, currentUserProfile.name];
       const avatarsSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.avatarUrl, otherUserProfile.avatarUrl] : [otherUserProfile.avatarUrl, currentUserProfile.avatarUrl];
 
-      const newThreadData: Omit<MessageThread, 'id' | 'lastMessageAt'> & { lastMessageAt: any } = {
+      const newThreadData: Omit<MessageThread, 'id'> & { createdAt: any, lastMessageAt: any } = {
         participantIds: participantUidsSorted,
         participantNames: [namesSorted[0] || 'Utilisateur', namesSorted[1] || 'Utilisateur'],
         participantAvatars: [avatarsSorted[0] || 'https://placehold.co/100x100.png?text=?', avatarsSorted[1] || 'https://placehold.co/100x100.png?text=?'],
         lastMessageAt: serverTimestamp(),
-        lastMessageText: itemId ? "Conversation à propos d'un article" : "Début de la conversation",
+        createdAt: serverTimestamp(),
+        lastMessageText: itemDetails ? `Question à propos de "${itemDetails.name}"` : "Début de la conversation",
         lastMessageSenderId: '',
-        itemId: itemId || '',
+        itemId: itemDetails?.id || '',
+        itemTitle: itemDetails?.name || '',
+        itemImageUrl: itemDetails?.imageUrls?.[0] || '',
       };
       await setDoc(threadRef, newThreadData);
       console.log(`Successfully created new thread ${threadId}.`);
-      return { threadId: threadId, error: undefined };
+      const createdThreadDoc = await getDoc(threadRef); // Fetch again to get timestamps resolved
+      const resolvedData = createdThreadDoc.data();
+      return { 
+        threadId: threadId, 
+        error: undefined, 
+        threadData: resolvedData ? {
+          id: createdThreadDoc.id,
+          ...resolvedData,
+          createdAt: convertTimestampToISO(resolvedData.createdAt as Timestamp),
+          lastMessageAt: convertTimestampToISO(resolvedData.lastMessageAt as Timestamp),
+        } as MessageThread : null
+      };
     } else {
       console.log(`Thread ${threadId} already exists.`);
-      const existingData = threadSnap.data();
-      if (itemId && (!existingData.itemId || existingData.itemId !== itemId)) {
-        await setDoc(threadRef, { itemId: itemId }, { merge: true });
-        console.log(`Updated itemId for existing thread ${threadId}.`);
+      const existingData = threadSnap.data() as MessageThread;
+      let updated = false;
+      const updatePayload: Partial<MessageThread> = {};
+
+      if (itemDetails && (!existingData.itemId || existingData.itemId !== itemDetails.id)) {
+        updatePayload.itemId = itemDetails.id;
+        updatePayload.itemTitle = itemDetails.name;
+        updatePayload.itemImageUrl = itemDetails.imageUrls?.[0];
+        updated = true;
       }
-      return { threadId: threadId, error: undefined };
+      if(updated) {
+        await updateDoc(threadRef, updatePayload);
+        console.log(`Updated item context for existing thread ${threadId}.`);
+      }
+      const currentThreadData = updated ? {...existingData, ...updatePayload} : existingData;
+      return { 
+        threadId: threadId, 
+        error: undefined,
+        threadData: {
+          id: threadSnap.id,
+          ...currentThreadData,
+          createdAt: convertTimestampToISO(currentThreadData.createdAt as Timestamp),
+          lastMessageAt: convertTimestampToISO(currentThreadData.lastMessageAt as Timestamp),
+        }
+      };
     }
   } catch (error: any) {
     let specificError = "Une erreur technique est survenue lors de la création/récupération du fil de discussion.";
     if (error.code === 'permission-denied') {
-      specificError = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore pour les collections 'messageThreads' et 'users'. Les actions serveur pourraient ne pas être authentifiées correctement pour ces opérations.";
+      specificError = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore.";
       console.error(`Firestore Permission Denied in createOrGetMessageThread for thread ${threadId}: ${error.message}`, error.stack);
     } else {
       console.error(`Error in createOrGetMessageThread for thread ${threadId}: ${error.message}`, error.stack);
@@ -128,9 +184,10 @@ export const sendMessage = async (
   threadId: string,
   senderId: string,
   senderName: string,
-  text: string
+  text: string,
+  imageUrl?: string
 ): Promise<void> => {
-  if (!text.trim()) return;
+  if (!text.trim() && !imageUrl) return; // Must have text or image
   if (!threadId || !senderId || !senderName) {
     console.error("ThreadID, SenderID, and SenderName are required to send a message.");
     throw new Error("Missing required parameters for sending message.");
@@ -139,20 +196,32 @@ export const sendMessage = async (
   const threadRef = doc(db, 'messageThreads', threadId);
   const messagesColRef = collection(threadRef, 'messages');
 
-  const newMessage: Omit<Message, 'id' | 'timestamp'> & { timestamp: any } = {
+  const newMessageData: Omit<Message, 'id' | 'timestamp'> & { timestamp: any } = {
     threadId,
     senderId,
-    senderName: senderName || "Utilisateur Inconnu", // Fallback for senderName
+    senderName: senderName || "Utilisateur Inconnu",
     text: text.trim(),
     timestamp: serverTimestamp(),
+    readBy: [senderId], // Sender has implicitly read it
   };
+  if (imageUrl) {
+    newMessageData.imageUrl = imageUrl;
+  }
 
   try {
     const batch = writeBatch(db);
-    const newMsgDocRef = doc(messagesColRef); // Generate a new doc ref for the message
-    batch.set(newMsgDocRef, newMessage);      // Use set with the new doc ref
+    const newMsgDocRef = doc(messagesColRef);
+    batch.set(newMsgDocRef, newMessageData);
+    
+    let lastMessagePreview = text.trim();
+    if (imageUrl && !text.trim()) {
+        lastMessagePreview = "📷 Image";
+    } else if (imageUrl && text.trim()) {
+        lastMessagePreview = `📷 ${text.trim()}`;
+    }
+
     batch.update(threadRef, {
-      lastMessageText: text.trim(),
+      lastMessageText: lastMessagePreview,
       lastMessageSenderId: senderId,
       lastMessageAt: serverTimestamp(),
     });
@@ -170,7 +239,7 @@ export const getMessageThreadsForUser = (
   if (!userUid) {
     console.warn("getMessageThreadsForUser called with no userUid.");
     onUpdate([]);
-    return () => {}; // Return a no-op unsubscribe function
+    return () => {};
   }
   const threadsQuery = query(
     collection(db, 'messageThreads'),
@@ -189,7 +258,10 @@ export const getMessageThreadsForUser = (
         lastMessageText: data.lastMessageText,
         lastMessageSenderId: data.lastMessageSenderId,
         lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
+        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
         itemId: data.itemId,
+        itemTitle: data.itemTitle,
+        itemImageUrl: data.itemImageUrl,
       } as MessageThread;
     });
     onUpdate(threads);
@@ -211,7 +283,7 @@ export const getMessagesForThread = (
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
     orderBy('timestamp', 'asc'),
-    limit(100)
+    limit(100) // Load last 100 messages, implement pagination later if needed
   );
 
   return onSnapshot(messagesQuery, (querySnapshot) => {
@@ -223,7 +295,9 @@ export const getMessagesForThread = (
         senderId: data.senderId,
         senderName: data.senderName || "Utilisateur Inconnu",
         text: data.text,
+        imageUrl: data.imageUrl,
         timestamp: convertTimestampToISO(data.timestamp as Timestamp),
+        readBy: data.readBy || [],
       } as Message;
     });
     onUpdate(messages);
@@ -233,3 +307,52 @@ export const getMessagesForThread = (
   });
 };
 
+export const markMessageAsRead = async (threadId: string, messageId: string, userId: string): Promise<void> => {
+  if (!threadId || !messageId || !userId) {
+    console.warn("markMessageAsRead requires threadId, messageId, and userId");
+    return;
+  }
+  const messageRef = doc(db, 'messageThreads', threadId, 'messages', messageId);
+  try {
+    // Check if already read to avoid unnecessary writes
+    const messageSnap = await getDoc(messageRef);
+    if (messageSnap.exists()) {
+      const messageData = messageSnap.data() as Message;
+      if (!messageData.readBy || !messageData.readBy.includes(userId)) {
+        await updateDoc(messageRef, {
+          readBy: arrayUnion(userId)
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`Error marking message ${messageId} as read by ${userId}:`, error);
+  }
+};
+
+export async function getThreadInfoById(threadId: string): Promise<MessageThread | null> {
+  if (!threadId) return null;
+  try {
+    const threadRef = doc(db, 'messageThreads', threadId);
+    const threadSnap = await getDoc(threadRef);
+    if (threadSnap.exists()) {
+      const data = threadSnap.data();
+      return {
+        id: threadSnap.id,
+        participantIds: data.participantIds,
+        participantNames: data.participantNames,
+        participantAvatars: data.participantAvatars,
+        lastMessageText: data.lastMessageText,
+        lastMessageSenderId: data.lastMessageSenderId,
+        lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
+        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        itemId: data.itemId,
+        itemTitle: data.itemTitle,
+        itemImageUrl: data.itemImageUrl,
+      } as MessageThread;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching thread info by ID:", error);
+    return null;
+  }
+}
