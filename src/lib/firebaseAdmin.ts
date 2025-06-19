@@ -13,6 +13,9 @@ import * as admin from 'firebase-admin';
 
 const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
+// Log the path being used for diagnostics
+console.log(`ADMIN_SDK_INIT: GOOGLE_APPLICATION_CREDENTIALS path is: ${serviceAccountPath}`);
+
 if (!admin.apps.length) {
   if (!serviceAccountPath) {
     console.error(
@@ -20,8 +23,6 @@ if (!admin.apps.length) {
       ' The Admin SDK cannot be initialized. Ensure the .env.local file is set up correctly, ' +
       'the service account JSON file exists at the specified path, and you have restarted your Next.js server.'
     );
-    // Depending on your deployment, you might want to throw an error here or handle it gracefully.
-    // For now, it will log, and dependent services might fail.
   } else {
     try {
       admin.initializeApp({
@@ -32,9 +33,9 @@ if (!admin.apps.length) {
       console.log('Firebase Admin SDK initialized successfully.');
     } catch (error: any) {
       console.error('CRITICAL_FIREBASE_ADMIN_INIT: Firebase Admin SDK initialization error:', error.message);
-      console.error('Stack:', error.stack);
+      console.error('Full error object:', error); // Log the full error object for more details
       console.error(
-          'Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable points to a valid service account JSON file.'
+          'Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable points to a valid service account JSON file and that the file is correctly formatted.'
       );
     }
   }
@@ -42,15 +43,13 @@ if (!admin.apps.length) {
 
 let adminDbInstance, adminAuthInstance;
 
-if (admin.apps.length) {
+if (admin.apps.length > 0 && admin.app().options.credential) { // Check if initialization was successful
     adminDbInstance = admin.firestore();
     adminAuthInstance = admin.auth();
 } else {
-    // Provide non-functional stubs or handle the uninitialized state appropriately
-    // to prevent crashes if other parts of the app import these before full init.
-    console.warn("Firebase Admin SDK not initialized. adminDb and adminAuth will not be functional.");
-    adminDbInstance = null; // Or some stub object
-    adminAuthInstance = null; // Or some stub object
+    console.warn("Firebase Admin SDK not initialized properly or credential issue. adminDb and adminAuth will not be functional.");
+    adminDbInstance = null;
+    adminAuthInstance = null;
 }
 
 
