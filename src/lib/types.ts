@@ -14,6 +14,9 @@ export interface Item {
   dataAiHint?: string;
   itemId?: string; // Optional: can be used to link a thread to an item
   lastUpdated?: string; // For showing when item was last modified
+  suspectedSold?: boolean;
+  isSold?: boolean;
+  soldAt?: string;
 }
 
 export interface UserProfile {
@@ -61,6 +64,7 @@ export interface MessageThread {
   itemId?: string; // Optional: if the conversation is about a specific item
   itemTitle?: string; // Denormalized item title
   itemImageUrl?: string; // Denormalized item primary image URL
+  itemSellerId?: string;
   participantsWhoHaveSeenLatest?: string[]; // UIDs of participants who have seen the latest messages
 }
 
@@ -86,4 +90,3 @@ export type ItemCategory = typeof ItemCategories[number];
 
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];
-

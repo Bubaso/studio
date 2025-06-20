@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
         itemId: itemDetails?.id || '',
         itemTitle: itemDetails?.name || '',
         itemImageUrl: itemDetails?.imageUrls?.[0] || '',
+        itemSellerId: itemDetails?.sellerId || '',
       };
 
       await threadRef.set(newThreadData);
@@ -145,6 +146,7 @@ export async function POST(request: NextRequest) {
         updatePayload.itemId = itemDetails.id;
         updatePayload.itemTitle = itemDetails.name;
         updatePayload.itemImageUrl = itemDetails.imageUrls?.[0];
+        updatePayload.itemSellerId = itemDetails.sellerId;
         needsUpdate = true;
       }
       // Potentially update participant names/avatars if they changed

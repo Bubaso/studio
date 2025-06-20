@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Item } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, MapPin } from 'lucide-react';
+import { Package, MapPin, Flag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButtonClient } from './favorite-button-client';
 
@@ -34,6 +34,14 @@ export function ItemCard({ item }: ItemCardProps) {
               placeholder="blur"
               blurDataURL={genericBlurDataURL}
             />
+            {item.suspectedSold && (
+                <div className="absolute inset-0 bg-gray-900/40 flex items-center justify-center p-2">
+                    <Badge variant="destructive" className="text-xs py-1 px-3 transform-gpu scale-90 text-center">
+                        <Flag className="h-3 w-3 mr-1.5" />
+                        Non confirmé : peut être vendu
+                    </Badge>
+                </div>
+            )}
           </div>
           <div className="absolute top-2 right-2 z-10 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
             <FavoriteButtonClient itemId={item.id} className="bg-background/70 hover:bg-background/90" />

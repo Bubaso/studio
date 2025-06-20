@@ -173,6 +173,7 @@ export const createOrGetMessageThread = async (
         itemId: itemDetails?.id || '',
         itemTitle: itemDetails?.name || '',
         itemImageUrl: itemDetails?.imageUrls?.[0] || '',
+        itemSellerId: itemDetails?.sellerId || '',
       };
       console.log(`SERVICE: Preparing to setDoc for new thread ${threadId} with data:`, JSON.stringify(newThreadData, null, 2));
       await setDoc(threadRef, newThreadData);
@@ -199,6 +200,7 @@ export const createOrGetMessageThread = async (
         updatePayload.itemId = itemDetails.id;
         updatePayload.itemTitle = itemDetails.name;
         updatePayload.itemImageUrl = itemDetails.imageUrls?.[0];
+        updatePayload.itemSellerId = itemDetails.sellerId;
         updated = true;
       }
       if(updated) {
@@ -314,6 +316,7 @@ export const getMessageThreadsForUser = (
         itemId: data.itemId,
         itemTitle: data.itemTitle,
         itemImageUrl: data.itemImageUrl,
+        itemSellerId: data.itemSellerId,
       } as MessageThread;
     });
     onUpdate(threads);
@@ -401,6 +404,7 @@ export async function getThreadInfoById(threadId: string): Promise<MessageThread
         itemId: data.itemId,
         itemTitle: data.itemTitle,
         itemImageUrl: data.itemImageUrl,
+        itemSellerId: data.itemSellerId,
       } as MessageThread;
     }
     return null;

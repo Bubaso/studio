@@ -6,7 +6,7 @@ import type { UserProfile, Review, Item, ItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Star, MessageSquarePlus, Clock } from 'lucide-react'; 
+import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -19,6 +19,7 @@ import { SimilarListingsCarousel } from '@/components/similar-listings-carousel'
 import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
 import { ItemStatsDisplay } from '@/components/item-stats-display';
+import { ReportItemButton } from '@/components/report-item-button';
 
 interface ItemPageProps {
   params: { id: string };
@@ -154,6 +155,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <h1 className="text-4xl font-bold font-headline text-primary flex-1_">{item.name}</h1>
             <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
           </div>
+
+          {item.suspectedSold && (
+              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
+                  <Flag className="h-4 w-4 mr-2" />
+                  Non confirmé : peut être vendu
+              </Badge>
+          )}
+
           <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
           <div className="flex flex-wrap gap-2">
@@ -232,6 +241,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 <EditItemButtonClient sellerId={item.sellerId} itemId={itemId} />
             )}
           </div>
+
+          {item && item.sellerId && (
+            <div className="pt-4 text-center border-t border-dashed">
+              <ReportItemButton itemId={itemId} sellerId={item.sellerId} />
+            </div>
+          )}
           
            <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex items-center">

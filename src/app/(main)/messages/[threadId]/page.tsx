@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ReportItemButton } from '@/components/report-item-button';
 
 
 export default function MessageThreadPage() {
@@ -238,6 +239,9 @@ export default function MessageThreadPage() {
                  </Link>
             )}
         </div>
+        {threadInfo.itemId && threadInfo.itemSellerId && (
+            <ReportItemButton itemId={threadInfo.itemId} sellerId={threadInfo.itemSellerId} asIcon />
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-background/30">
@@ -345,4 +349,3 @@ export default function MessageThreadPage() {
     </div>
   );
 }
-
