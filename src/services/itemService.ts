@@ -9,29 +9,27 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
-  if (!timestamp) return new Date().toISOString(); // Default for missing
-  if (typeof timestamp === 'string') return timestamp; // Already a string
-  // Check if it's a Firestore Timestamp-like object with a toDate method
+  if (!timestamp) return new Date().toISOString(); 
+  if (typeof timestamp === 'string') return timestamp; 
   if (timestamp && typeof (timestamp as FirebaseTimestampType).toDate === 'function') {
     try {
       return (timestamp as FirebaseTimestampType).toDate().toISOString();
     } catch (e) {
       console.warn('Error converting timestamp toDate:', timestamp, e);
-      return new Date().toISOString(); // Fallback on conversion error
+      return new Date().toISOString(); 
     }
   }
-  // If it's not a string, not undefined, and not a valid Timestamp, it's malformed.
   console.warn('Invalid timestamp format encountered:', timestamp);
-  return new Date().toISOString(); // Fallback for malformed
+  return new Date().toISOString(); 
 };
 
 const mapDocToItem = (document: any): Item => {
   const data = document.data();
-  let imageUrls: string[] = ['https://placehold.co/600x400.png']; // Default placeholder
+  let imageUrls: string[] = ['https://placehold.co/600x400.png']; 
 
   if (Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
     imageUrls = data.imageUrls;
-  } else if (typeof data.imageUrl === 'string') { // Backward compatibility for old single imageUrl
+  } else if (typeof data.imageUrl === 'string') { 
     imageUrls = [data.imageUrl];
   }
 
@@ -151,19 +149,32 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
 };
 
 export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
+  console.log(`ITEM_SERVICE_UPLOAD: Initiating uploadImageAndGetURL for item. UserID: ${userId}, File: ${imageFile.name}, Size: ${imageFile.size}`);
   if (!userId) {
-     console.error("User ID is required for image upload.");
-     throw new Error("User ID is required for image upload.");
+     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for image upload.";
+     console.error(errorMsg);
+     throw new Error(errorMsg);
+  }
+  if (!storage) {
+    const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
-  const imageRef = storageRef(storage, `items/${userId}/${uniqueFileName}`);
+  const imagePath = `items/${userId}/${uniqueFileName}`;
+  console.log(`ITEM_SERVICE_UPLOAD: Constructed storage path: ${imagePath}`);
+  const imageRef = storageRef(storage, imagePath);
   try {
+    console.log(`ITEM_SERVICE_UPLOAD: Attempting uploadBytes for ${imagePath}`);
     const snapshot = await uploadBytes(imageRef, imageFile);
+    console.log(`ITEM_SERVICE_UPLOAD: Upload successful for ${imagePath}. Snapshot ref: ${snapshot.ref.fullPath}`);
     const downloadURL = await getDownloadURL(snapshot.ref);
+    console.log(`ITEM_SERVICE_UPLOAD: Got download URL for ${imagePath}: ${downloadURL}`);
     return downloadURL;
-  } catch (error) {
-    console.error("Error uploading image: ", error);
-    throw error; // Re-throw error to be caught by the form
+  } catch (error: any) {
+    console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
+    console.error(`ITEM_SERVICE_UPLOAD_ERROR_DETAILS: Code: ${error.code}, Message: ${error.message}, Full Error:`, error);
+    throw error; 
   }
 };
 
@@ -221,6 +232,6 @@ export async function logItemView(itemId: string): Promise<void> {
     console.log(`SERVER: View logged successfully for item ${itemId} in Firestore.`);
   } catch (error) {
     console.error(`SERVER: Error logging view for item ${itemId}:`, error);
-    // Potentially re-throw or handle more gracefully if specific errors are expected
   }
 }
+

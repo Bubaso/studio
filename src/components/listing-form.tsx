@@ -30,7 +30,7 @@ import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
 import Image from "next/image";
 import Link from "next/link";
 
-const MAX_FILE_SIZE_MB = 10; // Reverted to 10MB for better reliability
+const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
@@ -126,7 +126,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   const itemDescriptionForAISuggestion = form.watch("description");
 
-  // Debounce category suggestion
   useEffect(() => {
     if (itemDescriptionForAISuggestion && itemDescriptionForAISuggestion.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
       const handler = setTimeout(async () => {
@@ -144,13 +143,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         } finally {
           setIsSuggestingCategory(false);
         }
-      }, 1000); // 1 second delay
+      }, 1000);
 
       return () => {
         clearTimeout(handler);
       };
     } else {
-      setCategorySuggestion(null); // Clear suggestion if description is too short or already applied
+      setCategorySuggestion(null);
     }
   }, [itemDescriptionForAISuggestion, isCategorySuggestionApplied, isEditMode]);
 
@@ -162,7 +161,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const applyCategorySuggestion = () => {
     if (categorySuggestion) {
       form.setValue("category", categorySuggestion.category, { shouldValidate: true });
-      setCategorySuggestion(null); // Hide suggestion after applying
+      setCategorySuggestion(null);
       setIsCategorySuggestionApplied(true);
       toast({
         title: "Catégorie Appliquée",
@@ -250,15 +249,27 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     finalImageUrls.push(...keptExistingUrls);
 
     const newFilesForUpload = values.imageFiles || [];
+    console.log(`LISTING_FORM: Attempting to upload ${newFilesForUpload.length} new image(s). CurrentUser UID: ${currentUser.uid}`);
+
     if (newFilesForUpload.length > 0) {
       try {
         const uploadedNewUrls = await Promise.all(
-          newFilesForUpload.map(file => uploadImageAndGetURL(file, currentUser.uid))
+          newFilesForUpload.map(file => {
+            console.log(`LISTING_FORM: Calling uploadImageAndGetURL for file: ${file.name}, with UID: ${currentUser.uid}`);
+            return uploadImageAndGetURL(file, currentUser.uid);
+          })
         );
         finalImageUrls.push(...uploadedNewUrls);
-      } catch (uploadError) {
-        console.error("Error uploading new images:", uploadError);
-        toast({ title: "Erreur de téléversement", description: "Certaines images n'ont pas pu être téléversées.", variant: "destructive"});
+      } catch (uploadError: any) {
+        console.error("LISTING_FORM: Error during Promise.all for image uploads:", uploadError);
+        let detailedMessage = "Certaines images n'ont pas pu être téléversées.";
+        if (uploadError.code) {
+          detailedMessage += ` (Code: ${uploadError.code})`;
+        }
+        if (uploadError.message) {
+          detailedMessage += ` Message: ${uploadError.message}`;
+        }
+        toast({ title: "Erreur de téléversement", description: detailedMessage, variant: "destructive"});
         setIsSubmitting(false);
         return;
       }
@@ -303,7 +314,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         router.push(`/items/${newItemId}`);
       }
     } catch (error) {
-      console.error(`Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
+      console.error(`LISTING_FORM: Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
       toast({
         title: "Erreur",
         description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. Veuillez réessayer.`,
