@@ -46,15 +46,16 @@ const generateThreadId = (uid1: string, uid2: string): string => {
     console.error(errorMessage, {uid1, uid2});
     throw new Error(errorMessage);
   }
-  return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+  return uid1 < uid2 ? `\${uid1}_\${uid2}` : `\${uid2}_\${uid1}`;
 };
 
 export const uploadChatImageAndGetURL = async (file: File, threadId: string, userId: string): Promise<string> => {
   if (!file || !threadId || !userId) {
     throw new Error("File, thread ID, and user ID are required for chat image upload.");
   }
-  const uniqueFileName = `${userId}_${Date.now()}_${file.name}`;
-  const imagePath = `chatAttachments/${threadId}/${uniqueFileName}`;
+  const uniqueFileName = `\${Date.now()}_\${file.name}`;
+  // Corrected path to include userId
+  const imagePath = `chatAttachments/\${threadId}/\${userId}/\${uniqueFileName}`;
   const imageRef = storageRef(storage, imagePath);
 
   try {
@@ -98,37 +99,37 @@ export const createOrGetMessageThread = async (
   }
   
   const threadRef = doc(db, 'messageThreads', threadId);
-  console.log(`SERVICE: Generated threadId: ${threadId}. Thread ref path: ${threadRef.path}`);
+  console.log(`SERVICE: Generated threadId: \${threadId}. Thread ref path: \${threadRef.path}`);
 
   try {
-    console.log(`SERVICE: Attempting to get document: ${threadRef.path}`);
+    console.log(`SERVICE: Attempting to get document: \${threadRef.path}`);
     const threadSnap = await getDoc(threadRef);
-    console.log(`SERVICE: getDoc for ${threadRef.path} completed. Exists: ${threadSnap.exists()}`);
+    console.log(`SERVICE: getDoc for \${threadRef.path} completed. Exists: \${threadSnap.exists()}`);
 
     let itemDetails: Item | null = null;
     if (itemId) {
-        console.log(`SERVICE: Fetching item details for itemId: ${itemId}`);
+        console.log(`SERVICE: Fetching item details for itemId: \${itemId}`);
         itemDetails = await getItemByIdFromFirestore(itemId);
-        console.log(`SERVICE: Item details fetched: ${itemDetails ? JSON.stringify(itemDetails.name) : 'Not Found'}`);
+        console.log(`SERVICE: Item details fetched: \${itemDetails ? JSON.stringify(itemDetails.name) : 'Not Found'}`);
     }
 
     if (!threadSnap.exists()) {
-      console.log(`SERVICE: Thread ${threadId} does not exist. Attempting to create...`);
+      console.log(`SERVICE: Thread \${threadId} does not exist. Attempting to create...`);
       const currentUserProfile = await getUserDocument(currentUserUid);
       if (!currentUserProfile) {
-        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch current user profile (UID: ${currentUserUid}) for creating thread.`;
+        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch current user profile (UID: \${currentUserUid}) for creating thread.`;
         console.error(errorMessage);
         return { threadId: null, error: "Impossible de récupérer le profil de l'utilisateur actuel." };
       }
-      console.log(`SERVICE: Fetched current user profile: ${currentUserProfile.name || 'N/A'}`);
+      console.log(`SERVICE: Fetched current user profile: \${currentUserProfile.name || 'N/A'}`);
 
       const otherUserProfile = await getUserDocument(otherUserUid);
       if (!otherUserProfile) {
-        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch other user profile (UID: ${otherUserUid}) for creating thread.`;
+        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch other user profile (UID: \${otherUserUid}) for creating thread.`;
         console.error(errorMessage);
         return { threadId: null, error: "Impossible de récupérer le profil du vendeur." };
       }
-      console.log(`SERVICE: Fetched other user profile: ${otherUserProfile.name || 'N/A'}`);
+      console.log(`SERVICE: Fetched other user profile: \${otherUserProfile.name || 'N/A'}`);
 
       const participantUidsSorted: [string, string] = currentUserUid < otherUserUid ? [currentUserUid, otherUserUid] : [otherUserUid, currentUserUid];
       const namesSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.name, otherUserProfile.name] : [otherUserProfile.name, currentUserProfile.name];
@@ -140,15 +141,15 @@ export const createOrGetMessageThread = async (
         participantAvatars: [avatarsSorted[0] || 'https://placehold.co/100x100.png?text=?', avatarsSorted[1] || 'https://placehold.co/100x100.png?text=?'],
         lastMessageAt: serverTimestamp(),
         createdAt: serverTimestamp(),
-        lastMessageText: itemDetails ? `Question à propos de "${itemDetails.name}"` : "Début de la conversation",
+        lastMessageText: itemDetails ? `Question à propos de "\${itemDetails.name}"` : "Début de la conversation",
         lastMessageSenderId: '',
         itemId: itemDetails?.id || '',
         itemTitle: itemDetails?.name || '',
         itemImageUrl: itemDetails?.imageUrls?.[0] || '',
       };
-      console.log(`SERVICE: Preparing to setDoc for new thread ${threadId} with data:`, JSON.stringify(newThreadData, null, 2));
+      console.log(`SERVICE: Preparing to setDoc for new thread \${threadId} with data:`, JSON.stringify(newThreadData, null, 2));
       await setDoc(threadRef, newThreadData);
-      console.log(`SERVICE: Successfully created new thread ${threadId}.`);
+      console.log(`SERVICE: Successfully created new thread \${threadId}.`);
       const createdThreadDoc = await getDoc(threadRef); 
       const resolvedData = createdThreadDoc.data();
       return { 
@@ -162,7 +163,7 @@ export const createOrGetMessageThread = async (
         } as MessageThread : null
       };
     } else {
-      console.log(`SERVICE: Thread ${threadId} already exists.`);
+      console.log(`SERVICE: Thread \${threadId} already exists.`);
       const existingData = threadSnap.data() as MessageThread; // Cast existing data for type safety
       let updated = false;
       const updatePayload: Partial<MessageThread> = {};
@@ -174,9 +175,9 @@ export const createOrGetMessageThread = async (
         updated = true;
       }
       if(updated) {
-        console.log(`SERVICE: Updating item context for existing thread ${threadId} with payload:`, JSON.stringify(updatePayload, null, 2));
+        console.log(`SERVICE: Updating item context for existing thread \${threadId} with payload:`, JSON.stringify(updatePayload, null, 2));
         await updateDoc(threadRef, updatePayload);
-        console.log(`SERVICE: Updated item context for existing thread ${threadId}.`);
+        console.log(`SERVICE: Updated item context for existing thread \${threadId}.`);
       }
       const currentThreadData = updated ? {...existingData, ...updatePayload} : existingData;
       return { 
@@ -194,9 +195,9 @@ export const createOrGetMessageThread = async (
     let specificError = "Une erreur technique est survenue lors de la création/récupération du fil de discussion.";
     if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
       specificError = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore.";
-      console.error(`SERVICE: Firestore Permission Denied for thread ${threadId}: ${error.message}`, error.stack);
+      console.error(`SERVICE: Firestore Permission Denied for thread \${threadId}: \${error.message}`, error.stack);
     } else {
-      console.error(`SERVICE: Error for thread ${threadId}: ${error.message}`, error.stack);
+      console.error(`SERVICE: Error for thread \${threadId}: \${error.message}`, error.stack);
     }
     return { threadId: null, error: specificError, threadData: null };
   }
@@ -239,7 +240,7 @@ export const sendMessage = async (
     if (imageUrl && !text.trim()) {
         lastMessagePreview = "📷 Image";
     } else if (imageUrl && text.trim()) {
-        lastMessagePreview = `📷 ${text.trim()}`;
+        lastMessagePreview = `📷 \${text.trim()}`;
     }
 
     batch.update(threadRef, {
@@ -324,7 +325,7 @@ export const getMessagesForThread = (
     });
     onUpdate(messages);
   }, (error) => {
-    console.error(`Error fetching messages for thread ${threadId}: `, error);
+    console.error(`Error fetching messages for thread \${threadId}: `, error);
     onUpdate([]);
   });
 };
@@ -346,7 +347,7 @@ export const markMessageAsRead = async (threadId: string, messageId: string, use
       }
     }
   } catch (error) {
-    console.error(`Error marking message ${messageId} as read by ${userId}:`, error);
+    console.error(`Error marking message \${messageId} as read by \${userId}:`, error);
   }
 };
 
