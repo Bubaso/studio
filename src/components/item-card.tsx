@@ -3,9 +3,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Item } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, MapPin, Flag } from 'lucide-react';
+import { Package, MapPin, Flag, TrendingDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButtonClient } from './favorite-button-client';
+import { cn } from '@/lib/utils';
 
 interface ItemCardProps {
   item: Item;
@@ -19,7 +20,10 @@ export function ItemCard({ item }: ItemCardProps) {
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   return (
-    <Card className="group/itemcard flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.015] active:scale-[0.98]">
+    <Card className={cn(
+        "group/itemcard flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.015] active:scale-[0.98]",
+        item.lowActivity && "opacity-85 hover:opacity-100"
+    )}>
       <Link href={`/items/${item.id}`} className="flex flex-col h-full group">
         <CardHeader className="p-0 relative">
           <div className="aspect-[4/3] relative w-full overflow-hidden">
@@ -28,17 +32,27 @@ export function ItemCard({ item }: ItemCardProps) {
               alt={item.name}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className={cn(
+                  "object-cover transition-transform duration-300 group-hover:scale-105",
+                  item.lowActivity && "grayscale-[25%]"
+              )}
               data-ai-hint={imageHint}
               loading="lazy"
               placeholder="blur"
               blurDataURL={genericBlurDataURL}
             />
-            {item.suspectedSold && (
+            {item.suspectedSold ? (
                 <div className="absolute inset-0 bg-gray-900/40 flex items-center justify-center p-2">
                     <Badge variant="destructive" className="text-xs py-1 px-3 transform-gpu scale-90 text-center">
                         <Flag className="h-3 w-3 mr-1.5" />
                         Non confirmé : peut être vendu
+                    </Badge>
+                </div>
+            ) : item.lowActivity && (
+                 <div className="absolute inset-0 bg-gray-900/10 flex items-center justify-center p-2 pointer-events-none">
+                    <Badge variant="outline" className="bg-background/90 text-xs py-1 px-3 text-center text-muted-foreground shadow-sm">
+                        <TrendingDown className="h-3.5 w-3.5 mr-1.5" />
+                        Peu d’activité récente
                     </Badge>
                 </div>
             )}

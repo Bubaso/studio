@@ -17,6 +17,7 @@ export interface Item {
   suspectedSold?: boolean;
   isSold?: boolean;
   soldAt?: string;
+  lowActivity?: boolean;
 }
 
 export interface UserProfile {

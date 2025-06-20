@@ -38,6 +38,18 @@ const mapDocToItem = (document: any): Item => {
   
   const itemNameForHint = itemName ? itemName.split(' ')[0] : 'article';
   const categoryForHint = itemCategory || 'general';
+  
+  const postDate = new Date(convertTimestampToISO(data.postedDate as FirebaseTimestampType));
+  const now = new Date();
+  const ageInDays = (now.getTime() - postDate.getTime()) / (1000 * 3600 * 24);
+
+  // SIMULATION: In a real app, engagementScore would be calculated and stored by a background job (e.g., Cloud Function).
+  // Here, we simulate it to demonstrate the "low activity" feature.
+  // This logic marks items older than 45 days with a price not divisible by 7 as having "low activity".
+  const isOld = ageInDays > 45;
+  // This is a placeholder for a real score. In reality, you'd check a stored `engagementScore` field.
+  const hasSimulatedLowScore = data.price % 7 !== 0; 
+  const lowActivity = isOld && hasSimulatedLowScore;
 
   return {
     id: document.id,
@@ -53,6 +65,8 @@ const mapDocToItem = (document: any): Item => {
     condition: data.condition,
     dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20),
     lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated as FirebaseTimestampType) : undefined,
+    suspectedSold: data.suspectedSold || false,
+    lowActivity: lowActivity,
   };
 };
 
@@ -108,6 +122,13 @@ export const getItemsFromFirestore = async (filters?: {
       );
     }
     
+    // Sort items to push low-activity items to the bottom, effectively lowering their priority.
+    fetchedItems.sort((a, b) => {
+        const aScore = a.lowActivity ? 1 : 0;
+        const bScore = b.lowActivity ? 1 : 0;
+        return aScore - bScore;
+    });
+
     if (filters?.excludeSellerId) {
       fetchedItems = fetchedItems.filter(item => item.sellerId !== filters.excludeSellerId);
     }
@@ -251,4 +272,3 @@ export async function logItemView(itemId: string): Promise<void> {
     console.error(`SERVER: Error logging view for item ${itemId}:`, error);
   }
 }
-
