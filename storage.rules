@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // User Avatars:
+    // Users can read anyone's avatar.
+    // Authenticated users can only write (upload/update/delete) to their own avatar path.
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Item Images:
+    // Users can read anyone's item images.
+    // Authenticated users (sellers) can only write to paths under their own userId for items.
+    // Note: The `itemService.ts` `uploadImageAndGetURL` uses `items/{userId}/{fileName}`.
+    match /items/{uploaderId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uploaderId;
+    }
+
+    // Chat Attachments:
+    // Path used in code: chatAttachments/{threadId}/{currentUserId}/{fileName}
+    // Authenticated users can write to a path if the {uploaderUserIdInPath} segment matches their auth UID.
+    // For reading, allow any authenticated user for now. This could be further restricted
+    // if you implement a mechanism to check thread participation (e.g., via Firestore lookup in a Cloud Function trigger
+    // or by embedding participant info in Storage metadata, which is more complex).
+    match /chatAttachments/{threadId}/{uploaderUserIdInPath}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uploaderUserIdInPath;
+    }
+
+    // Default deny: It's good practice to implicitly or explicitly deny access to any other paths.
+    // Firebase Storage rules default to deny if no rule explicitly allows access.
+    // So, not adding a "match /{allPaths=**} { allow read, write: if false; }" is okay,
+    // as long as all intended access patterns are covered above.
+  }
+}
