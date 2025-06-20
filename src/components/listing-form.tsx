@@ -86,7 +86,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     defaultValues: {
       name: initialItemData?.name || "",
       description: initialItemData?.description || "",
-      price: initialItemData?.price || 0,
+      price: initialItemData?.price || undefined, // Use undefined to allow placeholder to show if price is 0
       category: initialItemData?.category as ItemCategory | undefined,
       condition: initialItemData?.condition as ItemCondition | undefined,
       location: initialItemData?.location || "",
@@ -99,7 +99,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         form.reset({
             name: initialItemData.name,
             description: initialItemData.description,
-            price: initialItemData.price,
+            price: initialItemData.price || undefined,
             category: initialItemData.category as ItemCategory,
             condition: initialItemData.condition as ItemCondition,
             location: initialItemData.location || "",
@@ -243,13 +243,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       setIsSubmitting(false);
       return;
     }
+    console.log(`LISTING_FORM: Attempting to upload images. CurrentUser UID: ${currentUser.uid}`);
 
     let finalImageUrls: string[] = [];
     const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
     finalImageUrls.push(...keptExistingUrls);
 
     const newFilesForUpload = values.imageFiles || [];
-    console.log(`LISTING_FORM: Attempting to upload ${newFilesForUpload.length} new image(s). CurrentUser UID: ${currentUser.uid}`);
+    console.log(`LISTING_FORM: Attempting to upload ${newFilesForUpload.length} new image(s).`);
 
     if (newFilesForUpload.length > 0) {
       try {
@@ -284,7 +285,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     const commonItemData = {
       name: values.name,
       description: values.description,
-      price: Math.round(values.price),
+      price: Math.round(values.price), // Price is already a number from form values
       category: values.category,
       condition: values.condition,
       location: values.location || '',
@@ -379,15 +380,26 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             <FormField
               control={form.control}
               name="price"
-              render={({ field }) => (
+              render={({ field: { onChange, onBlur, value, name, ref } }) => (
                 <FormItem>
                   <FormLabel>Prix (FCFA)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="1" placeholder="ex: 25000" {...field}
-                      onChange={e => field.onChange(parseInt(e.target.value, 10))}
-                      onBlur={e => {
-                        const value = parseInt(e.target.value, 10)
-                        if(!isNaN(value)) field.onChange(value)
+                    <Input
+                      type="number"
+                      step="1"
+                      placeholder="ex: 25000"
+                      name={name}
+                      ref={ref}
+                      onBlur={onBlur}
+                      value={value === undefined || isNaN(Number(value)) ? '' : value}
+                      onChange={e => {
+                        const stringValue = e.target.value;
+                        if (stringValue === "") {
+                          onChange(undefined); 
+                        } else {
+                          const num = parseFloat(stringValue);
+                          onChange(isNaN(num) ? stringValue : num);
+                        }
                       }}
                     />
                   </FormControl>
