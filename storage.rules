@@ -2,31 +2,36 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Rules for item images
-    // IMPORTANT: Temporarily allowing all writes for debugging item uploads.
-    // REVERT TO SECURE RULES AFTER TESTING.
-    match /items/{userId}/{fileName} {
-      allow read: if true; // Or allow read: if request.auth != null; for more security
-      allow write: if true; // TEMPORARY - THIS IS INSECURE FOR PRODUCTION
-      // Previous secure rule:
-      // allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Rules for user avatars
+  
+    // Rules for user avatar images
+    // Path: /avatars/{userId}/{fileName}
     match /avatars/{userId}/{fileName} {
+      // Anyone can read avatars (e.g., to display profile pictures)
       allow read: if true;
+      // An authenticated user can only write to their own avatar directory
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Rules for chat attachments
+    
+    // Rules for item images
+    // Path: /items/{userId}/{fileName}
+    match /items/{userId}/{fileName} {
+      // Anyone can read item images
+      allow read: if true;
+      
+      // Temporarily allow any authenticated user to upload item images.
+      // This is a workaround for development to bypass auth context issues.
+      // TODO: Revert to a more secure rule before production, like:
+      // allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
+    }
+    
+    // Rules for chat image attachments
+    // Path: /chatAttachments/{threadId}/{userId}/{fileName}
     match /chatAttachments/{threadId}/{userId}/{fileName} {
-      allow read: if request.auth != null; // Allow read if user is authenticated (can be refined further if needed)
+       // Anyone can read chat images (if they have the URL)
+      allow read: if true;
+      // An authenticated user can only write images to their own subdirectory within a chat
       allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Default deny for any other paths
-    match /{allPaths=**} {
-      allow read, write: if false;
     }
   }
 }
