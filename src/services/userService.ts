@@ -1,7 +1,7 @@
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp } from 'firebase/firestore'; // Added updateDoc
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore'; // Added updateDoc
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -46,6 +46,7 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
         dataAiHint: additionalData.dataAiHint || "profil personne",
         joinedDate,
         location: additionalData.location || '',
+        lastActiveAt: serverTimestamp(),
       });
     }
   } catch (error) {
@@ -66,9 +67,8 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
     if (userDocSnap.exists()) {
       const data = userDocSnap.data();
       // Ensure joinedDate is correctly converted, handling potential string format from older data
-      const joinedDateISO = data.joinedDate instanceof Timestamp
-                            ? data.joinedDate.toDate().toISOString()
-                            : (typeof data.joinedDate === 'string' ? data.joinedDate : new Date().toISOString());
+      const joinedDateISO = convertTimestampToISO(data.joinedDate);
+      const lastActiveAtISO = data.lastActiveAt ? convertTimestampToISO(data.lastActiveAt) : undefined;
 
       return {
         uid: data.uid,
@@ -78,6 +78,7 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         dataAiHint: data.dataAiHint || "profil personne", // Provide a default if missing
         joinedDate: joinedDateISO,
         location: data.location || '', // Provide a default if missing
+        lastActiveAt: lastActiveAtISO,
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);
@@ -147,5 +148,21 @@ export const updateUserProfile = async (
   } catch (error) {
     console.error("Error updating user profile:", error);
     throw error;
+  }
+};
+
+export const updateUserLastActive = async (uid: string): Promise<void> => {
+  if (!uid) {
+    console.warn('updateUserLastActive called without a uid.');
+    return;
+  }
+  const userDocRef = doc(db, 'users', uid);
+  try {
+    await updateDoc(userDocRef, {
+      lastActiveAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // This is a background task, so we'll log the error but not disrupt the user experience.
+    console.error(`Error updating lastActiveAt for user ${uid}:`, error);
   }
 };

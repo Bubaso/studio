@@ -27,6 +27,7 @@ export interface UserProfile {
   dataAiHint?: string;
   joinedDate: string;
   location?: string;
+  lastActiveAt?: string;
 }
 
 export interface Review {
