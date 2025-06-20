@@ -1,22 +1,18 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // User Avatars: Only authenticated user can write to their own avatar path
     match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Item Images: Only authenticated user (seller) can write to their item image path
-    match /items/{userId}/{allPaths=**} {
+    // Explicitly match the fileName for item uploads
+    match /items/{userId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Chat Attachments: Authenticated users can write to a path scoped by threadId and their userId
     match /chatAttachments/{threadId}/{userId}/{fileName} {
-        allow read: if true; // Or restrict to participants of the thread if metadata is available
-        allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if true; 
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
