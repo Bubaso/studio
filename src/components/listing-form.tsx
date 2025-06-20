@@ -86,7 +86,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     defaultValues: {
       name: initialItemData?.name || "",
       description: initialItemData?.description || "",
-      price: initialItemData?.price || undefined, // Use undefined to allow placeholder to show if price is 0
+      price: initialItemData?.price || undefined,
       category: initialItemData?.category as ItemCategory | undefined,
       condition: initialItemData?.condition as ItemCondition | undefined,
       location: initialItemData?.location || "",
@@ -243,7 +243,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       setIsSubmitting(false);
       return;
     }
-    console.log(`LISTING_FORM: Attempting to upload images. CurrentUser UID: ${currentUser.uid}`);
+    console.log(`LISTING_FORM: Attempting to process item. CurrentUser UID: ${currentUser.uid}`);
 
     let finalImageUrls: string[] = [];
     const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
@@ -263,11 +263,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         finalImageUrls.push(...uploadedNewUrls);
       } catch (uploadError: any) {
         console.error("LISTING_FORM: Error during Promise.all for image uploads:", uploadError);
+        console.error("LISTING_FORM_UPLOAD_ERROR_RAW:", {
+            name: uploadError.name,
+            message: uploadError.message,
+            code: uploadError.code,
+            stack: uploadError.stack, 
+            stringified: JSON.stringify(uploadError, Object.getOwnPropertyNames(uploadError))
+        });
         let detailedMessage = "Certaines images n'ont pas pu être téléversées.";
         if (uploadError.code) {
           detailedMessage += ` (Code: ${uploadError.code})`;
         }
-        if (uploadError.message) {
+        if (uploadError.message && !detailedMessage.includes(uploadError.message)) { 
           detailedMessage += ` Message: ${uploadError.message}`;
         }
         toast({ title: "Erreur de téléversement", description: detailedMessage, variant: "destructive"});
@@ -276,20 +283,25 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       }
     }
     
-    if (finalImageUrls.length === 0) {
+    if (finalImageUrls.length === 0 && !isEditMode) { 
       finalImageUrls.push("https://placehold.co/600x400.png");
+    } else if (finalImageUrls.length === 0 && isEditMode && initialItemData?.imageUrls && initialItemData.imageUrls.length > 0) {
+      // User removed all images in edit mode. finalImageUrls is intentionally empty.
+    } else if (finalImageUrls.length === 0 && isEditMode && (!initialItemData?.imageUrls || initialItemData.imageUrls.length === 0)) {
+      // No images initially, and none added.
+      finalImageUrls.push("https://placehold.co/600x400.png"); 
     }
     
     const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
 
-    const commonItemData = {
+    const commonItemData: Partial<Item> = { 
       name: values.name,
       description: values.description,
-      price: Math.round(values.price), // Price is already a number from form values
+      price: Math.round(values.price),
       category: values.category,
       condition: values.condition,
       location: values.location || '',
-      imageUrls: finalImageUrls,
+      imageUrls: finalImageUrls, 
       dataAiHint: dataAiHintForImage,
     };
 
@@ -302,23 +314,30 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         });
         router.push(`/items/${initialItemData.id}`);
       } else {
-        const newItemFullData = {
-          ...commonItemData,
+        const newItemFullData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'> = {
+          ...(commonItemData as Omit<Item, 'id' | 'postedDate' | 'lastUpdated' | 'sellerId' | 'sellerName'>), 
           sellerId: currentUser.uid,
           sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
+          imageUrls: finalImageUrls.length > 0 ? finalImageUrls : ["https://placehold.co/600x400.png"], 
         };
-        const newItemId = await createItemInFirestore(newItemFullData as Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>);
+        const newItemId = await createItemInFirestore(newItemFullData);
         toast({
           title: "Annonce créée !",
           description: `Votre article "${values.name}" a été mis en vente avec succès.`,
         });
         router.push(`/items/${newItemId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`LISTING_FORM: Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
+      console.error("LISTING_FORM_FIRESTORE_ERROR_RAW:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stringified: JSON.stringify(error, Object.getOwnPropertyNames(error))
+      });
       toast({
-        title: "Erreur",
-        description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. Veuillez réessayer.`,
+        title: "Erreur de sauvegarde",
+        description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. ${error.message || 'Veuillez réessayer.'}`,
         variant: "destructive",
       });
     } finally {
@@ -391,14 +410,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                       name={name}
                       ref={ref}
                       onBlur={onBlur}
-                      value={value === undefined || isNaN(Number(value)) ? '' : value}
+                      value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
                       onChange={e => {
                         const stringValue = e.target.value;
                         if (stringValue === "") {
                           onChange(undefined); 
                         } else {
                           const num = parseFloat(stringValue);
-                          onChange(isNaN(num) ? stringValue : num);
+                          onChange(isNaN(num) ? undefined : num); 
                         }
                       }}
                     />
@@ -555,7 +574,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 )}
                 <FormDescription>
                   Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
-                  {isEditMode && " Les nouvelles images remplaceront les anciennes si vous en sélectionnez."}
+                  {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
                 </FormDescription>
                 {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
               </FormItem>

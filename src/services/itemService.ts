@@ -1,7 +1,7 @@
 
 'use server'; // Ensure this file's functions run as server actions
 
-import { db, storage, auth as clientAuth } from '@/lib/firebase'; // Added storage and clientAuth
+import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
@@ -64,7 +64,7 @@ export const getItemsFromFirestore = async (filters?: {
   query?: string;
   condition?: ItemCondition;
   count?: number;
-  excludeSellerId?: string; // Added excludeSellerId
+  excludeSellerId?: string; 
 }): Promise<Item[]> => {
   try {
     const itemsCollectionRef = collection(db, 'items');
@@ -82,19 +82,12 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.priceMax !== undefined) {
       queryConstraints.push(where('price', '<=', filters.priceMax));
     }
-    // Note: Firestore does not support direct inequality filters (like '!=') on one field
-    // combined with range filters or orderBy on other fields for all cases.
-    // So, filtering by excludeSellerId will be done client-side after fetching.
-    // If excludeSellerId is the *only* filter, we could potentially use `where('sellerId', '!=', filters.excludeSellerId)`,
-    // but it's safer to do it post-fetch to ensure compatibility with other filters.
-
+    
     queryConstraints.push(orderBy('postedDate', 'desc'));
 
-    if (filters?.count && !filters.excludeSellerId) { // Apply limit only if not excluding, as we need more items initially
+    if (filters?.count && !filters.excludeSellerId) { 
       queryConstraints.push(limit(filters.count));
     } else if (filters?.count && filters.excludeSellerId) {
-      // Fetch a bit more if excluding, then limit client-side.
-      // This is a simple heuristic; a more robust solution might involve pagination and more complex queries.
       queryConstraints.push(limit(filters.count * 2)); 
     }
 
@@ -119,7 +112,7 @@ export const getItemsFromFirestore = async (filters?: {
       fetchedItems = fetchedItems.filter(item => item.sellerId !== filters.excludeSellerId);
     }
 
-    if (filters?.count && filters.excludeSellerId) { // Apply final limit after exclusion
+    if (filters?.count && filters.excludeSellerId) { 
         fetchedItems = fetchedItems.slice(0, filters.count);
     }
 
@@ -180,15 +173,6 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
-  
-  const currentAuthUid = clientAuth.currentUser?.uid;
-  console.log(`ITEM_SERVICE_UPLOAD: Current clientAuth.currentUser?.uid at start of uploadImageAndGetURL: ${currentAuthUid}`);
-  if (!currentAuthUid) {
-      console.error("ITEM_SERVICE_UPLOAD_ERROR: clientAuth.currentUser is null. User appears unauthenticated to the SDK at this point.");
-  } else if (currentAuthUid !== userId) {
-      console.error(`ITEM_SERVICE_UPLOAD_ERROR: Mismatch! userId param (${userId}) !== clientAuth.currentUser.uid (${currentAuthUid})`);
-  }
-
 
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
   const imagePath = `items/${userId}/${uniqueFileName}`;
@@ -203,7 +187,8 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     return downloadURL;
   } catch (error: any) {
     console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
-    console.error(`ITEM_SERVICE_UPLOAD_ERROR_DETAILS: Code: ${error.code}, Message: ${error.message}, Full Error:`, error);
+    console.error(`ITEM_SERVICE_UPLOAD_ERROR_RAW: Name: ${error.name}, Code: ${error.code}, Message: ${error.message}`);
+    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2)); // Added 2 for pretty print
     throw error;
   }
 };
@@ -211,15 +196,7 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
-  const currentClientAuthUidInService = clientAuth.currentUser?.uid;
-  console.log(`ITEM_SERVICE_CREATE: Current clientAuth.currentUser?.uid at start of createItemInFirestore: ${currentClientAuthUidInService}`);
   console.log(`ITEM_SERVICE_CREATE: itemData.sellerId passed to createItemInFirestore: ${itemData.sellerId}`);
-
-  if (!currentClientAuthUidInService) {
-    console.error("ITEM_SERVICE_CREATE_ERROR: clientAuth.currentUser is null within createItemInFirestore. This indicates auth state isn't available here.");
-  } else if (currentClientAuthUidInService !== itemData.sellerId) {
-    console.error(`ITEM_SERVICE_CREATE_ERROR: Mismatch! clientAuth.currentUser.uid (${currentClientAuthUidInService}) !== itemData.sellerId (${itemData.sellerId}) within createItemInFirestore.`);
-  }
 
   try {
     const docRef = await addDoc(collection(db, "items"), {
@@ -230,7 +207,7 @@ export async function createItemInFirestore(
     return docRef.id;
   } catch (error) {
     console.error("SERVER: Error creating item in Firestore: ", error);
-    throw error; // Re-throw to be caught by ListingForm
+    throw error; 
   }
 }
 
@@ -274,3 +251,4 @@ export async function logItemView(itemId: string): Promise<void> {
     console.error(`SERVER: Error logging view for item ${itemId}:`, error);
   }
 }
+
