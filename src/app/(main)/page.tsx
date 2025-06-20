@@ -42,7 +42,7 @@ export default async function HomePage() {
         <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-lg mx-auto">
           Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.
         </p>
-        <div className="flex flex-row gap-2 sm:gap-3 justify-center">
+        <div className="hidden md:flex flex-row gap-2 sm:gap-3 justify-center"> {/* Hidden on mobile, flex on md+ */}
           <Link href="/sell" className="flex-1 max-w-[200px] sm:max-w-xs">
             <Button size="lg" variant="default" className="w-full text-sm sm:text-base">
               <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Vendre Maintenant
