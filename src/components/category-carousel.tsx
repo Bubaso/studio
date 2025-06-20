@@ -68,6 +68,7 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
                   sizes="(max-width: 640px) 128px, (max-width: 768px) 144px, 160px"
                   className="object-cover group-hover:scale-105 transition-transform duration-200"
                   data-ai-hint={category.dataAiHint || category.name.toLowerCase()}
+                  priority={index < 3} // Prioritize the first 3 images
                 />
               </div>
               <CardContent className="p-2 text-center">
