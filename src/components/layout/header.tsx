@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle } from 'lucide-react'; // Added Circle
+import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,7 +15,7 @@ interface NavLink {
   href: string;
   label: string;
   icon: JSX.Element;
-  id?: string; // Optional id for specific links like 'messages'
+  id?: string;
 }
 
 const initialMainLinks: NavLink[] = [
@@ -66,19 +66,20 @@ export function Header() {
       unsubscribeThreads = onSnapshot(threadsQuery, (querySnapshot) => {
         const newActivity = querySnapshot.docs.some(doc => {
           const threadData = doc.data() as MessageThread;
-          return threadData.lastMessageSenderId && threadData.lastMessageSenderId !== currentUser.uid;
-          // More sophisticated: check against a lastReadTimestamp for this thread
+          // New activity if last message is not from current user AND user is not currently viewing messages
+          return threadData.lastMessageSenderId && 
+                 threadData.lastMessageSenderId !== currentUser.uid;
         });
-        setHasNewMessageActivity(newActivity);
+        setHasNewMessageActivity(newActivity && !pathname.startsWith('/messages'));
       }, (error) => {
         console.error("Error fetching message threads for notification: ", error);
         setHasNewMessageActivity(false);
       });
     } else {
-      setHasNewMessageActivity(false); // Clear if user logs out
+      setHasNewMessageActivity(false);
     }
     return () => unsubscribeThreads();
-  }, [currentUser]);
+  }, [currentUser, pathname]);
 
 
   const handleSignOut = async () => {
@@ -203,4 +204,3 @@ export function Header() {
     </header>
   );
 }
-

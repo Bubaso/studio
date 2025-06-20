@@ -1,17 +1,17 @@
 
 "use client"; 
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // db removed as it's not directly used here
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { getMessagesForThread, sendMessage, getThreadInfoById, markMessageAsRead, uploadChatImageAndGetURL } from '@/services/messageService';
-import type { Message, MessageThread, Item } from '@/lib/types';
+import type { Message, MessageThread } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ArrowLeft, Loader2, Info, Paperclip, Check, CheckCheck, Image as ImageIcon, X } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Info, ImageIcon, X, Check, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -57,11 +57,16 @@ export default function MessageThreadPage() {
       getThreadInfoById(threadId).then(info => {
         setThreadInfo(info);
         setIsLoadingThreadInfo(false);
-        if (!info) {
+        if (!info || !info.participantIds.includes(currentUser.uid)) {
           console.warn("Fil de discussion non trouvé ou l'utilisateur n'est pas un participant.");
-          toast({ variant: "destructive", title: "Erreur", description: "Fil de discussion non trouvé." });
+          toast({ variant: "destructive", title: "Erreur", description: "Fil de discussion non trouvé ou accès refusé." });
           router.push('/messages');
         }
+      }).catch(err => {
+          console.error("Error fetching thread info:", err);
+          setIsLoadingThreadInfo(false);
+          toast({ variant: "destructive", title: "Erreur", description: "Impossible de charger le fil de discussion." });
+          router.push('/messages');
       });
 
       const unsubscribeMessages = getMessagesForThread(threadId, (fetchedMessages) => {
@@ -81,21 +86,18 @@ export default function MessageThreadPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mark messages as read
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   useEffect(() => {
-    if (!currentUser || !threadId || messages.length === 0) return;
+    if (!currentUser || !threadId || messages.length === 0 || !threadInfo) return;
 
-    const currentUserId = currentUser.uid; // Use uid
-    const otherParticipantIdInEffect = threadInfo?.participantIds.find(id => id !== currentUserId);
-
+    const currentUserId = currentUser.uid;
+    const otherParticipantIdInEffect = threadInfo.participantIds.find(id => id !== currentUserId);
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const messageId = entry.target.getAttribute('data-message-id');
           const senderId = entry.target.getAttribute('data-sender-id');
-          // Ensure otherParticipantIdInEffect is available for comparison
           if (messageId && senderId === otherParticipantIdInEffect && !visibleMessagesRef.current.has(messageId)) {
             const message = messages.find(m => m.id === messageId);
             if (message && (!message.readBy || !message.readBy.includes(currentUserId))) {
@@ -122,23 +124,24 @@ export default function MessageThreadPage() {
   const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { 
         toast({ variant: "destructive", title: "Fichier trop volumineux", description: "La taille maximale de l'image est de 5MB." });
         return;
       }
       setImageToSend(file);
-      setImagePreview(URL.createObjectURL(file));
+      const objectURL = URL.createObjectURL(file);
+      setImagePreview(objectURL);
     }
   };
 
   const clearImageAttachment = () => {
-    setImageToSend(null);
     if (imagePreview) {
       URL.revokeObjectURL(imagePreview);
-      setImagePreview(null);
     }
+    setImageToSend(null);
+    setImagePreview(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Reset file input
+      fileInputRef.current.value = ""; 
     }
   };
   
@@ -196,14 +199,14 @@ export default function MessageThreadPage() {
     return <div className="text-center py-10">Fil de discussion non trouvé ou vous n'y avez pas accès. Redirection...</div>;
   }
   
-  const otherParticipantId = threadInfo.participantIds.find(id => id !== currentUser.uid); // Use currentUser.uid
+  const otherParticipantId = threadInfo.participantIds.find(id => id !== currentUser.uid);
   const otherParticipantIndex = threadInfo.participantIds.indexOf(otherParticipantId!);
   const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
   const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card">
-      <header className="p-3 border-b flex items-center space-x-3">
+      <header className="p-3 border-b flex items-center space-x-3 sticky top-0 bg-card z-10">
         <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="mr-1" aria-label="Retour aux messages">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -218,15 +221,15 @@ export default function MessageThreadPage() {
                     {threadInfo.itemImageUrl && (
                         <Image src={threadInfo.itemImageUrl} alt={threadInfo.itemTitle} width={20} height={20} className="object-cover rounded mr-1.5" data-ai-hint="produit vente" />
                     )}
-                   <span>Discussion à propos de: <span className="font-medium">{threadInfo.itemTitle}</span></span>
+                   <span>À propos de: <span className="font-medium">{threadInfo.itemTitle}</span></span>
                  </Link>
             )}
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-background/30">
         {messages.map((msg) => {
-          const isCurrentUserSender = msg.senderId === currentUser.uid; // Use currentUser.uid
+          const isCurrentUserSender = msg.senderId === currentUser.uid;
           const senderAvatar = isCurrentUserSender ? (currentUser.photoURL || undefined) : otherParticipantAvatar;
           const senderNameDisplay = isCurrentUserSender ? "Vous" : msg.senderName;
           const isSeenByOther = isCurrentUserSender && otherParticipantId && msg.readBy?.includes(otherParticipantId);
@@ -239,44 +242,49 @@ export default function MessageThreadPage() {
               data-sender-id={msg.senderId}
             >
               {!isCurrentUserSender && (
-                <Avatar className="h-8 w-8 self-end">
+                <Avatar className="h-8 w-8 self-end mb-1"> {/* Adjusted margin */}
                   <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
                   <AvatarFallback>{senderNameDisplay.substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
               )}
               <div
                 className={cn(
-                  "max-w-[70%] lg:max-w-[60%] p-2.5 rounded-lg shadow",
+                  "max-w-[70%] lg:max-w-[60%] p-2.5 rounded-lg shadow-sm",
                   isCurrentUserSender
                     ? "bg-primary text-primary-foreground rounded-br-none"
-                    : "bg-secondary text-secondary-foreground rounded-bl-none"
+                    : "bg-card text-card-foreground border border-border rounded-bl-none"
                 )}
               >
                 {msg.imageUrl && (
                    <Dialog>
                     <DialogTrigger asChild>
-                        <div className="relative aspect-video max-h-64 w-auto mb-1.5 rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
-                        <Image src={msg.imageUrl} alt="Pièce jointe" fill className="object-contain" data-ai-hint="message image" />
+                        <div className="relative aspect-video max-h-72 w-auto mb-1.5 rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted/50">
+                            <Image src={msg.imageUrl} alt="Pièce jointe" fill className="object-contain" data-ai-hint="message image" />
                         </div>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl p-2">
+                    <DialogContent className="max-w-3xl p-2 sm:p-4 bg-background">
                         <DialogHeader className="sr-only"><DialogTitle>Aperçu de l'image</DialogTitle></DialogHeader>
-                        <Image src={msg.imageUrl} alt="Pièce jointe en grand" width={1200} height={800} className="object-contain rounded-md max-h-[80vh] w-auto mx-auto" data-ai-hint="message image" />
+                        <div className="flex justify-center items-center max-h-[85vh]">
+                         <Image src={msg.imageUrl} alt="Pièce jointe en grand" width={1200} height={800} className="object-contain rounded-md max-h-full w-auto" data-ai-hint="message image" />
+                        </div>
                     </DialogContent>
                    </Dialog>
                 )}
-                {msg.text && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
-                <div className={cn("text-xs mt-1.5 flex items-center", isCurrentUserSender ? "text-primary-foreground/70 justify-end" : "text-muted-foreground/80")}>
+                {msg.text && <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>}
+                <div className={cn(
+                    "text-xs mt-1.5 flex items-center", 
+                    isCurrentUserSender ? "text-primary-foreground/70 justify-end" : "text-muted-foreground/80 justify-start"
+                )}>
                   <span>{new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                   {isCurrentUserSender && (
-                    isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-300" /> : <Check className="ml-1.5 h-4 w-4 text-primary-foreground/60" />
+                    isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-300" /> : <Check className="ml-1.5 h-4 w-4 opacity-60" />
                   )}
                 </div>
               </div>
                {isCurrentUserSender && (
-                <Avatar className="h-8 w-8 self-end">
+                <Avatar className="h-8 w-8 self-end mb-1"> {/* Adjusted margin */}
                   <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
-                  <AvatarFallback>{(currentUser.displayName || "V").substring(0,1).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{(currentUser.displayName || "M").substring(0,1).toUpperCase()}</AvatarFallback>
                 </Avatar>
               )}
             </div>
@@ -285,11 +293,11 @@ export default function MessageThreadPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <footer className="p-3 border-t">
+      <footer className="p-3 border-t bg-card sticky bottom-0 z-10">
         {imagePreview && (
           <div className="mb-2 p-2 border rounded-md bg-muted/50 relative w-24 h-24">
             <Image src={imagePreview} alt="Aperçu" fill className="object-cover rounded-md" />
-            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment}>
+            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment} aria-label="Retirer l'image">
               <X className="h-3 w-3" />
             </Button>
           </div>
@@ -322,4 +330,3 @@ export default function MessageThreadPage() {
     </div>
   );
 }
-

@@ -6,12 +6,13 @@ import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { getMessageThreadsForUser } from '@/services/messageService';
-import type { MessageThread, UserProfile } from '@/lib/types';
+import type { MessageThread } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquarePlus, Info, Loader2 } from 'lucide-react';
+import { MessageSquarePlus, Info, Loader2, Circle } from 'lucide-react'; // Added Circle
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export default function MessagesPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -24,7 +25,7 @@ export default function MessagesPage() {
       setCurrentUser(user);
       setIsLoadingAuth(false);
       if (!user) {
-        setIsLoadingThreads(false); // No threads to load if not logged in
+        setIsLoadingThreads(false); 
       }
     });
     return () => unsubscribeAuth();
@@ -39,14 +40,13 @@ export default function MessagesPage() {
       });
       return () => unsubscribeThreads();
     } else {
-      setThreads([]); // Clear threads if user logs out
+      setThreads([]); 
     }
   }, [currentUser]);
 
   const getOtherParticipantDetails = (thread: MessageThread) => {
     if (!currentUser) return { name: 'Utilisateur', avatar: 'https://placehold.co/100x100.png?text=?', dataAiHint: "profil personne" };
     const otherParticipantIndex = thread.participantIds.findIndex(id => id !== currentUser.uid);
-    // Ensure indices are valid before accessing
     const name = otherParticipantIndex !== -1 && thread.participantNames && thread.participantNames[otherParticipantIndex] 
                  ? thread.participantNames[otherParticipantIndex] 
                  : 'Utilisateur Inconnu';
@@ -83,13 +83,6 @@ export default function MessagesPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-4xl font-bold font-headline text-primary">Vos Messages</h1>
-        {/* Temporarily removing "Nouveau Message" button as its flow needs definition for Firestore users
-        <Link href="/messages/new"> 
-          <Button variant="outline">
-            <MessageSquarePlus className="mr-2 h-4 w-4" /> Nouveau Message
-          </Button>
-        </Link>
-        */}
       </div>
 
       {isLoadingThreads && threads.length === 0 && (
@@ -97,30 +90,38 @@ export default function MessagesPage() {
       )}
 
       {!isLoadingThreads && threads.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {threads.map((thread) => {
             const otherParticipant = getOtherParticipantDetails(thread);
             const lastMessageText = thread.lastMessageText || "Pas encore de messages.";
             const isLastMessageFromCurrentUser = thread.lastMessageSenderId === currentUser.uid;
-            
+            const hasUnreadMessages = !isLastMessageFromCurrentUser && thread.lastMessageSenderId; // Simple check: if last message is not from current user, consider it unread for this list item
+
             return (
             <Link key={thread.id} href={`/messages/${thread.id}`} className="block">
-              <Card className="hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50">
+              <Card className={cn(
+                "hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50",
+                hasUnreadMessages ? "border-primary/70 bg-primary/5" : ""
+              )}>
                 <CardContent className="p-4 flex items-center space-x-4">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} data-ai-hint={otherParticipant.dataAiHint as string} />
                     <AvatarFallback>{otherParticipant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 overflow-hidden">
-                    <p className="font-semibold text-lg truncate">{otherParticipant.name}</p>
-                    <p className="text-sm truncate text-muted-foreground">
+                    <p className={cn("font-semibold text-lg truncate", hasUnreadMessages ? "text-primary" : "")}>{otherParticipant.name}</p>
+                    <p className={cn("text-sm truncate", hasUnreadMessages ? "text-foreground font-medium" : "text-muted-foreground")}>
                       {isLastMessageFromCurrentUser ? "Vous : " : ""}
                       {lastMessageText}
                     </p>
                   </div>
-                  <div className="text-xs text-muted-foreground text-right whitespace-nowrap">
-                    {new Date(thread.lastMessageAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    {/* Unread count logic removed for simplicity for now */}
+                  <div className="flex flex-col items-end space-y-1">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {new Date(thread.lastMessageAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    {hasUnreadMessages && (
+                      <Circle className="h-2.5 w-2.5 fill-primary text-primary" />
+                    )}
                   </div>
                 </CardContent>
               </Card>
