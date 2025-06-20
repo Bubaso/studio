@@ -11,7 +11,7 @@ import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ArrowLeft, Loader2, Info, Paperclip, Check, CheckCheck, Image as ImageIcon } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Info, Paperclip, Check, CheckCheck, Image as ImageIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -321,3 +321,4 @@ export default function MessageThreadPage() {
     </div>
   );
 }
+
