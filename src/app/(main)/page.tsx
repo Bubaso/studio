@@ -6,6 +6,7 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import type { Item, ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
+import { auth } from '@/lib/firebase'; // Import auth
 
 // Updated to include new categories and ensure diversity, with specific data-ai-hints
 const carouselCategories = [
@@ -26,8 +27,14 @@ const carouselCategories = [
 
 export default async function HomePage() {
   let featuredItems: Item[] = [];
+  const currentUser = auth.currentUser; // Get current user
+
   try {
-    featuredItems = await getItemsFromFirestore({ count: 4, query: '' });
+    featuredItems = await getItemsFromFirestore({ 
+      count: 4, 
+      query: '',
+      excludeSellerId: currentUser?.uid // Exclude current user's items
+    });
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
   }

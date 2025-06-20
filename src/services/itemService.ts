@@ -64,6 +64,7 @@ export const getItemsFromFirestore = async (filters?: {
   query?: string;
   condition?: ItemCondition;
   count?: number;
+  excludeSellerId?: string; // Added excludeSellerId
 }): Promise<Item[]> => {
   try {
     const itemsCollectionRef = collection(db, 'items');
@@ -81,12 +82,22 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.priceMax !== undefined) {
       queryConstraints.push(where('price', '<=', filters.priceMax));
     }
+    // Note: Firestore does not support direct inequality filters (like '!=') on one field
+    // combined with range filters or orderBy on other fields for all cases.
+    // So, filtering by excludeSellerId will be done client-side after fetching.
+    // If excludeSellerId is the *only* filter, we could potentially use `where('sellerId', '!=', filters.excludeSellerId)`,
+    // but it's safer to do it post-fetch to ensure compatibility with other filters.
 
     queryConstraints.push(orderBy('postedDate', 'desc'));
 
-    if (filters?.count) {
+    if (filters?.count && !filters.excludeSellerId) { // Apply limit only if not excluding, as we need more items initially
       queryConstraints.push(limit(filters.count));
+    } else if (filters?.count && filters.excludeSellerId) {
+      // Fetch a bit more if excluding, then limit client-side.
+      // This is a simple heuristic; a more robust solution might involve pagination and more complex queries.
+      queryConstraints.push(limit(filters.count * 2)); 
     }
+
 
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
@@ -103,6 +114,15 @@ export const getItemsFromFirestore = async (filters?: {
         item.category.toLowerCase().includes(lq)
       );
     }
+    
+    if (filters?.excludeSellerId) {
+      fetchedItems = fetchedItems.filter(item => item.sellerId !== filters.excludeSellerId);
+    }
+
+    if (filters?.count && filters.excludeSellerId) { // Apply final limit after exclusion
+        fetchedItems = fetchedItems.slice(0, filters.count);
+    }
+
 
     return fetchedItems;
   } catch (error) {
@@ -191,7 +211,6 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
-  // Log the auth state from clientAuth *within this server action context*
   const currentClientAuthUidInService = clientAuth.currentUser?.uid;
   console.log(`ITEM_SERVICE_CREATE: Current clientAuth.currentUser?.uid at start of createItemInFirestore: ${currentClientAuthUidInService}`);
   console.log(`ITEM_SERVICE_CREATE: itemData.sellerId passed to createItemInFirestore: ${itemData.sellerId}`);

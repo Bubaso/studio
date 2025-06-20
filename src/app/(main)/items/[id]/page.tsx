@@ -109,7 +109,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
       category: item.category as ItemCategory,
       priceMin: priceMin,
       priceMax: priceMax,
-      count: 10, 
+      count: 10,
+      excludeSellerId: currentUser?.uid, // Exclude current user's items from similar items
     });
     similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
   }

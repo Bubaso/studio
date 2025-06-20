@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
 import { getItemsFromFirestore } from '@/services/itemService';
+import { auth } from '@/lib/firebase'; // Import auth
 
 const ITEMS_PER_PAGE = 12;
 
@@ -22,6 +23,7 @@ interface BrowsePageProps {
 }
 
 async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
+  const currentUser = auth.currentUser; // Get current user
   // Destructure searchParams properties at the beginning
   const {
     q: queryParam,
@@ -40,6 +42,7 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
     priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
     location: locationParam,
     condition: conditionParam,
+    excludeSellerId: currentUser?.uid, // Exclude current user's items
   });
 
   const currentPage = parseInt(pageParam || '1');
