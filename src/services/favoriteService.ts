@@ -16,8 +16,6 @@ import {
   Timestamp,
   orderBy,
   limit,
-  // onSnapshot, // Removed as real-time count moves to client
-  // Unsubscribe, // Removed
 } from 'firebase/firestore';
 import { getItemByIdFromFirestore } from './itemService';
 
