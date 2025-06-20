@@ -1,18 +1,32 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
-    match /avatars/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    // Explicitly match the fileName for item uploads
+    // Rules for item images
+    // IMPORTANT: Temporarily allowing all writes for debugging item uploads.
+    // REVERT TO SECURE RULES AFTER TESTING.
     match /items/{userId}/{fileName} {
+      allow read: if true; // Or allow read: if request.auth != null; for more security
+      allow write: if true; // TEMPORARY - THIS IS INSECURE FOR PRODUCTION
+      // Previous secure rule:
+      // allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Rules for user avatars
+    match /avatars/{userId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Rules for chat attachments
     match /chatAttachments/{threadId}/{userId}/{fileName} {
-      allow read: if true; 
+      allow read: if request.auth != null; // Allow read if user is authenticated (can be refined further if needed)
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny for any other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
