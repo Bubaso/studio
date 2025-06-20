@@ -1,13 +1,33 @@
 
 "use client";
 import Link from 'next/link';
-import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart } from 'lucide-react'; // Added Heart icon
+import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle } from 'lucide-react'; // Added Circle
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase'; 
+import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; 
+import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import type { MessageThread } from '@/lib/types';
+
+interface NavLink {
+  href: string;
+  label: string;
+  icon: JSX.Element;
+  id?: string; // Optional id for specific links like 'messages'
+}
+
+const initialMainLinks: NavLink[] = [
+  { href: '/browse', label: 'Parcourir', icon: <Search className="h-4 w-4" /> },
+  { href: '/sell', label: 'Vendre', icon: <PlusCircle className="h-4 w-4" /> },
+];
+
+const initialUserLinks: NavLink[] = [
+  { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" />, id: 'messages' },
+  { href: '/favorites', label: 'Favoris', icon: <Heart className="h-4 w-4" /> },
+];
+
 
 export function Header() {
   const pathname = usePathname();
@@ -17,6 +37,7 @@ export function Header() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -26,13 +47,39 @@ export function Header() {
       document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsLoadingAuth(false);
     });
 
-    return () => unsubscribe(); 
+    return () => unsubscribeAuth(); 
   }, []);
+
+  useEffect(() => {
+    let unsubscribeThreads: Unsubscribe = () => {};
+
+    if (currentUser) {
+      const threadsQuery = query(
+        collection(db, 'messageThreads'),
+        where('participantIds', 'array-contains', currentUser.uid)
+      );
+      unsubscribeThreads = onSnapshot(threadsQuery, (querySnapshot) => {
+        const newActivity = querySnapshot.docs.some(doc => {
+          const threadData = doc.data() as MessageThread;
+          return threadData.lastMessageSenderId && threadData.lastMessageSenderId !== currentUser.uid;
+          // More sophisticated: check against a lastReadTimestamp for this thread
+        });
+        setHasNewMessageActivity(newActivity);
+      }, (error) => {
+        console.error("Error fetching message threads for notification: ", error);
+        setHasNewMessageActivity(false);
+      });
+    } else {
+      setHasNewMessageActivity(false); // Clear if user logs out
+    }
+    return () => unsubscribeThreads();
+  }, [currentUser]);
+
 
   const handleSignOut = async () => {
     try {
@@ -58,17 +105,6 @@ export function Header() {
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
-  const navLinks = [
-    { href: '/browse', label: 'Parcourir', icon: <Search className="h-4 w-4" /> },
-    { href: '/sell', label: 'Vendre', icon: <PlusCircle className="h-4 w-4" /> },
-  ];
-
-  const userNavLinks = [ // Links to show only if user is logged in
-    { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
-    { href: '/favorites', label: 'Favoris', icon: <Heart className="h-4 w-4" /> },
-  ];
-
-
   if (!mounted || isLoadingAuth) {
     return ( 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,7 +126,7 @@ export function Header() {
           <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
         </Link>
         <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
-          {navLinks.map((link) => (
+          {initialMainLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -102,16 +138,27 @@ export function Header() {
               <span className="md:hidden" title={link.label}>{link.icon}</span>
             </Link>
           ))}
-          {currentUser && userNavLinks.map((link) => (
+          {currentUser && initialUserLinks.map((link) => (
              <Link
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
+              className={`text-sm font-medium transition-colors hover:text-primary relative ${
                 pathname === link.href ? 'text-primary' : 'text-muted-foreground'
               }`}
             >
-              <span className="hidden md:inline">{link.label}</span>
-              <span className="md:hidden" title={link.label}>{link.icon}</span>
+              <span className="hidden md:inline-flex items-center">
+                {link.icon}
+                <span className="ml-1">{link.label}</span>
+                 {link.id === 'messages' && hasNewMessageActivity && (
+                  <Circle className="ml-1.5 h-2 w-2 fill-red-500 text-red-500" />
+                )}
+              </span>
+              <span className="md:hidden relative" title={link.label}>
+                {link.icon}
+                {link.id === 'messages' && hasNewMessageActivity && (
+                  <Circle className="absolute -top-0.5 -right-0.5 h-2 w-2 fill-red-500 text-red-500 ring-1 ring-background" />
+                )}
+              </span>
             </Link>
           ))}
         </nav>
@@ -156,3 +203,4 @@ export function Header() {
     </header>
   );
 }
+

@@ -86,15 +86,20 @@ export default function MessageThreadPage() {
   useEffect(() => {
     if (!currentUser || !threadId || messages.length === 0) return;
 
+    const currentUserId = currentUser.uid; // Use uid
+    const otherParticipantIdInEffect = threadInfo?.participantIds.find(id => id !== currentUserId);
+
+
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const messageId = entry.target.getAttribute('data-message-id');
           const senderId = entry.target.getAttribute('data-sender-id');
-          if (messageId && senderId === otherParticipantId && !visibleMessagesRef.current.has(messageId)) {
+          // Ensure otherParticipantIdInEffect is available for comparison
+          if (messageId && senderId === otherParticipantIdInEffect && !visibleMessagesRef.current.has(messageId)) {
             const message = messages.find(m => m.id === messageId);
-            if (message && (!message.readBy || !message.readBy.includes(currentUser.uid))) {
-              markMessageAsRead(threadId, messageId, currentUser.uid);
+            if (message && (!message.readBy || !message.readBy.includes(currentUserId))) {
+              markMessageAsRead(threadId, messageId, currentUserId);
               visibleMessagesRef.current.add(messageId); 
             }
           }
@@ -111,10 +116,7 @@ export default function MessageThreadPage() {
       currentObserver.disconnect();
       visibleMessagesRef.current.clear();
     };
-  }, [messages, currentUser, threadId, // Add otherParticipantId as dependency if available early
-     // Ensure otherParticipantId is stable or this effect re-runs correctly
-     threadInfo?.participantIds.find(id => id !== currentUser?.uid) 
-    ]);
+  }, [messages, currentUser, threadId, threadInfo]);
 
 
   const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,14 +193,13 @@ export default function MessageThreadPage() {
   }
 
   if (!threadInfo) {
-    // This case should ideally be handled by the redirect in useEffect, but as a fallback:
     return <div className="text-center py-10">Fil de discussion non trouvé ou vous n'y avez pas accès. Redirection...</div>;
   }
   
-  const otherParticipantId = threadInfo.participantIds.find(id => id !== currentUser.id);
+  const otherParticipantId = threadInfo.participantIds.find(id => id !== currentUser.uid); // Use currentUser.uid
   const otherParticipantIndex = threadInfo.participantIds.indexOf(otherParticipantId!);
-  const otherParticipantName = otherParticipantIndex !== -1 ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
-  const otherParticipantAvatar = otherParticipantIndex !== -1 ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
+  const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
+  const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card">
@@ -225,7 +226,7 @@ export default function MessageThreadPage() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.map((msg) => {
-          const isCurrentUserSender = msg.senderId === currentUser.id;
+          const isCurrentUserSender = msg.senderId === currentUser.uid; // Use currentUser.uid
           const senderAvatar = isCurrentUserSender ? (currentUser.photoURL || undefined) : otherParticipantAvatar;
           const senderNameDisplay = isCurrentUserSender ? "Vous" : msg.senderName;
           const isSeenByOther = isCurrentUserSender && otherParticipantId && msg.readBy?.includes(otherParticipantId);
