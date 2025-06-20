@@ -251,21 +251,20 @@ export default function MessageThreadPage() {
                 className={cn(
                   "max-w-[70%] lg:max-w-[60%] p-2.5 rounded-lg shadow-sm",
                   isCurrentUserSender
-                    ? "bg-primary text-primary-foreground rounded-br-none"
-                    : "bg-card text-card-foreground border border-border rounded-bl-none"
+                    ? "bg-primary/20 text-primary rounded-br-none" 
+                    : "bg-muted text-foreground rounded-bl-none" 
                 )}
               >
                 {msg.imageUrl && (
                    <Dialog>
                     <DialogTrigger asChild>
-                        <div className="relative aspect-video max-h-72 w-auto mb-1.5 rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted/50">
+                        <div className="relative w-full max-w-[300px] aspect-[4/3] mb-1.5 rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted/50">
                             <Image src={msg.imageUrl} alt="Pièce jointe" fill className="object-contain" data-ai-hint="message image" />
                         </div>
                     </DialogTrigger>
-                    <DialogContent className="max-w-3xl p-2 sm:p-4 bg-background">
-                        <DialogHeader className="sr-only"><DialogTitle>Aperçu de l'image</DialogTitle></DialogHeader>
-                        <div className="flex justify-center items-center max-h-[85vh]">
-                         <Image src={msg.imageUrl} alt="Pièce jointe en grand" width={1200} height={800} className="object-contain rounded-md max-h-full w-auto" data-ai-hint="message image" />
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background flex items-center justify-center">
+                        <div className="relative w-full h-full">
+                         <Image src={msg.imageUrl} alt="Pièce jointe en grand" fill className="object-contain rounded-md" unoptimized={true} data-ai-hint="message image" />
                         </div>
                     </DialogContent>
                    </Dialog>
@@ -273,16 +272,16 @@ export default function MessageThreadPage() {
                 {msg.text && <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>}
                 <div className={cn(
                     "text-xs mt-1.5 flex items-center", 
-                    isCurrentUserSender ? "text-primary-foreground/70 justify-end" : "text-muted-foreground/80 justify-start"
+                    isCurrentUserSender ? "text-primary/80 justify-end" : "text-muted-foreground/80 justify-start"
                 )}>
                   <span>{new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                   {isCurrentUserSender && (
-                    isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-300" /> : <Check className="ml-1.5 h-4 w-4 opacity-60" />
+                    isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className="ml-1.5 h-4 w-4 opacity-70" />
                   )}
                 </div>
               </div>
                {isCurrentUserSender && (
-                <Avatar className="h-8 w-8 self-end mb-1"> {/* Adjusted margin */}
+                <Avatar className="h-8 w-8 self-end mb-1"> 
                   <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
                   <AvatarFallback>{(currentUser.displayName || "M").substring(0,1).toUpperCase()}</AvatarFallback>
                 </Avatar>
