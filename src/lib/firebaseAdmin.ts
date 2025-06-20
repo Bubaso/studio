@@ -1,3 +1,4 @@
+
 // src/lib/firebaseAdmin.ts
 import * as admin from 'firebase-admin';
 
@@ -28,7 +29,7 @@ if (!admin.apps.length) {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountPath),
         // If you use Firebase Realtime Database, you might also need:
-        // databaseURL: `https://${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseio.com`
+        // databaseURL: `https://refind-cpgi5.firebaseio.com` (using your project_id)
       });
       console.log('Firebase Admin SDK initialized successfully.');
     } catch (error: any) {
