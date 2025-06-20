@@ -160,7 +160,7 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
-  // Log current auth state from clientAuth instance RIGHT BEFORE storage operation
+  
   const currentAuthUid = clientAuth.currentUser?.uid;
   console.log(`ITEM_SERVICE_UPLOAD: Current clientAuth.currentUser?.uid at start of uploadImageAndGetURL: ${currentAuthUid}`);
   if (!currentAuthUid) {
@@ -191,6 +191,17 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
+  // Log the auth state from clientAuth *within this server action context*
+  const currentClientAuthUidInService = clientAuth.currentUser?.uid;
+  console.log(`ITEM_SERVICE_CREATE: Current clientAuth.currentUser?.uid at start of createItemInFirestore: ${currentClientAuthUidInService}`);
+  console.log(`ITEM_SERVICE_CREATE: itemData.sellerId passed to createItemInFirestore: ${itemData.sellerId}`);
+
+  if (!currentClientAuthUidInService) {
+    console.error("ITEM_SERVICE_CREATE_ERROR: clientAuth.currentUser is null within createItemInFirestore. This indicates auth state isn't available here.");
+  } else if (currentClientAuthUidInService !== itemData.sellerId) {
+    console.error(`ITEM_SERVICE_CREATE_ERROR: Mismatch! clientAuth.currentUser.uid (${currentClientAuthUidInService}) !== itemData.sellerId (${itemData.sellerId}) within createItemInFirestore.`);
+  }
+
   try {
     const docRef = await addDoc(collection(db, "items"), {
       ...itemData,
@@ -200,7 +211,7 @@ export async function createItemInFirestore(
     return docRef.id;
   } catch (error) {
     console.error("SERVER: Error creating item in Firestore: ", error);
-    throw error;
+    throw error; // Re-throw to be caught by ListingForm
   }
 }
 
