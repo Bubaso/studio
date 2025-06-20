@@ -30,7 +30,7 @@ import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
 import Image from "next/image";
 import Link from "next/link";
 
-const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_MB = 25; // Updated to 25MB
 const MAX_FILES = 5;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
@@ -38,7 +38,7 @@ const fileSchema = z
   .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
   .refine(
     (file) => file.size <= MAX_FILE_SIZE_MB * 1024 * 1024,
-    `La taille maximale du fichier est de ${MAX_FILE_SIZE_MB}MB.`
+    `La taille maximale du fichier est de ${MAX_FILE_SIZE_MB}MB.` // Updated message
   )
   .refine(
     (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
