@@ -1,35 +1,35 @@
 
 'use server'; // Ensure this file's functions run as server actions
 
-import { db, storage } from '@/lib/firebase'; // Added storage
+import { db, storage, auth as clientAuth } from '@/lib/firebase'; // Added storage and clientAuth
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore'; // Removed onSnapshot, Unsubscribe
-import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore'; // Explicit import for clarity
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"; // Firebase Storage functions
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
-  if (!timestamp) return new Date().toISOString(); 
-  if (typeof timestamp === 'string') return timestamp; 
+  if (!timestamp) return new Date().toISOString();
+  if (typeof timestamp === 'string') return timestamp;
   if (timestamp && typeof (timestamp as FirebaseTimestampType).toDate === 'function') {
     try {
       return (timestamp as FirebaseTimestampType).toDate().toISOString();
     } catch (e) {
       console.warn('Error converting timestamp toDate:', timestamp, e);
-      return new Date().toISOString(); 
+      return new Date().toISOString();
     }
   }
   console.warn('Invalid timestamp format encountered:', timestamp);
-  return new Date().toISOString(); 
+  return new Date().toISOString();
 };
 
 const mapDocToItem = (document: any): Item => {
   const data = document.data();
-  let imageUrls: string[] = ['https://placehold.co/600x400.png']; 
+  let imageUrls: string[] = ['https://placehold.co/600x400.png'];
 
   if (Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
     imageUrls = data.imageUrls;
-  } else if (typeof data.imageUrl === 'string') { 
+  } else if (typeof data.imageUrl === 'string') {
     imageUrls = [data.imageUrl];
   }
 
@@ -149,9 +149,9 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
 };
 
 export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
-  console.log(`ITEM_SERVICE_UPLOAD: Initiating uploadImageAndGetURL for item. UserID: ${userId}, File: ${imageFile.name}, Size: ${imageFile.size}`);
+  console.log(`ITEM_SERVICE_UPLOAD: Initiating uploadImageAndGetURL for item. UserID param: ${userId}, File: ${imageFile.name}, Size: ${imageFile.size}`);
   if (!userId) {
-     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for image upload.";
+     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID (param) is required for image upload.";
      console.error(errorMsg);
      throw new Error(errorMsg);
   }
@@ -160,12 +160,22 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
+  // Log current auth state from clientAuth instance RIGHT BEFORE storage operation
+  const currentAuthUid = clientAuth.currentUser?.uid;
+  console.log(`ITEM_SERVICE_UPLOAD: Current clientAuth.currentUser?.uid at start of uploadImageAndGetURL: ${currentAuthUid}`);
+  if (!currentAuthUid) {
+      console.error("ITEM_SERVICE_UPLOAD_ERROR: clientAuth.currentUser is null. User appears unauthenticated to the SDK at this point.");
+  } else if (currentAuthUid !== userId) {
+      console.error(`ITEM_SERVICE_UPLOAD_ERROR: Mismatch! userId param (${userId}) !== clientAuth.currentUser.uid (${currentAuthUid})`);
+  }
+
+
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
   const imagePath = `items/${userId}/${uniqueFileName}`;
   console.log(`ITEM_SERVICE_UPLOAD: Constructed storage path: ${imagePath}`);
   const imageRef = storageRef(storage, imagePath);
   try {
-    console.log(`ITEM_SERVICE_UPLOAD: Attempting uploadBytes for ${imagePath}`);
+    console.log(`ITEM_SERVICE_UPLOAD: Attempting uploadBytes for ${imagePath}.`);
     const snapshot = await uploadBytes(imageRef, imageFile);
     console.log(`ITEM_SERVICE_UPLOAD: Upload successful for ${imagePath}. Snapshot ref: ${snapshot.ref.fullPath}`);
     const downloadURL = await getDownloadURL(snapshot.ref);
@@ -174,7 +184,7 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
   } catch (error: any) {
     console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
     console.error(`ITEM_SERVICE_UPLOAD_ERROR_DETAILS: Code: ${error.code}, Message: ${error.message}, Full Error:`, error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -234,4 +244,3 @@ export async function logItemView(itemId: string): Promise<void> {
     console.error(`SERVER: Error logging view for item ${itemId}:`, error);
   }
 }
-
