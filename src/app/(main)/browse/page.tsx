@@ -1,12 +1,15 @@
 
+"use client";
+
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
 import { getItemsFromFirestore } from '@/services/itemService';
-import { auth } from '@/lib/firebase'; // Import auth
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -22,8 +25,13 @@ interface BrowsePageProps {
   };
 }
 
-async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
-  const currentUser = auth.currentUser; // Get current user
+function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [items, setItems] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
+
+
   // Destructure searchParams properties at the beginning
   const {
     q: queryParam,
@@ -35,15 +43,42 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
     page: pageParam,
   } = searchParams;
 
-  const items = await getItemsFromFirestore({
-    query: queryParam,
-    category: categoryParam,
-    priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
-    priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
-    location: locationParam,
-    condition: conditionParam,
-    excludeSellerId: currentUser?.uid, // Exclude current user's items
-  });
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setInitialAuthCheckDone(true); // Mark that initial auth check has completed
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Wait for initial auth check to complete before fetching
+    if (!initialAuthCheckDone) {
+      return;
+    }
+
+    setIsLoading(true);
+    getItemsFromFirestore({
+      query: queryParam,
+      category: categoryParam,
+      priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
+      priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
+      location: locationParam,
+      condition: conditionParam,
+      excludeSellerId: currentUser?.uid,
+    }).then(fetchedItems => {
+      setItems(fetchedItems);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error fetching items in ItemGrid:", error);
+      setItems([]);
+      setIsLoading(false);
+    });
+  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam, currentUser, initialAuthCheckDone, pageParam]); // Add pageParam dependency if pagination logic depends on re-fetching
+
+  if (isLoading && items.length === 0) { // Show skeleton only on initial load or when items are empty
+    return <ItemGridSkeleton />;
+  }
 
   const currentPage = parseInt(pageParam || '1');
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
@@ -63,7 +98,9 @@ async function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searc
 
   return (
     <div className="flex-1">
-      {items.length > 0 ? (
+      {isLoading && items.length === 0 ? ( // Handles case where skeleton was shown
+         <ItemGridSkeleton />
+      ) : items.length > 0 ? (
         <>
           <p className="mb-4 text-muted-foreground">
             Affichage de {paginatedItems.length} sur {items.length} articles
@@ -135,7 +172,6 @@ function CardSkeleton() {
 
 
 export default function BrowsePage({ searchParams }: BrowsePageProps) {
-  // Destructure relevant searchParams for title generation
   const { q: queryParam, category: categoryParam } = searchParams;
 
   const pageTitle = queryParam
@@ -150,7 +186,6 @@ export default function BrowsePage({ searchParams }: BrowsePageProps) {
       <div className="flex flex-col md:flex-row gap-8">
         <FilterControls />
         <Suspense fallback={<ItemGridSkeleton />}>
-          {/* Pass the original searchParams object to ItemGrid */}
           <ItemGrid searchParams={searchParams} />
         </Suspense>
       </div>

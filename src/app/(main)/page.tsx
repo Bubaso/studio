@@ -1,14 +1,14 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ItemCard } from '@/components/item-card';
+// import { ItemCard } from '@/components/item-card'; // ItemCard is now used within FeaturedItemsGrid
 import { getItemsFromFirestore } from '@/services/itemService';
 import type { Item, ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
+import { FeaturedItemsGrid } from '@/components/featured-items-grid'; // Import new component
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
-import { auth } from '@/lib/firebase'; // Import auth
+// import { auth } from '@/lib/firebase'; // auth.currentUser won't work reliably here for this filtering
 
-// Updated to include new categories and ensure diversity, with specific data-ai-hints
 const carouselCategories = [
   { name: 'Électronique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Électronique', dataAiHint: 'electronics gadgets' },
   { name: 'Téléphones et Portables', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Téléphones%20et%20Portables', dataAiHint: 'smartphones mobiles' },
@@ -26,22 +26,21 @@ const carouselCategories = [
 ];
 
 export default async function HomePage() {
-  let featuredItems: Item[] = [];
-  const currentUser = auth.currentUser; // Get current user
+  let allFetchedItems: Item[] = [];
 
   try {
-    featuredItems = await getItemsFromFirestore({ 
-      count: 4, 
+    // Fetch more items than needed initially, client component will filter and slice
+    allFetchedItems = await getItemsFromFirestore({
+      count: 8, // Fetch a bit more to allow for filtering by client component
       query: '',
-      excludeSellerId: currentUser?.uid // Exclude current user's items
+      // excludeSellerId cannot be reliably determined in Server Component without server session
     });
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
   }
 
   return (
-    <div className="space-y-4 md:space-y-6"> {/* Reduced vertical spacing further */}
-      {/* New Hero Section */}
+    <div className="space-y-4 md:space-y-6">
       <section className="text-center py-4 md:py-6">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-headline text-primary mb-2 md:mb-3">
           Votre Marché d'Occasion
@@ -49,7 +48,7 @@ export default async function HomePage() {
         <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-lg mx-auto">
           Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.
         </p>
-        <div className="hidden md:flex flex-row gap-2 sm:gap-3 justify-center"> {/* Hidden on mobile, flex on md+ */}
+        <div className="hidden md:flex flex-row gap-2 sm:gap-3 justify-center">
           <Link href="/sell" className="flex-1 max-w-[200px] sm:max-w-xs">
             <Button size="lg" variant="default" className="w-full text-sm sm:text-base">
               <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Vendre Maintenant
@@ -63,24 +62,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Category Carousel Section */}
       <section className="mb-4 md:mb-8">
         <h2 className="text-lg sm:text-xl font-bold font-headline text-primary mb-2 md:mb-3 px-1">Explorer par Catégorie</h2>
         <CategoryCarousel categories={carouselCategories} />
       </section>
 
-      {/* Featured Items Section */}
-      {featuredItems.length > 0 && (
+      {allFetchedItems.length > 0 && (
         <section className="py-4 md:py-6">
           <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
             Dernières trouvailles sur ReFind
           </h2>
-          {/* Added gap-3 for mobile and md:gap-4 for medium screens and up */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {featuredItems.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
+         <FeaturedItemsGrid initialItems={allFetchedItems} maxItems={4} />
            <div className="text-center mt-6 md:mt-8">
             <Link href="/browse">
               <Button variant="secondary" size="lg">Voir tous les articles</Button>
@@ -89,8 +81,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* How it Works Section - App Introduction */}
-      <section className="py-4 md:py-6 bg-card/30 rounded-lg"> {/* Lightly different background */}
+      <section className="py-4 md:py-6 bg-card/30 rounded-lg">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-3 md:gap-4 text-center">
             <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">

@@ -25,19 +25,15 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const itemId = params.id; // Assign params.id to a variable at the top
+  const itemId = params.id; 
   
   if (!itemId) {
-    // This case should ideally not be hit if the route segment is always present
     return <div className="text-center py-10">ID d'article manquant.</div>;
   }
 
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {
-    // This UI error is likely due to Firestore permission issues if itemId is valid.
-    // The custom error message "Permissions Firestore insuffisantes" from your screenshot
-    // suggests this is happening.
     return (
         <Card className="max-w-xl mx-auto my-10">
             <CardHeader>
@@ -100,18 +96,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   let similarItems: Item[] = [];
-  // Ensure item is not null before accessing its properties for similar items query
   if (item && item.price !== undefined && item.category) {
     const priceMin = Math.round(item.price * 0.8);
     const priceMax = Math.round(item.price * 1.2);
 
+    // Fetch without excluding seller ID here; carousel component will handle client-side filtering
     const fetchedSimilarItems = await getItemsFromFirestore({
       category: item.category as ItemCategory,
       priceMin: priceMin,
       priceMax: priceMax,
-      count: 10,
-      excludeSellerId: currentUser?.uid, // Exclude current user's items from similar items
+      count: 10, 
     });
+    // Initial simple filter to exclude the current item, client component handles user-specific filtering
     similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
   }
 
@@ -192,7 +188,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           {similarItems.length > 0 && (
             <section className="space-y-4"> 
               <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
-              <SimilarListingsCarousel items={similarItems} />
+              <SimilarListingsCarousel items={similarItems} currentItemId={itemId} />
             </section>
           )}
           
