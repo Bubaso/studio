@@ -11,6 +11,8 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
+export const dynamic = 'force-dynamic'; // Opt into dynamic rendering
+
 const ITEMS_PER_PAGE = 12;
 
 interface BrowsePageProps {
