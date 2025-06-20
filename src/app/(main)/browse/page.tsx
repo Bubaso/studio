@@ -1,72 +1,59 @@
 
-"use client";
+"use client"; // Make BrowsePage a client component
 
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
 import { getItemsFromFirestore } from '@/services/itemService';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 
-export const dynamic = 'force-dynamic'; // Opt into dynamic rendering
+export const dynamic = 'force-dynamic';
 
 const ITEMS_PER_PAGE = 12;
 
-interface BrowsePageProps {
-  searchParams: {
-    q?: string;
-    category?: ItemCategory;
-    minPrice?: string;
-    maxPrice?: string;
-    location?: string;
-    condition?: ItemCondition;
-    page?: string;
-  };
-}
-
-function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParams'] }) {
+// ItemGrid component - no longer takes searchParams prop
+function ItemGrid() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
 
+  const actualSearchParams = useSearchParams(); // Use the hook in ItemGrid
 
-  // Destructure searchParams properties at the beginning
-  const {
-    q: queryParam,
-    category: categoryParam,
-    minPrice: minPriceParam,
-    maxPrice: maxPriceParam,
-    location: locationParam,
-    condition: conditionParam,
-    page: pageParam,
-  } = searchParams;
+  const queryParam = actualSearchParams.get('q');
+  const categoryParam = actualSearchParams.get('category') as ItemCategory | null;
+  const minPriceParam = actualSearchParams.get('minPrice');
+  const maxPriceParam = actualSearchParams.get('maxPrice');
+  const locationParam = actualSearchParams.get('location');
+  const conditionParam = actualSearchParams.get('condition') as ItemCondition | null;
+  const pageParam = actualSearchParams.get('page');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      setInitialAuthCheckDone(true); // Mark that initial auth check has completed
+      setInitialAuthCheckDone(true);
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    // Wait for initial auth check to complete before fetching
     if (!initialAuthCheckDone) {
       return;
     }
 
     setIsLoading(true);
     getItemsFromFirestore({
-      query: queryParam,
-      category: categoryParam,
+      query: queryParam || undefined,
+      category: categoryParam || undefined,
       priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
       priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
-      location: locationParam,
-      condition: conditionParam,
+      location: locationParam || undefined,
+      condition: conditionParam || undefined,
       excludeSellerId: currentUser?.uid,
     }).then(fetchedItems => {
       setItems(fetchedItems);
@@ -76,9 +63,9 @@ function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParam
       setItems([]);
       setIsLoading(false);
     });
-  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam, currentUser, initialAuthCheckDone, pageParam]); // Add pageParam dependency if pagination logic depends on re-fetching
+  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam, currentUser, initialAuthCheckDone, pageParam]);
 
-  if (isLoading && items.length === 0) { // Show skeleton only on initial load or when items are empty
+  if (isLoading && items.length === 0) {
     return <ItemGridSkeleton />;
   }
 
@@ -87,7 +74,7 @@ function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParam
   const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const buildPageUrl = (pageNumber: number) => {
-    const newParams = new URLSearchParams();
+    const newParams = new URLSearchParams(); // Standard URLSearchParams
     if (queryParam) newParams.set('q', queryParam);
     if (categoryParam) newParams.set('category', categoryParam);
     if (minPriceParam) newParams.set('minPrice', minPriceParam);
@@ -100,7 +87,7 @@ function ItemGrid({ searchParams }: { searchParams: BrowsePageProps['searchParam
 
   return (
     <div className="flex-1">
-      {isLoading && items.length === 0 ? ( // Handles case where skeleton was shown
+      {isLoading && items.length === 0 ? (
          <ItemGridSkeleton />
       ) : items.length > 0 ? (
         <>
@@ -172,9 +159,12 @@ function CardSkeleton() {
   );
 }
 
+// BrowsePage no longer receives searchParams prop
+export default function BrowsePage() {
+  const actualSearchParams = useSearchParams(); // Use hook for pageTitle
 
-export default function BrowsePage({ searchParams }: BrowsePageProps) {
-  const { q: queryParam, category: categoryParam } = searchParams;
+  const queryParam = actualSearchParams.get('q');
+  const categoryParam = actualSearchParams.get('category') as ItemCategory | null;
 
   const pageTitle = queryParam
     ? `Résultats pour "${queryParam}"`
@@ -186,9 +176,9 @@ export default function BrowsePage({ searchParams }: BrowsePageProps) {
     <div className="space-y-8">
       <h1 className="text-4xl font-bold font-headline text-primary">{pageTitle}</h1>
       <div className="flex flex-col md:flex-row gap-8">
-        <FilterControls />
+        <FilterControls /> {/* FilterControls already uses useSearchParams */}
         <Suspense fallback={<ItemGridSkeleton />}>
-          <ItemGrid searchParams={searchParams} />
+          <ItemGrid /> {/* ItemGrid no longer takes searchParams prop */}
         </Suspense>
       </div>
     </div>
