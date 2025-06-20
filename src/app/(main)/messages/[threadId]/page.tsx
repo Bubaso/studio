@@ -242,7 +242,7 @@ export default function MessageThreadPage() {
               data-sender-id={msg.senderId}
             >
               {!isCurrentUserSender && (
-                <Avatar className="h-8 w-8 self-end mb-1"> {/* Adjusted margin */}
+                <Avatar className="h-8 w-8 self-end mb-1">
                   <AvatarImage src={senderAvatar} alt={senderNameDisplay} data-ai-hint="profil personne" />
                   <AvatarFallback>{senderNameDisplay.substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
@@ -263,6 +263,9 @@ export default function MessageThreadPage() {
                         </div>
                     </DialogTrigger>
                     <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background flex items-center justify-center">
+                        <DialogHeader>
+                           <DialogTitle className="sr-only">Image en plein écran</DialogTitle>
+                        </DialogHeader>
                         <div className="relative w-full h-full">
                          <Image src={msg.imageUrl} alt="Pièce jointe en grand" fill className="object-contain rounded-md" unoptimized={true} data-ai-hint="message image" />
                         </div>
@@ -329,3 +332,4 @@ export default function MessageThreadPage() {
     </div>
   );
 }
+
