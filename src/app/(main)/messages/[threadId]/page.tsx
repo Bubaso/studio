@@ -4,9 +4,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { auth } from '@/lib/firebase'; // db removed as it's not directly used here
+import { auth } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { getMessagesForThread, sendMessage, getThreadInfoById, markMessageAsRead, uploadChatImageAndGetURL } from '@/services/messageService';
+import { getMessagesForThread, sendMessage, getThreadInfoById, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser } from '@/services/messageService';
 import type { Message, MessageThread } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -83,8 +83,10 @@ export default function MessageThreadPage() {
 
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // Scroll to bottom when messages or threadId changes
+    // Using "auto" for possibly smoother experience on frequent updates or initial load.
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  }, [messages, threadId]);
 
   const intersectionObserverRef = useRef<IntersectionObserver | null>(null);
   useEffect(() => {
@@ -98,10 +100,21 @@ export default function MessageThreadPage() {
         if (entry.isIntersecting) {
           const messageId = entry.target.getAttribute('data-message-id');
           const senderId = entry.target.getAttribute('data-sender-id');
-          if (messageId && senderId === otherParticipantIdInEffect && !visibleMessagesRef.current.has(messageId)) {
+
+          if (messageId && senderId && !visibleMessagesRef.current.has(messageId)) {
             const message = messages.find(m => m.id === messageId);
-            if (message && (!message.readBy || !message.readBy.includes(currentUserId))) {
-              markMessageAsRead(threadId, messageId, currentUserId);
+            if (message) {
+              // Mark individual message as read
+              if (senderId === otherParticipantIdInEffect && (!message.readBy || !message.readBy.includes(currentUserId))) {
+                markMessageAsRead(threadId, messageId, currentUserId);
+              }
+              
+              // If this intersecting message is the last one in the chat from the other user,
+              // mark the entire thread as "seen" by the current user.
+              const lastMessageInChat = messages[messages.length - 1];
+              if (message.id === lastMessageInChat.id && lastMessageInChat.senderId !== currentUserId) {
+                markThreadAsSeenByCurrentUser(threadId, currentUserId);
+              }
               visibleMessagesRef.current.add(messageId); 
             }
           }

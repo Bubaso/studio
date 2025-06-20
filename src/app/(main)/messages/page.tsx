@@ -9,7 +9,7 @@ import { getMessageThreadsForUser } from '@/services/messageService';
 import type { MessageThread } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquarePlus, Info, Loader2, Circle } from 'lucide-react'; // Added Circle
+import { MessageSquarePlus, Info, Loader2, Circle } from 'lucide-react'; 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -95,7 +95,8 @@ export default function MessagesPage() {
             const otherParticipant = getOtherParticipantDetails(thread);
             const lastMessageText = thread.lastMessageText || "Pas encore de messages.";
             const isLastMessageFromCurrentUser = thread.lastMessageSenderId === currentUser.uid;
-            const hasUnreadMessages = !isLastMessageFromCurrentUser && thread.lastMessageSenderId; // Simple check: if last message is not from current user, consider it unread for this list item
+            const currentUserHasSeenLatest = thread.participantsWhoHaveSeenLatest?.includes(currentUser.uid);
+            const hasUnreadMessages = !isLastMessageFromCurrentUser && !currentUserHasSeenLatest;
 
             return (
             <Link key={thread.id} href={`/messages/${thread.id}`} className="block">
@@ -142,3 +143,4 @@ export default function MessagesPage() {
     </div>
   );
 }
+

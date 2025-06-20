@@ -66,10 +66,12 @@ export function Header() {
       unsubscribeThreads = onSnapshot(threadsQuery, (querySnapshot) => {
         const newActivity = querySnapshot.docs.some(doc => {
           const threadData = doc.data() as MessageThread;
-          // New activity if last message is not from current user AND user is not currently viewing messages
+          // New activity if last message is not from current user AND current user hasn't seen the latest in this thread
           return threadData.lastMessageSenderId && 
-                 threadData.lastMessageSenderId !== currentUser.uid;
+                 threadData.lastMessageSenderId !== currentUser.uid &&
+                 (!threadData.participantsWhoHaveSeenLatest || !threadData.participantsWhoHaveSeenLatest.includes(currentUser.uid));
         });
+        // Hide dot if user is anywhere in messages section
         setHasNewMessageActivity(newActivity && !pathname.startsWith('/messages'));
       }, (error) => {
         console.error("Error fetching message threads for notification: ", error);
@@ -204,3 +206,4 @@ export function Header() {
     </header>
   );
 }
+

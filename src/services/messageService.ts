@@ -67,8 +67,6 @@ export const uploadChatImageAndGetURL = async (file: File, threadId: string, use
     throw new Error("User not authenticated. Cannot upload image.");
   }
   if (currentFirebaseUser.uid !== userId) {
-    // This case should ideally not happen if userId is sourced from auth.currentUser.uid by the caller.
-    // However, it's a good check.
     console.error('CLIENT_STORAGE_UPLOAD_ERROR: Mismatch between provided userId and auth.currentUser.uid.', { providedUserId: userId, authUid: currentFirebaseUser.uid });
     throw new Error("User ID mismatch during image upload authentication.");
   } else {
@@ -77,7 +75,6 @@ export const uploadChatImageAndGetURL = async (file: File, threadId: string, use
 
 
   const uniqueFileName = `${Date.now()}_${file.name}`;
-  // Path was corrected in a previous step to include userId
   const imagePath = `chatAttachments/${threadId}/${userId}/${uniqueFileName}`;
   console.log('CLIENT_STORAGE_UPLOAD: Constructed Storage Path:', imagePath);
 
@@ -91,10 +88,9 @@ export const uploadChatImageAndGetURL = async (file: File, threadId: string, use
     console.log('CLIENT_STORAGE_UPLOAD: Successfully got download URL:', downloadURL);
     return downloadURL;
   } catch (error: any) {
-    // Log the detailed error from Firebase Storage
     console.error("CLIENT_STORAGE_UPLOAD_ERROR: Error during Firebase Storage operation (uploadBytes or getDownloadURL).", 
                   { errorName: error.name, errorCode: error.code, errorMessage: error.message, fullErrorObject: error });
-    throw error; // Re-throw to be caught by the calling component's toast
+    throw error; 
   }
 };
 
@@ -173,6 +169,7 @@ export const createOrGetMessageThread = async (
         createdAt: serverTimestamp(),
         lastMessageText: itemDetails ? `Question à propos de "${itemDetails.name}"` : "Début de la conversation",
         lastMessageSenderId: '',
+        participantsWhoHaveSeenLatest: [], // Initialize as empty or with sender if an initial message is sent
         itemId: itemDetails?.id || '',
         itemTitle: itemDetails?.name || '',
         itemImageUrl: itemDetails?.imageUrls?.[0] || '',
@@ -263,7 +260,7 @@ export const sendMessage = async (
 
   try {
     const batch = writeBatch(db);
-    const newMsgDocRef = doc(messagesColRef); // Auto-generate ID for new message
+    const newMsgDocRef = doc(messagesColRef); 
     batch.set(newMsgDocRef, newMessageData);
     
     let lastMessagePreview = text.trim();
@@ -277,6 +274,7 @@ export const sendMessage = async (
       lastMessageText: lastMessagePreview,
       lastMessageSenderId: senderId,
       lastMessageAt: serverTimestamp(),
+      participantsWhoHaveSeenLatest: [senderId], // Reset this to only the sender
     });
     await batch.commit();
   } catch (error) {
@@ -312,6 +310,7 @@ export const getMessageThreadsForUser = (
         lastMessageSenderId: data.lastMessageSenderId,
         lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
         createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
         itemId: data.itemId,
         itemTitle: data.itemTitle,
         itemImageUrl: data.itemImageUrl,
@@ -370,6 +369,7 @@ export const markMessageAsRead = async (threadId: string, messageId: string, use
     const messageSnap = await getDoc(messageRef);
     if (messageSnap.exists()) {
       const messageData = messageSnap.data() as Message;
+      // Only update if userId is not already in readBy to avoid unnecessary writes
       if (!messageData.readBy || !messageData.readBy.includes(userId)) {
         await updateDoc(messageRef, {
           readBy: arrayUnion(userId)
@@ -397,6 +397,7 @@ export async function getThreadInfoById(threadId: string): Promise<MessageThread
         lastMessageSenderId: data.lastMessageSenderId,
         lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
         createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
         itemId: data.itemId,
         itemTitle: data.itemTitle,
         itemImageUrl: data.itemImageUrl,
@@ -406,6 +407,29 @@ export async function getThreadInfoById(threadId: string): Promise<MessageThread
   } catch (error) {
     console.error("Error fetching thread info by ID:", error);
     return null;
+  }
+}
+
+export async function markThreadAsSeenByCurrentUser(threadId: string, userId: string): Promise<void> {
+  if (!threadId || !userId) {
+    console.warn("markThreadAsSeenByCurrentUser requires threadId and userId");
+    return;
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+  try {
+    // Check if the user is already in the array to prevent redundant updates
+    // This read is optional but can save a write if the user is already marked as seen.
+    const threadSnap = await getDoc(threadRef);
+    if (threadSnap.exists()) {
+      const threadData = threadSnap.data() as MessageThread;
+      if (!threadData.participantsWhoHaveSeenLatest || !threadData.participantsWhoHaveSeenLatest.includes(userId)) {
+        await updateDoc(threadRef, {
+          participantsWhoHaveSeenLatest: arrayUnion(userId)
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`Error marking thread ${threadId} as seen by ${userId}:`, error);
   }
 }
     

@@ -61,6 +61,7 @@ export interface MessageThread {
   itemId?: string; // Optional: if the conversation is about a specific item
   itemTitle?: string; // Denormalized item title
   itemImageUrl?: string; // Denormalized item primary image URL
+  participantsWhoHaveSeenLatest?: string[]; // UIDs of participants who have seen the latest messages
 }
 
 export const ItemCategories = [
@@ -85,3 +86,4 @@ export type ItemCategory = typeof ItemCategories[number];
 
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];
+
