@@ -4,11 +4,12 @@
 import { useTransition, useState, useEffect } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash, CheckCircle, Edit3 } from 'lucide-react';
-import { markAsSoldAction, deleteItemAction } from '@/actions/itemActions';
+import { markItemAsSold, deleteItem } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -20,6 +21,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
   const [isMarkingSold, startMarkingSold] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -32,23 +34,34 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
   }, []);
 
   const handleMarkAsSold = () => {
+     if (!currentUser || currentUser.uid !== item.sellerId) {
+      toast({ variant: "destructive", title: "Erreur", description: "Vous n'êtes pas autorisé à effectuer cette action." });
+      return;
+    }
     startMarkingSold(async () => {
-      const result = await markAsSoldAction(item.id, item.sellerId);
-      if (result.success) {
+      try {
+        await markItemAsSold(item.id);
         toast({ title: "Annonce mise à jour", description: "Votre article a été marqué comme vendu." });
-      } else {
-        toast({ variant: "destructive", title: "Erreur", description: result.error });
+        router.refresh();
+      } catch (error: any) {
+         toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de marquer comme vendu." });
       }
     });
   };
 
   const handleDelete = () => {
+    if (!currentUser || currentUser.uid !== item.sellerId) {
+        toast({ variant: "destructive", title: "Erreur", description: "Vous n'êtes pas autorisé à effectuer cette action." });
+        return;
+    }
     startDeleting(async () => {
-      const result = await deleteItemAction(item.id, item.sellerId);
-      if (result?.error) { // redirect might not return a value, so check for error
-        toast({ variant: "destructive", title: "Erreur", description: result.error });
-      } else {
+      try {
+        await deleteItem(item.id);
         toast({ title: "Annonce supprimée", description: "Votre annonce a été supprimée." });
+        router.push(`/profile`);
+        router.refresh();
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de supprimer l'annonce." });
       }
     });
   };
