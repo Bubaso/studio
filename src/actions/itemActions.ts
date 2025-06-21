@@ -3,13 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { markItemAsSold as markItemAsSoldService, deleteItem as deleteItemService } from '@/services/itemService';
-import { auth } from '@/lib/firebase'; // Client SDK, Next.js provides auth context
 
 export async function markAsSoldAction(itemId: string, sellerId: string) {
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid !== sellerId) {
-        return { success: false, error: "Non autorisé. Vous devez être le vendeur de cet article." };
-    }
     try {
         await markItemAsSoldService(itemId);
         revalidatePath(`/items/${itemId}`);
@@ -22,10 +17,6 @@ export async function markAsSoldAction(itemId: string, sellerId: string) {
 }
 
 export async function deleteItemAction(itemId: string, sellerId: string) {
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid !== sellerId) {
-        return { success: false, error: "Non autorisé. Vous devez être le vendeur de cet article." };
-    }
     try {
         await deleteItemService(itemId);
     } catch (error: any) {
