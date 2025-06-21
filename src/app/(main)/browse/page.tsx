@@ -3,7 +3,7 @@
 
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { Pagination, PaginationContent, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';

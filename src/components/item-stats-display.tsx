@@ -7,7 +7,7 @@ import { getUserListingsFromFirestore } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Timestamp, Unsubscribe } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 interface ItemStatsDisplayProps {
   itemId: string;
@@ -20,48 +20,48 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
   const [activeListingsCount, setActiveListingsCount] = useState<number | null>(null);
 
   useEffect(() => {
-    let unsubscribeViews: Unsubscribe = () => {};
     if (itemId) {
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      const fetchViewCount = async () => {
+        try {
+          const today = new Date();
+          const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
+          const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
 
-      const viewsCollectionRef = collection(db, 'items', itemId, 'views');
-      const q = query(
-        viewsCollectionRef,
-        where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-        where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-      );
-      unsubscribeViews = onSnapshot(
-        q,
-        (snapshot) => setViewCount(snapshot.size),
-        (error) => {
+          const viewsCollectionRef = collection(db, 'items', itemId, 'views');
+          const q = query(
+            viewsCollectionRef,
+            where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+            where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+          );
+          const snapshot = await getDocs(q);
+          setViewCount(snapshot.size);
+        } catch (error) {
           console.error(`Error fetching today's view count for item ${itemId}:`, error);
           setViewCount(0);
         }
-      );
+      };
+      fetchViewCount();
     } else {
       setViewCount(0);
     }
-    return () => unsubscribeViews();
   }, [itemId]);
 
   useEffect(() => {
-    let unsubscribeFavorites: Unsubscribe = () => {};
     if (itemId) {
-      const favoritesQuery = query(collection(db, 'userFavorites'), where('itemId', '==', itemId));
-      unsubscribeFavorites = onSnapshot(
-        favoritesQuery,
-        (snapshot) => setFavoriteCount(snapshot.size),
-        (error) => {
+      const fetchFavoriteCount = async () => {
+        try {
+          const favoritesQuery = query(collection(db, 'userFavorites'), where('itemId', '==', itemId));
+          const snapshot = await getDocs(favoritesQuery);
+          setFavoriteCount(snapshot.size);
+        } catch (error) {
           console.error(`Error fetching favorite count for item ${itemId}:`, error);
           setFavoriteCount(0);
         }
-      );
+      };
+      fetchFavoriteCount();
     } else {
       setFavoriteCount(0);
     }
-    return () => unsubscribeFavorites();
   }, [itemId]);
 
   useEffect(() => {
