@@ -3,9 +3,9 @@
 
 import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -45,9 +45,7 @@ const mapDocToItem = (document: any): Item => {
 
   // SIMULATION: In a real app, engagementScore would be calculated and stored by a background job (e.g., Cloud Function).
   // Here, we simulate it to demonstrate the "low activity" feature.
-  // This logic marks items older than 45 days with a price not divisible by 7 as having "low activity".
   const isOld = ageInDays > 45;
-  // This is a placeholder for a real score. In reality, you'd check a stored `engagementScore` field.
   const hasSimulatedLowScore = data.price % 7 !== 0; 
   const lowActivity = isOld && hasSimulatedLowScore;
 
@@ -67,6 +65,8 @@ const mapDocToItem = (document: any): Item => {
     lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated as FirebaseTimestampType) : undefined,
     suspectedSold: data.suspectedSold || false,
     lowActivity: lowActivity,
+    isSold: data.isSold || false,
+    soldAt: data.soldAt ? convertTimestampToISO(data.soldAt as FirebaseTimestampType) : undefined,
   };
 };
 
@@ -105,10 +105,19 @@ export const getItemsFromFirestore = async (filters?: {
       queryConstraints.push(limit(filters.count * 2)); 
     }
 
-
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
-    let fetchedItems = querySnapshot.docs.map(mapDocToItem);
+    let allItems = querySnapshot.docs.map(mapDocToItem);
+
+    // Filter for sold items older than 15 days
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+    
+    let fetchedItems = allItems.filter(item => {
+        if (!item.isSold) return true; // Keep if not sold
+        if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true; // Keep if sold recently
+        return false; // Hide if sold more than 15 days ago
+    });
 
     if (filters?.location) {
       fetchedItems = fetchedItems.filter(item => item.location?.toLowerCase().includes(filters.location!.toLowerCase()));
@@ -136,7 +145,6 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.count && filters.excludeSellerId) { 
         fetchedItems = fetchedItems.slice(0, filters.count);
     }
-
 
     return fetchedItems;
   } catch (error) {
@@ -183,7 +191,6 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
 };
 
 export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
-  console.log(`ITEM_SERVICE_UPLOAD: Initiating uploadImageAndGetURL for item. UserID param: ${userId}, File: ${imageFile.name}, Size: ${imageFile.size}`);
   if (!userId) {
      const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID (param) is required for image upload.";
      console.error(errorMsg);
@@ -197,19 +204,14 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
 
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
   const imagePath = `items/${userId}/${uniqueFileName}`;
-  console.log(`ITEM_SERVICE_UPLOAD: Constructed storage path: ${imagePath}`);
   const imageRef = storageRef(storage, imagePath);
   try {
-    console.log(`ITEM_SERVICE_UPLOAD: Attempting uploadBytes for ${imagePath}.`);
     const snapshot = await uploadBytes(imageRef, imageFile);
-    console.log(`ITEM_SERVICE_UPLOAD: Upload successful for ${imagePath}. Snapshot ref: ${snapshot.ref.fullPath}`);
     const downloadURL = await getDownloadURL(snapshot.ref);
-    console.log(`ITEM_SERVICE_UPLOAD: Got download URL for ${imagePath}: ${downloadURL}`);
     return downloadURL;
   } catch (error: any) {
     console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
-    console.error(`ITEM_SERVICE_UPLOAD_ERROR_RAW: Name: ${error.name}, Code: ${error.code}, Message: ${error.message}`);
-    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2)); // Added 2 for pretty print
+    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     throw error;
   }
 };
@@ -217,14 +219,11 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
-  console.log(`ITEM_SERVICE_CREATE: itemData.sellerId passed to createItemInFirestore: ${itemData.sellerId}`);
-
   try {
     const docRef = await addDoc(collection(db, "items"), {
       ...itemData,
       postedDate: serverTimestamp(),
     });
-    console.log("SERVER: Item created successfully in Firestore with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
     console.error("SERVER: Error creating item in Firestore: ", error);
@@ -250,7 +249,6 @@ export async function updateItemInFirestore(
 
   try {
     await updateDoc(itemRef, dataToUpdate);
-    console.log(`SERVER: Item ${itemId} updated successfully in Firestore.`);
   } catch (error) {
     console.error(`SERVER: Error updating item ${itemId} in Firestore: `, error);
     throw error;
@@ -259,7 +257,6 @@ export async function updateItemInFirestore(
 
 export async function logItemView(itemId: string): Promise<void> {
   if (!itemId) {
-    console.warn('SERVER: logItemView called without itemId');
     return;
   }
   try {
@@ -267,8 +264,50 @@ export async function logItemView(itemId: string): Promise<void> {
     await addDoc(viewsCollectionRef, {
       timestamp: serverTimestamp(),
     });
-    console.log(`SERVER: View logged successfully for item ${itemId} in Firestore.`);
   } catch (error) {
     console.error(`SERVER: Error logging view for item ${itemId}:`, error);
   }
+}
+
+export async function markItemAsSold(itemId: string): Promise<void> {
+  const itemRef = doc(db, 'items', itemId);
+  await updateDoc(itemRef, {
+    isSold: true,
+    soldAt: serverTimestamp(),
+  });
+}
+
+export async function deleteItem(itemId: string): Promise<void> {
+  const item = await getItemByIdFromFirestore(itemId);
+  if (!item) {
+    throw new Error("Item not found, cannot delete.");
+  }
+
+  // Delete images from Firebase Storage
+  const imageDeletePromises = item.imageUrls.map(url => {
+    // Only attempt to delete images hosted on Firebase Storage
+    if (url.includes('firebasestorage.googleapis.com')) {
+      try {
+        const imageRef = storageRef(storage, url);
+        return deleteObject(imageRef);
+      } catch (error) {
+        console.error(`Failed to create storage reference for URL ${url}. It might be malformed.`, error);
+        return Promise.resolve(); // Don't block other deletions
+      }
+    }
+    return Promise.resolve(); // Ignore placeholders or other external URLs
+  });
+
+  await Promise.allSettled(imageDeletePromises)
+    .then(results => {
+      results.forEach(result => {
+        if (result.status === 'rejected') {
+          console.warn('One or more images failed to delete:', result.reason);
+        }
+      });
+    });
+
+  // Delete the item document from Firestore
+  const itemDocRef = doc(db, 'items', itemId);
+  await deleteDoc(itemDocRef);
 }

@@ -1,37 +1,27 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Rules for user avatar images
-    // Path: /avatars/{userId}/{fileName}
-    match /avatars/{userId}/{fileName} {
-      // Anyone can read avatars (e.g., to display profile pictures)
+    // Avatars: Users can read anyone's avatar, but only write/delete their own.
+    match /avatars/{userId}/{allPaths=**} {
       allow read: if true;
-      // An authenticated user can only write to their own avatar directory
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Item Images: Users can read anyone's item images.
+    // Sellers can create, update, or delete images under their own user ID folder.
+    match /items/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write, delete: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Rules for item images
-    // Path: /items/{userId}/{fileName}
-    match /items/{userId}/{fileName} {
-      // Anyone can read item images
-      allow read: if true;
-      
-      // Temporarily allow any authenticated user to upload item images.
-      // This is a workaround for development to bypass auth context issues.
-      // TODO: Revert to a more secure rule before production, like:
-      // allow write: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null;
-    }
-    
-    // Rules for chat image attachments
-    // Path: /chatAttachments/{threadId}/{userId}/{fileName}
-    match /chatAttachments/{threadId}/{userId}/{fileName} {
-       // Anyone can read chat images (if they have the URL)
-      allow read: if true;
-      // An authenticated user can only write images to their own subdirectory within a chat
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Chat attachments: Only participants of a thread can read/write attachments.
+    // This rule is more complex as it needs to check the messageThreads collection.
+    // For simplicity, we'll allow any authenticated user to write to their own user-id-scoped folder.
+    // Reading would ideally be restricted based on thread participation.
+    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

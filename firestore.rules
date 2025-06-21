@@ -1,109 +1,101 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated.
+    // Helper function to check if a user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Rules for the 'items' collection
-    match /items/{itemId} {
-      // Anyone can read items.
-      allow read: if true;
-
-      // Only authenticated users can create items, and the sellerId must match their own UID.
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.sellerId;
-      
-      // Only the seller of an item can update it.
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.sellerId;
-
-      // No one can delete items for now (safer).
-      allow delete: if false;
-
-      // Rules for the 'views' subcollection within an item.
-      match /views/{viewId} {
-        allow read: if true; // Allow reading views if needed for analytics.
-        allow create: if true; // Anyone can log a view.
-      }
+    // Helper function to check if the user is the owner of a document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    // Rules for the 'users' collection
+    // `users` collection rules
     match /users/{userId} {
-      // Anyone can read user profiles.
+      // Anyone can read a user's public profile
       allow read: if true;
       
-      // A user can create their own profile document.
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-
-      // A user can only update their own profile.
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+      // Only the authenticated owner can create their own user document
+      allow create: if isOwner(userId);
+      
+      // Only the authenticated owner can update their own document
+      allow update: if isOwner(userId);
+      
+      // Users should not be able to delete their accounts via these rules
+      allow delete: if false;
     }
 
-    // Rules for the 'reviews' collection
-    match /reviews/{reviewId} {
-      // Anyone can read reviews.
+    // `items` collection rules
+    match /items/{itemId} {
+      // Anyone can read item listings
       allow read: if true;
       
-      // Authenticated users can create reviews, but not for their own items.
-      allow create: if isAuthenticated() && request.resource.data.reviewerId == request.auth.uid && request.resource.data.sellerId != request.auth.uid;
-    }
+      // An authenticated user can create an item if their UID matches the sellerId in the new document
+      allow create: if isAuthenticated() && isOwner(request.resource.data.sellerId);
 
-    // Rules for message threads and their subcollections
-    match /messageThreads/{threadId} {
-      // Creation is handled by the API route with Admin SDK, but this rule provides a layer of security.
-      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participantIds;
-
-      // Participants can read or update their own threads.
-      allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+      // The seller can update their own item document. They cannot change the sellerId.
+      allow update: if isAuthenticated() && isOwner(resource.data.sellerId) && request.resource.data.sellerId == resource.data.sellerId;
       
-      // Rules for the 'messages' subcollection.
-      match /messages/{messageId} {
-        // Participants can read and create messages in their thread.
-        // This rule securely checks the parent thread document for the user's ID.
-        allow read, create: if isAuthenticated() && (get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid);
+      // The seller can delete their own item document
+      allow delete: if isAuthenticated() && isOwner(resource.data.sellerId);
+
+      // Rules for subcollections of items, e.g., views
+      match /views/{viewId} {
+        allow read: if false; // No one should read individual views
+        allow list: if false; // Prevent listing all views
+        allow create: if true; // Anyone can create a view document (logging a view)
       }
     }
+    
+    // `reviews` collection rules
+    match /reviews/{reviewId} {
+      // Anyone can read reviews for an item
+      allow read: if true;
 
-    // Rules for the 'userFavorites' collection
-    match /userFavorites/{favoriteId} {
-      // Anyone can perform a list query. This is necessary for the public favorite count on item pages.
-      // Security is maintained because specific document reads are still protected by the 'get' rule.
-      allow list: if true;
+      // An authenticated user can create a review, but cannot review their own item
+      allow create: if isAuthenticated() && isOwner(request.resource.data.reviewerId) && request.resource.data.reviewerId != request.resource.data.sellerId;
 
-      // A user can read or delete their own specific favorite document.
-      // The document ID is a composite key: {userId}_{itemId}
-      allow get, delete: if isAuthenticated() && request.auth.uid == favoriteId.split('_')[0];
-
-      // A user can create their own favorite document.
-      // The data must also contain the correct userId, and the doc ID must match.
-      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId && request.auth.uid == favoriteId.split('_')[0];
-      
-      // Updates to favorite documents are not allowed.
-      allow update: if false;
+      // Reviews are immutable
+      allow update, delete: if false;
     }
 
-    // Rules for product reports
-    match /productReports/{itemId} {
-        // No one can read or list the top-level report documents directly.
-        allow read: if false;
-        
-        // Rules for the 'reports' subcollection.
-        match /reports/{userId} {
-            // A user can get their own report to check if they've already reported.
-            allow get: if isAuthenticated() && request.auth.uid == userId;
-            
-            // Users cannot list reports from others.
-            allow list: if false;
+    // `messageThreads` collection rules
+    match /messageThreads/{threadId} {
+      // Users can only access threads they are a part of
+      allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+      // Allow creation via the backend API route, not directly by clients
+      allow create: if isAuthenticated();
 
-            // A user can create their own report.
-            allow create: if isAuthenticated() && request.auth.uid == userId;
-            
-            // No updates or deletes on reports.
-            allow update, delete: if false;
-        }
+      // Rules for the 'messages' subcollection
+      match /messages/{messageId} {
+        // Users can only read messages in threads they are part of
+        allow read, create: if isAuthenticated() && get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || 
+                               get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid;
+        // Messages are immutable
+        allow update, delete: if false;
+      }
+    }
+    
+    // `userFavorites` collection rules
+    match /userFavorites/{favoriteId} {
+      // Public can count favorites (via query), but not read individual documents
+      allow read: if false;
+      allow list: if true; // Allow queries, e.g., to count favorites for an item
+      
+      // An authenticated user can create/delete their own favorite entry
+      // The favoriteId must be in the format {userId}_{itemId}
+      allow create, delete: if isAuthenticated() && isOwner(favoriteId.split('_')[0]);
+    }
+
+    // `productReports` subcollection rules
+    match /productReports/{itemId}/reports/{userId} {
+      // A user can create a report for an item if they are authenticated and are the one reporting
+      allow create: if isAuthenticated() && isOwner(userId);
+      // Nobody can read, update, or delete individual reports directly
+      allow read, update, delete: if false;
     }
   }
 }

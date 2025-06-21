@@ -6,14 +6,13 @@ import type { UserProfile, Review, Item, ItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag } from 'lucide-react'; 
+import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag, CheckCircle } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
 import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; 
 import { ReviewForm } from '@/components/review-form'; 
-import { EditItemButtonClient } from '@/components/edit-item-button-client';
-import { PurchaseItemButtonClient } from '@/components/purchase-item-button-client';
+import { SellerActionsClient } from '@/components/seller-actions-client';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
 import { auth } from '@/lib/firebase';
@@ -38,18 +37,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
     return (
         <Card className="max-w-xl mx-auto my-10">
             <CardHeader>
-                <CardTitle className="text-destructive text-center">Erreur de chargement de l'article</CardTitle>
+                <CardTitle className="text-destructive text-center">Article non trouvé</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
                 <p className="text-muted-foreground mb-2">
-                    L'article avec l'ID "{itemId}" n'a pas pu être chargé.
+                    L'article avec l'ID "{itemId}" n'existe pas ou a été supprimé.
                 </p>
-                <p className="text-red-500 font-semibold">
-                    Cause probable : Permissions Firestore insuffisantes.
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Veuillez vérifier vos règles de sécurité Firestore dans la console Firebase.
-                </p>
+                <Link href="/browse"><Button variant="outline">Retourner aux annonces</Button></Link>
             </CardContent>
         </Card>
     );
@@ -101,14 +95,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
     const priceMin = Math.round(item.price * 0.8);
     const priceMax = Math.round(item.price * 1.2);
 
-    // Fetch without excluding seller ID here; carousel component will handle client-side filtering
     const fetchedSimilarItems = await getItemsFromFirestore({
       category: item.category as ItemCategory,
       priceMin: priceMin,
       priceMax: priceMax,
       count: 10, 
     });
-    // Initial simple filter to exclude the current item, client component handles user-specific filtering
     similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
   }
 
@@ -129,6 +121,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 data-ai-hint={imageHint}
                 priority
               />
+               {item.isSold && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
+                    <Badge variant="destructive" className="text-base sm:text-lg py-2 px-4 border-2 border-white/50 transform-gpu scale-110">
+                        <CheckCircle className="h-5 w-5 mr-2" /> VENDU
+                    </Badge>
+                </div>
+               )}
             </div>
           </Card>
           {otherImageUrls.length > 0 && (
@@ -156,7 +155,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
           </div>
 
-          {item.suspectedSold && (
+          {item.isSold && (
+             <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Cet article a été vendu
+              </Badge>
+          )}
+
+          {item.suspectedSold && !item.isSold && (
               <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
                   <Flag className="h-4 w-4 mr-2" />
                   Non confirmé : peut être vendu
@@ -231,18 +237,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
           )}
 
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-            {item && item.sellerId && (
-                <PurchaseItemButtonClient sellerId={item.sellerId} itemId={itemId} />
-            )}
-            {item && item.sellerId && (
+            {item && item.sellerId && !item.isSold && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
             )}
-             {item && item.sellerId && (
-                <EditItemButtonClient sellerId={item.sellerId} itemId={itemId} />
-            )}
           </div>
+          
+          {item && <SellerActionsClient item={item} />}
 
-          {item && item.sellerId && (
+
+          {item && item.sellerId && !item.isSold && (
             <div className="pt-4 text-center border-t border-dashed">
               <ReportItemButton itemId={itemId} sellerId={item.sellerId} />
             </div>
@@ -253,7 +256,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
                 <span>Publié le : {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
             </div>
-            {item.lastUpdated && (
+             {item.soldAt && (
+                 <div className="flex items-center text-green-600">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <span>Vendu le : {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                </div>
+            )}
+            {item.lastUpdated && !item.soldAt && (
                  <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
                     <span>Dernière modification : {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
