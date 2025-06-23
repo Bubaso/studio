@@ -9,7 +9,7 @@ interface EditItemPageProps {
 }
 
 export default async function EditItemPage({ params }: EditItemPageProps) {
-  const itemId = params.id;
+  const { id: itemId } = params;
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {

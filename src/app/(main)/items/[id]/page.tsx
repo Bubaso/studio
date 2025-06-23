@@ -25,7 +25,7 @@ interface ItemPageProps {
 }
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  const itemId = params.id; 
+  const { id: itemId } = params; 
   
   if (!itemId) {
     return <div className="text-center py-10">ID d'article manquant.</div>;
