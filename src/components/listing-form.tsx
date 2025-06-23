@@ -27,6 +27,7 @@ import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
 import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
+import { suggestDescription } from "@/ai/flows/suggest-description-flow";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -70,9 +71,16 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  // State for AI category suggestion
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const [categorySuggestion, setCategorySuggestion] = useState<{ category: ItemCategory; confidence: number } | null>(null);
   const [isCategorySuggestionApplied, setIsCategorySuggestionApplied] = useState(false);
+
+  // State for AI description suggestion
+  const [descriptionSuggestion, setDescriptionSuggestion] = useState<string | null>(null);
+  const [isSuggestingDescription, setIsSuggestingDescription] = useState(false);
+  const [isDescriptionSuggestionApplied, setIsDescriptionSuggestionApplied] = useState(false);
 
 
   const isEditMode = !!initialItemData?.id;
@@ -124,14 +132,15 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     };
   }, [objectUrlToFileMap, imagePreviews]);
 
-  const itemDescriptionForAISuggestion = form.watch("description");
+  const itemDescriptionForAISuggestions = form.watch("description");
 
+  // AI Category Suggestion Logic
   useEffect(() => {
-    if (itemDescriptionForAISuggestion && itemDescriptionForAISuggestion.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
+    if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
       const handler = setTimeout(async () => {
         setIsSuggestingCategory(true);
         try {
-          const suggestion = await suggestItemCategory({ itemDescription: itemDescriptionForAISuggestion });
+          const suggestion = await suggestItemCategory({ itemDescription: itemDescriptionForAISuggestions });
           if (suggestion.suggestedCategory && ItemCategories.includes(suggestion.suggestedCategory as ItemCategory)) {
             setCategorySuggestion({ category: suggestion.suggestedCategory as ItemCategory, confidence: suggestion.confidence });
           } else {
@@ -145,13 +154,38 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         }
       }, 1000);
 
-      return () => {
-        clearTimeout(handler);
-      };
+      return () => clearTimeout(handler);
     } else {
       setCategorySuggestion(null);
     }
-  }, [itemDescriptionForAISuggestion, isCategorySuggestionApplied, isEditMode]);
+  }, [itemDescriptionForAISuggestions, isCategorySuggestionApplied, isEditMode]);
+
+  // AI Description Suggestion Logic
+  useEffect(() => {
+    if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 25 && !isDescriptionSuggestionApplied && !isEditMode) {
+      const handler = setTimeout(async () => {
+        if (isSuggestingDescription) return;
+        setIsSuggestingDescription(true);
+        try {
+          const suggestionResult = await suggestDescription({ itemDescription: itemDescriptionForAISuggestions });
+          if (suggestionResult.suggestedDescription && suggestionResult.suggestedDescription !== itemDescriptionForAISuggestions) {
+            setDescriptionSuggestion(suggestionResult.suggestedDescription);
+          } else {
+            setDescriptionSuggestion(null);
+          }
+        } catch (error) {
+          console.error("Error suggesting description:", error);
+          setDescriptionSuggestion(null);
+        } finally {
+          setIsSuggestingDescription(false);
+        }
+      }, 1500);
+
+      return () => clearTimeout(handler);
+    } else {
+      setDescriptionSuggestion(null);
+    }
+  }, [itemDescriptionForAISuggestions, isDescriptionSuggestionApplied, isEditMode, isSuggestingDescription]);
 
 
   const handlePriceSuggested = (price: number) => {
@@ -243,41 +277,21 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       setIsSubmitting(false);
       return;
     }
-    console.log(`LISTING_FORM: Attempting to process item. CurrentUser UID: ${currentUser.uid}`);
 
     let finalImageUrls: string[] = [];
     const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
     finalImageUrls.push(...keptExistingUrls);
 
     const newFilesForUpload = values.imageFiles || [];
-    console.log(`LISTING_FORM: Attempting to upload ${newFilesForUpload.length} new image(s).`);
 
     if (newFilesForUpload.length > 0) {
       try {
         const uploadedNewUrls = await Promise.all(
-          newFilesForUpload.map(file => {
-            console.log(`LISTING_FORM: Calling uploadImageAndGetURL for file: ${file.name}, with UID: ${currentUser.uid}`);
-            return uploadImageAndGetURL(file, currentUser.uid);
-          })
+          newFilesForUpload.map(file => uploadImageAndGetURL(file, currentUser.uid))
         );
         finalImageUrls.push(...uploadedNewUrls);
-      } catch (uploadError: any) {
-        console.error("LISTING_FORM: Error during Promise.all for image uploads:", uploadError);
-        console.error("LISTING_FORM_UPLOAD_ERROR_RAW:", {
-            name: uploadError.name,
-            message: uploadError.message,
-            code: uploadError.code,
-            stack: uploadError.stack, 
-            stringified: JSON.stringify(uploadError, Object.getOwnPropertyNames(uploadError))
-        });
-        let detailedMessage = "Certaines images n'ont pas pu être téléversées.";
-        if (uploadError.code) {
-          detailedMessage += ` (Code: ${uploadError.code})`;
-        }
-        if (uploadError.message && !detailedMessage.includes(uploadError.message)) { 
-          detailedMessage += ` Message: ${uploadError.message}`;
-        }
-        toast({ title: "Erreur de téléversement", description: detailedMessage, variant: "destructive"});
+      } catch (uploadError) {
+        toast({ title: "Erreur de téléversement", description: "Certaines images n'ont pas pu être téléversées.", variant: "destructive"});
         setIsSubmitting(false);
         return;
       }
@@ -285,11 +299,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     
     if (finalImageUrls.length === 0 && !isEditMode) { 
       finalImageUrls.push("https://placehold.co/600x400.png");
-    } else if (finalImageUrls.length === 0 && isEditMode && initialItemData?.imageUrls && initialItemData.imageUrls.length > 0) {
-      // User removed all images in edit mode. finalImageUrls is intentionally empty.
-    } else if (finalImageUrls.length === 0 && isEditMode && (!initialItemData?.imageUrls || initialItemData.imageUrls.length === 0)) {
-      // No images initially, and none added.
-      finalImageUrls.push("https://placehold.co/600x400.png"); 
+    } else if (finalImageUrls.length === 0 && isEditMode) {
+      // User removed all images.
     }
     
     const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
@@ -328,13 +339,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         router.push(`/items/${newItemId}`);
       }
     } catch (error: any) {
-      console.error(`LISTING_FORM: Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
-      console.error("LISTING_FORM_FIRESTORE_ERROR_RAW:", {
-        name: error.name,
-        message: error.message,
-        code: error.code,
-        stringified: JSON.stringify(error, Object.getOwnPropertyNames(error))
-      });
+      console.error(`Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
       toast({
         title: "Erreur de sauvegarde",
         description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. ${error.message || 'Veuillez réessayer.'}`,
@@ -392,40 +397,95 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   />
                 </FormControl>
                 <FormMessage />
+                {isSuggestingDescription && (
+                  <div className="mt-2 text-xs text-muted-foreground flex items-center">
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche d'une meilleure description...
+                  </div>
+                )}
+                {descriptionSuggestion && !isDescriptionSuggestionApplied && (
+                  <div className="mt-2 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
+                    <div className="flex items-center justify-between font-semibold text-accent mb-2">
+                      Suggestion IA
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap mb-3 p-2 bg-background rounded-md">{descriptionSuggestion}</p>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-muted-foreground hover:underline"
+                        onClick={() => {
+                          setDescriptionSuggestion(null);
+                          setIsDescriptionSuggestionApplied(true);
+                        }}
+                      >
+                        Ignorer
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        className="h-auto px-3 py-1"
+                        onClick={() => {
+                          form.setValue("description", descriptionSuggestion, { shouldValidate: true });
+                          setDescriptionSuggestion(null);
+                          setIsDescriptionSuggestionApplied(true);
+                          toast({
+                            title: "Description Appliquée",
+                            description: "La description suggérée par l'IA a été appliquée.",
+                          });
+                        }}
+                      >
+                        Accepter la Suggestion
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </FormItem>
             )}
           />
+
           <div className="grid sm:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field: { onChange, onBlur, value, name, ref } }) => (
-                <FormItem>
-                  <FormLabel>Prix (FCFA)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="ex: 25000"
-                      name={name}
-                      ref={ref}
-                      onBlur={onBlur}
-                      value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
-                      onChange={e => {
-                        const stringValue = e.target.value;
-                        if (stringValue === "") {
-                          onChange(undefined); 
-                        } else {
-                          const num = parseFloat(stringValue);
-                          onChange(isNaN(num) ? undefined : num); 
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div>
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field: { onChange, onBlur, value, name, ref } }) => (
+                  <FormItem>
+                    <FormLabel>Prix (FCFA)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="1"
+                        placeholder="ex: 25000"
+                        name={name}
+                        ref={ref}
+                        onBlur={onBlur}
+                        value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
+                        onChange={e => {
+                          const stringValue = e.target.value;
+                          if (stringValue === "") {
+                            onChange(undefined); 
+                          } else {
+                            const num = parseFloat(stringValue);
+                            onChange(isNaN(num) ? undefined : num); 
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="md:hidden mt-8">
+                <PriceSuggestion
+                  itemDescription={itemDescriptionForAISuggestions}
+                  onPriceSuggested={handlePriceSuggested}
+                />
+              </div>
+            </div>
+            
             <FormField
               control={form.control}
               name="category"
@@ -576,11 +636,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
                   {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
                 </FormDescription>
+                <p className="text-xs text-muted-foreground mt-1">
+                    Les annonces avec au moins une courte vidéo se vendent plus rapidement.
+                </p>
                 {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
               </FormItem>
             )}
           />
-
 
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
@@ -588,13 +650,12 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
           </Button>
         </form>
       </Form>
-      <div className="md:col-span-1">
+      <div className="md:col-span-1 hidden md:block">
         <PriceSuggestion
-          itemDescription={itemDescriptionForAISuggestion}
+          itemDescription={itemDescriptionForAISuggestions}
           onPriceSuggested={handlePriceSuggested}
         />
       </div>
     </div>
   );
 }
-    
