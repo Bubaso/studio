@@ -9,23 +9,41 @@ import { FeaturedItemsGrid } from '@/components/featured-items-grid'; // Import 
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
 // import { auth } from '@/lib/firebase'; // auth.currentUser won't work reliably here for this filtering
 
-const carouselCategories = [
-  { name: 'Électronique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Électronique', dataAiHint: 'electronics gadgets' },
-  { name: 'Téléphones et Portables', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Téléphones%20et%20Portables', dataAiHint: 'smartphones mobiles' },
-  { name: 'Vêtements et Accessoires', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Vêtements%20et%20Accessoires', dataAiHint: 'fashion clothing' },
-  { name: 'Mobilier', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Mobilier', dataAiHint: 'furniture home' },
-  { name: 'Meubles', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Meubles', dataAiHint: 'household furniture' },
-  { name: 'Maison et Jardin', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Maison%20et%20Jardin', dataAiHint: 'home garden' },
-  { name: 'Santé et Beauté', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Santé%20et%20Beauté', dataAiHint: 'health beauty' },
-  { name: 'Bébés et Enfants', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Bébés%20et%20Enfants', dataAiHint: 'baby kids' },
-  { name: 'Sports et Plein Air', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Sports%20et%20Plein%20Air', dataAiHint: 'sports equipment' },
-  { name: 'Livres, Films et Musique', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Livres%2C%20Films%20et%20Musique', dataAiHint: 'books media' },
-  { name: 'Équipement et Outils', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Équipement%20et%20Outils', dataAiHint: 'tools equipment' },
-  { name: 'Véhicules', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Véhicules', dataAiHint: 'vehicles cars' },
-  { name: 'Autre', imageUrl: 'https://placehold.co/400x300.png', link: '/browse?category=Autre', dataAiHint: 'various items' },
+const categoryDefinitions = [
+  { name: 'Électronique', dataAiHint: 'electronics gadgets' },
+  { name: 'Téléphones et Portables', dataAiHint: 'smartphones mobiles' },
+  { name: 'Vêtements et Accessoires', dataAiHint: 'fashion clothing' },
+  { name: 'Mobilier', dataAiHint: 'furniture home' },
+  { name: 'Meubles', dataAiHint: 'household furniture' },
+  { name: 'Maison et Jardin', dataAiHint: 'home garden' },
+  { name: 'Santé et Beauté', dataAiHint: 'health beauty' },
+  { name: 'Bébés et Enfants', dataAiHint: 'baby kids' },
+  { name: 'Sports et Plein Air', dataAiHint: 'sports equipment' },
+  { name: 'Livres, Films et Musique', dataAiHint: 'books media' },
+  { name: 'Équipement et Outils', dataAiHint: 'tools equipment' },
+  { name: 'Véhicules', dataAiHint: 'vehicles cars' },
+  { name: 'Autre', dataAiHint: 'various items' },
 ];
 
 export default async function HomePage() {
+  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+  const carouselCategories = categoryDefinitions.map(category => {
+    // We assume a .png extension. User must upload files with this extension.
+    const imageName = `${category.name}.png`;
+    // The path in the storage bucket.
+    const encodedPath = `category-images/${encodeURIComponent(imageName)}`;
+    // Construct the public URL.
+    const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodedPath}?alt=media`;
+    
+    return {
+      name: category.name,
+      dataAiHint: category.dataAiHint,
+      imageUrl: imageUrl,
+      link: `/browse?category=${encodeURIComponent(category.name)}`
+    }
+  });
+  
   let allFetchedItems: Item[] = [];
 
   try {
