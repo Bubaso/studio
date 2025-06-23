@@ -498,9 +498,30 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             </div>
             <div className="grid grid-cols-2 gap-8">
                 {/* Condition Field (Desktop) */}
-                <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="condition" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>État</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize">{conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 {/* Location Field (Desktop) */}
-                <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="location" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lieu (Optionnel)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ex: Dakar, Sénégal" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
             </div>
           </div>
           
@@ -517,27 +538,48 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                         <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
+                        {ItemCategories.map((category) => ( <SelectItem key={category} value={category}>{category}</SelectItem>))}
                       </SelectContent>
                     </Select>
-                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"> <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie... </div> )}
+                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"><Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie...</div>)}
                     {categorySuggestion && !isCategorySuggestionApplied && (
                       <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
                         <div className="flex items-center justify-between">
                            <div><Sparkles className="h-3 w-3 mr-1 inline-block text-accent" /> Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)</div>
-                           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}> Accepter </Button>
+                           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}>Accepter</Button>
                         </div>
                       </div>
                     )}
-                    {isCategorySuggestionApplied && form.getValues("category") && ( <div className="mt-1 text-xs text-green-600 flex items-center"> <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée. </div> )}
+                    {isCategorySuggestionApplied && form.getValues("category") && (<div className="mt-1 text-xs text-green-600 flex items-center"><CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée.</div>)}
                     <FormMessage />
                   </FormItem>
                 )}
               />
             {/* Condition Field (Mobile) */}
-            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="condition" render={({ field }) => (
+              <FormItem>
+                <FormLabel>État</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {ItemConditions.map((conditionValue) => (<SelectItem key={conditionValue} value={conditionValue} className="capitalize">{conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
             {/* Location Field (Mobile) */}
-            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="location" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lieu (Optionnel)</FormLabel>
+                <FormControl>
+                  <Input placeholder="ex: Dakar, Sénégal" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
           </div>
 
           {/* --- MOBILE PRICE BLOCK --- */}
@@ -574,22 +616,20 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               <FormItem>
                 <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
                 <FormControl>
-                  <div>
-                    <Input
-                      type="file"
-                      accept="image/png, image/jpeg, image/gif, image/webp"
-                      multiple
-                      onChange={handleFileChange}
-                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                      disabled={(imagePreviews.length >= MAX_FILES)}
-                    />
-                    {(imagePreviews.length >= MAX_FILES) && (
-                        <FormDescription className="text-destructive">
-                            Vous avez atteint la limite de {MAX_FILES} images.
-                        </FormDescription>
-                    )}
-                  </div>
+                  <Input
+                    type="file"
+                    accept="image/png, image/jpeg, image/gif, image/webp"
+                    multiple
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                    disabled={imagePreviews.length >= MAX_FILES}
+                  />
                 </FormControl>
+                {(imagePreviews.length >= MAX_FILES) && (
+                    <FormDescription className="text-destructive">
+                        Vous avez atteint la limite de {MAX_FILES} images.
+                    </FormDescription>
+                )}
                  {imagePreviews.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {imagePreviews.map((previewUrl, index) => (
