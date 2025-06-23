@@ -1,27 +1,36 @@
 
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-    // Avatars: Users can read anyone's avatar, but only write/delete their own.
-    match /avatars/{userId}/{allPaths=**} {
+    
+    // User avatars: Users can read anyone's avatar.
+    // They can only write (create, update, delete) their own avatar.
+    // The path includes the user's UID.
+    match /avatars/{userId}/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Item Images: Users can read anyone's item images.
-    // Sellers can create, update, or delete images under their own user ID folder.
-    match /items/{userId}/{allPaths=**} {
+    // Item images: Anyone can read. Only the authenticated owner of the item can write.
+    // The path includes the seller's UID.
+    match /itemImages/{userId}/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Chat attachments: Only participants of a thread can read/write attachments.
-    // This rule is more complex as it needs to check the messageThreads collection.
-    // For simplicity, we'll allow any authenticated user to write to their own user-id-scoped folder.
-    // Reading would ideally be restricted based on thread participation.
-    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
-      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+
+    // Item videos: Same rules as item images.
+    match /itemVideos/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Chat attachments: Only participants of a thread can read/write.
+    // The path contains the threadId, which is composed of two user UIDs.
+    match /chatAttachments/{threadId}/{userId}/{fileName} {
+        // A user can read an attachment if their UID is part of the threadId.
+        allow read: if request.auth != null && request.auth.uid in threadId.split('_');
+        // A user can write an attachment if their UID is part of the threadId AND their UID matches the userId in the path.
+        allow write: if request.auth != null && request.auth.uid in threadId.split('_') && request.auth.uid == userId;
     }
   }
 }
