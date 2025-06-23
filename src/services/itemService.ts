@@ -1,6 +1,4 @@
 
-'use server'; // Ensure this file's functions run as server actions
-
 import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
