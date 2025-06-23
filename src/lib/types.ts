@@ -7,6 +7,7 @@ export interface Item {
   category: string;
   location?: string;
   imageUrls: string[];
+  videoUrl?: string; // Add videoUrl field
   sellerId: string;
   sellerName: string;
   postedDate: string;

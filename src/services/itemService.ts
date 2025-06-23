@@ -55,6 +55,7 @@ const mapDocToItem = (document: any): Item => {
     category: itemCategory,
     location: data.location || '',
     imageUrls: imageUrls,
+    videoUrl: data.videoUrl || undefined,
     sellerId: data.sellerId || 'unknown',
     sellerName: data.sellerName || 'Vendeur inconnu',
     postedDate: convertTimestampToISO(data.postedDate as FirebaseTimestampType),
@@ -201,7 +202,7 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
   }
 
   const uniqueFileName = `${Date.now()}_${imageFile.name}`;
-  const imagePath = `items/${userId}/${uniqueFileName}`;
+  const imagePath = `itemImages/${userId}/${uniqueFileName}`;
   const imageRef = storageRef(storage, imagePath);
   try {
     const snapshot = await uploadBytes(imageRef, imageFile);
@@ -213,6 +214,33 @@ export const uploadImageAndGetURL = async (imageFile: File, userId: string): Pro
     throw error;
   }
 };
+
+export const uploadVideoAndGetURL = async (videoFile: File, userId: string): Promise<string> => {
+  if (!userId) {
+     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for video upload.";
+     console.error(errorMsg);
+     throw new Error(errorMsg);
+  }
+  if (!storage) {
+    const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  const uniqueFileName = `${Date.now()}_${videoFile.name}`;
+  const videoPath = `itemVideos/${userId}/${uniqueFileName}`;
+  const videoRef = storageRef(storage, videoPath);
+  try {
+    const snapshot = await uploadBytes(videoRef, videoFile);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error: any) {
+    console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${videoPath}.`);
+    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    throw error;
+  }
+};
+
 
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
@@ -296,11 +324,22 @@ export async function deleteItem(itemId: string): Promise<void> {
     return Promise.resolve(); // Ignore placeholders or other external URLs
   });
 
+  // Delete video from Firebase Storage if it exists
+  if (item.videoUrl && item.videoUrl.includes('firebasestorage.googleapis.com')) {
+    try {
+        const videoRef = storageRef(storage, item.videoUrl);
+        imageDeletePromises.push(deleteObject(videoRef));
+    } catch (error) {
+        console.error(`Failed to create storage reference for video URL ${item.videoUrl}.`, error);
+    }
+  }
+
+
   await Promise.allSettled(imageDeletePromises)
     .then(results => {
       results.forEach(result => {
         if (result.status === 'rejected') {
-          console.warn('One or more images failed to delete:', result.reason);
+          console.warn('One or more media files failed to delete:', result.reason);
         }
       });
     });

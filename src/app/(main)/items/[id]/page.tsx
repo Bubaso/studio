@@ -6,7 +6,7 @@ import type { UserProfile, Review, Item, ItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag, CheckCircle } from 'lucide-react'; 
+import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag, CheckCircle, Video } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -108,30 +108,63 @@ export default async function ItemPage({ params }: ItemPageProps) {
     <div className="max-w-6xl mx-auto space-y-12">
       <ItemViewLogger itemId={itemId} />
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Left Column: Image Gallery */}
+        {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
-          <Card className="shadow-lg rounded-lg overflow-hidden">
-            <div className="relative aspect-video">
-              <Image
-                src={primaryImageUrl}
-                alt={item.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover"
-                data-ai-hint={imageHint}
-                priority
-              />
-               {item.isSold && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
-                    <Badge variant="destructive" className="text-base sm:text-lg py-2 px-4 border-2 border-white/50 transform-gpu scale-110">
-                        <CheckCircle className="h-5 w-5 mr-2" /> VENDU
-                    </Badge>
+          {item.videoUrl ? (
+            <Card className="shadow-lg rounded-lg overflow-hidden">
+                <div className="relative aspect-video bg-black">
+                    <video
+                        src={item.videoUrl}
+                        controls
+                        className="w-full h-full object-contain"
+                        preload="metadata"
+                    >
+                        Votre navigateur ne supporte pas la lecture de vidéos.
+                    </video>
                 </div>
-               )}
-            </div>
-          </Card>
+            </Card>
+          ) : (
+            <Card className="shadow-lg rounded-lg overflow-hidden">
+              <div className="relative aspect-video">
+                <Image
+                  src={primaryImageUrl}
+                  alt={item.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover"
+                  data-ai-hint={imageHint}
+                  priority
+                />
+                 {item.isSold && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
+                      <Badge variant="destructive" className="text-base sm:text-lg py-2 px-4 border-2 border-white/50 transform-gpu scale-110">
+                          <CheckCircle className="h-5 w-5 mr-2" /> VENDU
+                      </Badge>
+                  </div>
+                 )}
+              </div>
+            </Card>
+          )}
+
+          {/* Image thumbnails (always show if they exist) */}
           {otherImageUrls.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {/* If there's a video, the first image can also be a thumbnail */}
+              {item.videoUrl && (
+                 <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer">
+                    <Image
+                        src={primaryImageUrl}
+                        alt={`${item.name} - image principale`}
+                        fill
+                        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+                        className="object-cover"
+                        data-ai-hint={imageHint}
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Video className="h-8 w-8 text-white" />
+                    </div>
+                </div>
+              )}
               {otherImageUrls.map((url, index) => (
                 <div key={index} className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity">
                   <Image
