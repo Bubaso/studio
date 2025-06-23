@@ -3,44 +3,46 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 // import { ItemCard } from '@/components/item-card'; // ItemCard is now used within FeaturedItemsGrid
 import { getItemsFromFirestore } from '@/services/itemService';
-import type { Item, ItemCategory } from '@/lib/types';
+import { ItemCategories, type Item, type ItemCategory } from '@/lib/types'; // Import the master list and types
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid'; // Import new component
 import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
 // import { auth } from '@/lib/firebase'; // auth.currentUser won't work reliably here for this filtering
 
-const categoryDefinitions = [
-  { name: 'Électronique', dataAiHint: 'electronics gadgets' },
-  { name: 'Téléphones et Portables', dataAiHint: 'smartphones mobiles' },
-  { name: 'Vêtements et Accessoires', dataAiHint: 'fashion clothing' },
-  { name: 'Mobilier', dataAiHint: 'furniture home' },
-  { name: 'Meubles', dataAiHint: 'household furniture' },
-  { name: 'Maison et Jardin', dataAiHint: 'home garden' },
-  { name: 'Santé et Beauté', dataAiHint: 'health beauty' },
-  { name: 'Bébés et Enfants', dataAiHint: 'baby kids' },
-  { name: 'Sports et Plein Air', dataAiHint: 'sports equipment' },
-  { name: 'Livres, Films et Musique', dataAiHint: 'books media' },
-  { name: 'Équipement et Outils', dataAiHint: 'tools equipment' },
-  { name: 'Véhicules', dataAiHint: 'vehicles cars' },
-  { name: 'Autre', dataAiHint: 'various items' },
-];
+// Map categories to their AI hints for image generation
+const categoryHints: { [key in ItemCategory]?: string } = {
+  'Électronique': 'electronics gadgets',
+  'Téléphones et Portables': 'smartphones mobiles',
+  'Vêtements et Accessoires': 'fashion clothing',
+  'Mobilier': 'furniture home',
+  'Meubles': 'household furniture',
+  'Maison et Jardin': 'home garden',
+  'Santé et Beauté': 'health beauty',
+  'Bébés et Enfants': 'baby kids',
+  'Sports et Plein Air': 'sports equipment',
+  'Livres, Films et Musique': 'books media',
+  'Équipement et Outils': 'tools equipment',
+  'Véhicules': 'vehicles cars',
+  'Jouets et Jeux': 'toys games',
+  'Objets de Collection et Art': 'collectibles art',
+  'Autre': 'various items',
+};
+
 
 export default async function HomePage() {
   const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
 
-  const carouselCategories = categoryDefinitions.map(category => {
-    // We assume a .png extension. User must upload files with this extension.
-    const imageName = `${category.name}.png`;
-    // The path in the storage bucket.
+  // Dynamically create carousel categories from the master list
+  const carouselCategories = ItemCategories.map(categoryName => {
+    const imageName = `${categoryName}.png`;
     const encodedPath = `category-images/${encodeURIComponent(imageName)}`;
-    // Construct the public URL.
     const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodedPath}?alt=media`;
     
     return {
-      name: category.name,
-      dataAiHint: category.dataAiHint,
+      name: categoryName,
+      dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(), // Fallback to category name if hint is missing
       imageUrl: imageUrl,
-      link: `/browse?category=${encodeURIComponent(category.name)}`
+      link: `/browse?category=${encodeURIComponent(categoryName)}`
     }
   });
   
