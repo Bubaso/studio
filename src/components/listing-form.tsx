@@ -475,7 +475,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     <FormLabel>Catégorie</FormLabel>
                     <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger> <SelectValue placeholder="Sélectionnez une catégorie" /> </SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
@@ -498,7 +498,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             </div>
             <div className="grid grid-cols-2 gap-8">
                 {/* Condition Field (Desktop) */}
-                <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Sélectionnez l'état de l'article" /> </SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
                 {/* Location Field (Desktop) */}
                 <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
             </div>
@@ -514,7 +514,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     <FormLabel>Catégorie</FormLabel>
                     <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger> <SelectValue placeholder="Sélectionnez une catégorie" /> </SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
@@ -535,13 +535,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 )}
               />
             {/* Condition Field (Mobile) */}
-            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Sélectionnez l'état de l'article" /> </SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
             {/* Location Field (Mobile) */}
             <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
           </div>
 
           {/* --- MOBILE PRICE BLOCK --- */}
-          <div className="sm:hidden">
+          <div className="sm:hidden space-y-8">
               <FormField
                 control={form.control}
                 name="price"
