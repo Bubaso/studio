@@ -443,8 +443,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             )}
           />
 
-          <div className="grid sm:grid-cols-2 gap-8">
-            <div>
+          {/* --- DESKTOP LAYOUT --- */}
+          <div className="hidden sm:block space-y-8">
+            <div className="grid grid-cols-2 gap-8">
+              {/* Price Field (Desktop) */}
               <FormField
                 control={form.control}
                 name="price"
@@ -453,21 +455,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     <FormLabel>Prix (FCFA)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="1"
-                        placeholder="ex: 25000"
-                        name={name}
-                        ref={ref}
-                        onBlur={onBlur}
+                        type="number" step="1" placeholder="ex: 25000" name={name} ref={ref} onBlur={onBlur}
                         value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
                         onChange={e => {
                           const stringValue = e.target.value;
-                          if (stringValue === "") {
-                            onChange(undefined); 
-                          } else {
-                            const num = parseFloat(stringValue);
-                            onChange(isNaN(num) ? undefined : num); 
-                          }
+                          if (stringValue === "") { onChange(undefined); } else { const num = parseFloat(stringValue); onChange(isNaN(num) ? undefined : num); }
                         }}
                       />
                     </FormControl>
@@ -475,106 +467,104 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   </FormItem>
                 )}
               />
-              <div className="md:hidden mt-8">
-                <PriceSuggestion
-                  itemDescription={itemDescriptionForAISuggestions}
-                  onPriceSuggested={handlePriceSuggested}
-                />
-              </div>
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Catégorie</FormLabel>
-                  <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez une catégorie" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {ItemCategories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {isSuggestingCategory && !categorySuggestion && (
-                    <div className="mt-1 text-xs text-muted-foreground flex items-center">
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie...
-                    </div>
-                  )}
-                  {categorySuggestion && !isCategorySuggestionApplied && (
-                    <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                            <Sparkles className="h-3 w-3 mr-1 inline-block text-accent" />
-                            Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)
-                        </div>
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0 text-accent hover:underline"
-                          onClick={applyCategorySuggestion}
-                        >
-                          Accepter
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {isCategorySuggestionApplied && form.getValues("category") && (
-                     <div className="mt-1 text-xs text-green-600 flex items-center">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée.
-                     </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-           <div className="grid sm:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="condition"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>État</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez l'état de l'article" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {ItemConditions.map((conditionValue) => (
-                        <SelectItem key={conditionValue} value={conditionValue} className="capitalize">
-                          {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-                control={form.control}
-                name="location"
+              {/* Category Field (Desktop) */}
+              <FormField
+                control={form.control} name="category"
                 render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Lieu (Optionnel)</FormLabel>
+                  <FormItem>
+                    <FormLabel>Catégorie</FormLabel>
+                    <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger> <SelectValue placeholder="Sélectionnez une catégorie" /> </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
+                      </SelectContent>
+                    </Select>
+                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"> <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie... </div> )}
+                    {categorySuggestion && !isCategorySuggestionApplied && (
+                      <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div><Sparkles className="h-3 w-3 mr-1 inline-block text-accent" /> Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)</div>
+                          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}> Accepter </Button>
+                        </div>
+                      </div>
+                    )}
+                    {isCategorySuggestionApplied && form.getValues("category") && ( <div className="mt-1 text-xs text-green-600 flex items-center"> <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée. </div> )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+                {/* Condition Field (Desktop) */}
+                <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Sélectionnez l'état de l'article" /> </SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+                {/* Location Field (Desktop) */}
+                <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+            </div>
+          </div>
+          
+          {/* --- MOBILE LAYOUT --- */}
+          <div className="sm:hidden space-y-8">
+              {/* Category Field (Mobile) */}
+              <FormField
+                control={form.control} name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Catégorie</FormLabel>
+                    <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger> <SelectValue placeholder="Sélectionnez une catégorie" /> </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
+                      </SelectContent>
+                    </Select>
+                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"> <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie... </div> )}
+                    {categorySuggestion && !isCategorySuggestionApplied && (
+                      <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
+                        <div className="flex items-center justify-between">
+                           <div><Sparkles className="h-3 w-3 mr-1 inline-block text-accent" /> Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)</div>
+                           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}> Accepter </Button>
+                        </div>
+                      </div>
+                    )}
+                    {isCategorySuggestionApplied && form.getValues("category") && ( <div className="mt-1 text-xs text-green-600 flex items-center"> <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée. </div> )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            {/* Condition Field (Mobile) */}
+            <FormField control={form.control} name="condition" render={({ field }) => ( <FormItem> <FormLabel>État</FormLabel> <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Sélectionnez l'état de l'article" /> </SelectTrigger> </FormControl> <SelectContent> {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize"> {conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)} </SelectItem> ))} </SelectContent> </Select> <FormMessage /> </FormItem> )} />
+            {/* Location Field (Mobile) */}
+            <FormField control={form.control} name="location" render={({ field }) => ( <FormItem> <FormLabel>Lieu (Optionnel)</FormLabel> <FormControl> <Input placeholder="ex: Dakar, Sénégal" {...field} /> </FormControl> <FormMessage /> </FormItem> )} />
+          </div>
+
+          {/* --- MOBILE PRICE BLOCK --- */}
+          <div className="sm:hidden">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field: { onChange, onBlur, value, name, ref } }) => (
+                  <FormItem>
+                    <FormLabel>Prix (FCFA)</FormLabel>
                     <FormControl>
-                    <Input placeholder="ex: Dakar, Sénégal" {...field} />
+                      <Input
+                        type="number" step="1" placeholder="ex: 25000" name={name} ref={ref} onBlur={onBlur}
+                        value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
+                        onChange={e => {
+                          const stringValue = e.target.value;
+                          if (stringValue === "") { onChange(undefined); } else { const num = parseFloat(stringValue); onChange(isNaN(num) ? undefined : num); }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
-                </FormItem>
+                  </FormItem>
                 )}
-            />
+              />
+              <div className="mt-8">
+                  <PriceSuggestion onPriceSuggested={handlePriceSuggested} itemDescription={itemDescriptionForAISuggestions} />
+              </div>
           </div>
 
           <FormField
