@@ -22,10 +22,10 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
+import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
 import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
 import { suggestDescription } from "@/ai/flows/suggest-description-flow";
 import Image from "next/image";
@@ -34,6 +34,10 @@ import Link from "next/link";
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+const MAX_VIDEO_SIZE_MB = 50;
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/mov", "video/quicktime"];
+
 
 const fileSchema = z
   .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
@@ -56,6 +60,10 @@ const listingFormSchema = z.object({
   imageFiles: z
     .array(fileSchema)
     .max(MAX_FILES, `Vous ne pouvez télécharger que ${MAX_FILES} images au maximum.`)
+    .optional(),
+  videoFile: z.instanceof(File, { message: "Veuillez sélectionner un fichier vidéo." })
+    .refine((file) => file.size <= MAX_VIDEO_SIZE_MB * 1024 * 1024, `La taille maximale de la vidéo est de ${MAX_VIDEO_SIZE_MB}MB.`)
+    .refine((file) => ACCEPTED_VIDEO_TYPES.includes(file.type), "Formats vidéo acceptés : .mp4, .webm, .mov.")
     .optional(),
 });
 
@@ -86,6 +94,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const [imagePreviews, setImagePreviews] = useState<string[]>(initialItemData?.imageUrls || []);
   const [objectUrlToFileMap, setObjectUrlToFileMap] = useState<Map<string, File>>(new Map());
 
+  // Video state management
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [removeExistingVideo, setRemoveExistingVideo] = useState(false);
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingFormSchema),
@@ -97,8 +108,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       condition: initialItemData?.condition as ItemCondition | undefined,
       location: initialItemData?.location || "",
       imageFiles: [],
+      videoFile: undefined,
     },
   });
+  
+  const selectedVideoFile = form.watch("videoFile");
 
   useEffect(() => {
     if (initialItemData) {
@@ -110,11 +124,23 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             condition: initialItemData.condition as ItemCondition,
             location: initialItemData.location || "",
             imageFiles: [],
+            videoFile: undefined,
         });
         setImagePreviews(initialItemData.imageUrls || []);
+        setRemoveExistingVideo(false);
+        setVideoPreview(null); // Clear blob preview
     }
   }, [initialItemData, form]);
 
+  useEffect(() => {
+    if (selectedVideoFile) {
+        const url = URL.createObjectURL(selectedVideoFile);
+        setVideoPreview(url);
+        return () => URL.revokeObjectURL(url);
+    } else {
+        setVideoPreview(null);
+    }
+  }, [selectedVideoFile]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -262,7 +288,15 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       URL.revokeObjectURL(urlToRemove);
     }
   };
-  
+
+  const handleVideoRemove = () => {
+    if (selectedVideoFile) {
+        form.setValue("videoFile", undefined, { shouldValidate: true });
+    }
+    if (initialItemData?.videoUrl) {
+        setRemoveExistingVideo(true);
+    }
+  };
 
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
@@ -294,8 +328,19 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     
     if (finalImageUrls.length === 0 && !isEditMode) { 
       finalImageUrls.push("https://placehold.co/600x400.png");
-    } else if (finalImageUrls.length === 0 && isEditMode) {
-      // User removed all images.
+    }
+
+    let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
+    if (values.videoFile) {
+      try {
+        finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, currentUser.uid);
+      } catch (uploadError) {
+        toast({ title: "Erreur de téléversement vidéo", description: "La vidéo n'a pas pu être téléversée.", variant: "destructive"});
+        setIsSubmitting(false);
+        return;
+      }
+    } else if (removeExistingVideo) {
+      finalVideoUrl = undefined;
     }
     
     const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
@@ -308,6 +353,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       condition: values.condition,
       location: values.location || '',
       imageUrls: finalImageUrls, 
+      videoUrl: finalVideoUrl,
       dataAiHint: dataAiHintForImage,
     };
 
@@ -663,13 +709,57 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
                   {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
                 </FormDescription>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Les annonces avec au moins une courte vidéo se vendent plus rapidement.
-                </p>
                 {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="videoFile"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Vidéo de l'article (Optionnel, Max {MAX_VIDEO_SIZE_MB}MB)</FormLabel>
+                    <FormControl>
+                        <Input
+                            type="file"
+                            accept="video/mp4,video/webm,video/mov,video/quicktime"
+                            onChange={(e) => field.onChange(e.target.files?.[0])}
+                            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    
+                    {/* Video Preview Logic */}
+                    {(videoPreview || (initialItemData?.videoUrl && !removeExistingVideo)) && (
+                        <div className="mt-4 relative w-full max-w-sm aspect-video">
+                            <video 
+                                key={videoPreview || initialItemData?.videoUrl}
+                                src={videoPreview || initialItemData?.videoUrl} 
+                                controls 
+                                className="w-full h-full object-contain rounded-md border bg-black"
+                            >
+                                Votre navigateur ne supporte pas la balise vidéo.
+                            </video>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2 h-7 w-7 opacity-80 hover:opacity-100 transition-opacity z-10"
+                                onClick={handleVideoRemove}
+                            >
+                                <XCircle className="h-5 w-5" />
+                                <span className="sr-only">Supprimer la vidéo</span>
+                            </Button>
+                        </div>
+                    )}
+                    
+                    <FormDescription>
+                        Les annonces avec au moins une courte vidéo se vendent plus rapidement.
+                    </FormDescription>
+                </FormItem>
+            )}
+           />
 
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
