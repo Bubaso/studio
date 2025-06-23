@@ -16,7 +16,6 @@ interface PriceSuggestionProps {
 }
 
 export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSuggestionProps) {
-  const [similarItems, setSimilarItems] = useState('');
   const [priceRange, setPriceRange] = useState<{ low: number; optimal: number; high: number; currency: string } | null>(null);
   const [reasoning, setReasoning] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +34,6 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
     try {
       const input: SuggestPriceInput = {
         itemDescription,
-        similarItems: similarItems.trim() || 'Aucun article similaire fourni.',
       };
       const result = await suggestPrice(input);
       const optimalPriceRounded = Math.round(result.suggestedPriceOptimal);
@@ -47,8 +45,6 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
         currency: result.currency,
       });
       setReasoning(result.reasoning);
-      // Automatically call onPriceSuggested with the optimal price if user wants to apply it later
-      // onPriceSuggested(optimalPriceRounded); // Or let user click apply
     } catch (e) {
       console.error('Erreur lors de la suggestion de prix:', e);
       setError('Impossible de suggérer un prix. Veuillez réessayer.');
@@ -60,9 +56,6 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
   const handleApplyOptimalPrice = () => {
     if (priceRange) {
       onPriceSuggested(priceRange.optimal);
-      // Optionally, provide feedback that price was applied
-      // setError(null); // Clear previous errors
-      // setReasoning("Prix optimal appliqué au formulaire !"); // Example feedback
     }
   };
 
@@ -78,7 +71,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           Suggestion de Prix par IA
         </CardTitle>
         <CardDescription>
-          Obtenez une suggestion de prix et une fourchette réaliste (en {priceRange?.currency || 'FCFA'}) basée sur la description et articles similaires.
+          Obtenez une suggestion de prix et une fourchette réaliste (en {priceRange?.currency || 'FCFA'}) basée sur la description de votre article.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -91,20 +84,6 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
                 rows={3}
                 className="bg-muted"
             />
-        </div>
-        <div>
-          <Label htmlFor="similar-items">Articles similaires (Optionnel)</Label>
-          <Textarea
-            id="similar-items"
-            placeholder="ex: T-Shirt Marque X, taille M, bon état - 10000 FCFA&#x0a;Un autre article similaire - 12000 FCFA"
-            value={similarItems}
-            onChange={(e) => setSimilarItems(e.target.value)}
-            rows={3}
-            disabled={isLoading}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Listez quelques articles similaires et leurs prix pour améliorer la précision. Un article par ligne.
-          </p>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-4">
@@ -147,5 +126,3 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
     </Card>
   );
 }
-
-    

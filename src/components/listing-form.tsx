@@ -22,7 +22,7 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -72,16 +72,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
-  // State for AI category suggestion
   const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
   const [categorySuggestion, setCategorySuggestion] = useState<{ category: ItemCategory; confidence: number } | null>(null);
   const [isCategorySuggestionApplied, setIsCategorySuggestionApplied] = useState(false);
 
-  // State for AI description suggestion
   const [descriptionSuggestion, setDescriptionSuggestion] = useState<string | null>(null);
   const [isSuggestingDescription, setIsSuggestingDescription] = useState(false);
   const [isDescriptionSuggestionApplied, setIsDescriptionSuggestionApplied] = useState(false);
-
+  const [descriptionRegenerationTrigger, setDescriptionRegenerationTrigger] = useState(0);
 
   const isEditMode = !!initialItemData?.id;
 
@@ -134,7 +132,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   const itemDescriptionForAISuggestions = form.watch("description");
 
-  // AI Category Suggestion Logic
   useEffect(() => {
     if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
       const handler = setTimeout(async () => {
@@ -160,11 +157,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     }
   }, [itemDescriptionForAISuggestions, isCategorySuggestionApplied, isEditMode]);
 
-  // AI Description Suggestion Logic
   useEffect(() => {
     if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 25 && !isDescriptionSuggestionApplied && !isEditMode) {
       const handler = setTimeout(async () => {
-        if (isSuggestingDescription) return;
         setIsSuggestingDescription(true);
         try {
           const suggestionResult = await suggestDescription({ itemDescription: itemDescriptionForAISuggestions });
@@ -185,7 +180,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     } else {
       setDescriptionSuggestion(null);
     }
-  }, [itemDescriptionForAISuggestions, isDescriptionSuggestionApplied, isEditMode, isSuggestingDescription]);
+  }, [itemDescriptionForAISuggestions, isDescriptionSuggestionApplied, isEditMode, descriptionRegenerationTrigger]);
 
 
   const handlePriceSuggested = (price: number) => {
@@ -412,15 +407,17 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     <div className="flex justify-end gap-2">
                       <Button
                         type="button"
-                        variant="link"
+                        variant="ghost"
                         size="sm"
-                        className="h-auto p-0 text-muted-foreground hover:underline"
+                        className="h-auto px-3 py-1"
+                        disabled={isSuggestingDescription}
                         onClick={() => {
                           setDescriptionSuggestion(null);
-                          setIsDescriptionSuggestionApplied(true);
+                          setDescriptionRegenerationTrigger(c => c + 1);
                         }}
                       >
-                        Ignorer
+                         <RefreshCw className="mr-2 h-3 w-3" />
+                         Suggérer une autre
                       </Button>
                       <Button
                         type="button"
