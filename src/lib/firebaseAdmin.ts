@@ -2,58 +2,46 @@
 // src/lib/firebaseAdmin.ts
 import * as admin from 'firebase-admin';
 
-// IMPORTANT: Path to your Firebase Admin SDK service account key JSON file.
-// Download this from Firebase Console: Project settings > Service accounts > Generate new private key.
-// Store this file securely and DO NOT commit it to your repository.
-//
-// Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to the path of this file.
-// For local development, create a .env.local file in your project root and add:
-// GOOGLE_APPLICATION_CREDENTIALS="./your-service-account-key-filename.json"
-// (Replace with the actual path and filename of your key)
-// Ensure .env.local and the key file itself are in your .gitignore.
-
 const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
-// Log the path being used for diagnostics
-console.log(`ADMIN_SDK_INIT: GOOGLE_APPLICATION_CREDENTIALS path is: ${serviceAccountPath}`);
+// Initialize a variable to hold the initialized app.
+let app: admin.app.App;
 
 if (!admin.apps.length) {
+  // Verify that the service account path is provided.
   if (!serviceAccountPath) {
-    console.error(
-      'CRITICAL_FIREBASE_ADMIN_INIT: Firebase Admin SDK service account path (GOOGLE_APPLICATION_CREDENTIALS) is not set.' +
-      ' The Admin SDK cannot be initialized. Ensure the .env.local file is set up correctly, ' +
-      'the service account JSON file exists at the specified path, and you have restarted your Next.js server.'
-    );
-  } else {
-    try {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountPath),
-        // If you use Firebase Realtime Database, you might also need:
-        // databaseURL: `https://refind-cpgi5.firebaseio.com` (using your project_id)
-      });
-      console.log('Firebase Admin SDK initialized successfully.');
-    } catch (error: any) {
-      console.error('CRITICAL_FIREBASE_ADMIN_INIT: Firebase Admin SDK initialization error:', error.message);
-      console.error('Full error object:', error); // Log the full error object for more details
-      console.error(
-          'Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable points to a valid service account JSON file and that the file is correctly formatted.'
-      );
-    }
+    const errorMessage = 'CRITICAL_FIREBASE_ADMIN_INIT: The GOOGLE_APPLICATION_CREDENTIALS environment variable is not set. The Admin SDK cannot be initialized. Ensure the .env file is set up correctly, the service account JSON file exists, and you have restarted your Next.js server.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
-}
+  
+  // Verify that the service account path is not a placeholder.
+  if (serviceAccountPath.includes('REPLACE_WITH_')) {
+    const errorMessage = `CRITICAL_FIREBASE_ADMIN_INIT: The GOOGLE_APPLICATION_CREDENTIALS path is still a placeholder ('${serviceAccountPath}'). Please update your .env file with the correct path to your service account JSON file.`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
 
-let adminDbInstance, adminAuthInstance;
-
-if (admin.apps.length > 0 && admin.app().options.credential) { // Check if initialization was successful
-    adminDbInstance = admin.firestore();
-    adminAuthInstance = admin.auth();
+  try {
+    console.log(`ADMIN_SDK_INIT: Initializing with GOOGLE_APPLICATION_CREDENTIALS path: ${serviceAccountPath}`);
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccountPath),
+    });
+    console.log('Firebase Admin SDK initialized successfully.');
+  } catch (error: any) {
+    console.error('CRITICAL_FIREBASE_ADMIN_INIT: Firebase Admin SDK initialization error:', error.message);
+    console.error(
+        'Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable points to a valid service account JSON file and that the file is correctly formatted.'
+    );
+    // Re-throw the error to make the failure explicit and prevent the server from starting.
+    throw error;
+  }
 } else {
-    console.warn("Firebase Admin SDK not initialized properly or credential issue. adminDb and adminAuth will not be functional.");
-    adminDbInstance = null;
-    adminAuthInstance = null;
+  app = admin.app();
+  console.log('Using existing Firebase Admin SDK app instance.');
 }
 
-
-export const adminDb = adminDbInstance;
-export const adminAuth = adminAuthInstance;
+// Export the initialized services. If initialization failed, this part will not be reached.
+export const adminDb = admin.firestore(app);
+export const adminAuth = admin.auth(app);
 export default admin;

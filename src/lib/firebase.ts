@@ -25,44 +25,43 @@ let storage;
 let auth;
 
 try {
+  // Check for placeholder values from the .env template
+  const isConfigPlaceholder = (value: string | undefined) => value?.includes('REPLACE_WITH');
+
   if (
-    !firebaseConfig.apiKey ||
-    !firebaseConfig.authDomain ||
-    !firebaseConfig.projectId
+    !firebaseConfig.apiKey || isConfigPlaceholder(firebaseConfig.apiKey as string) ||
+    !firebaseConfig.authDomain || isConfigPlaceholder(firebaseConfig.authDomain as string) ||
+    !firebaseConfig.projectId || isConfigPlaceholder(firebaseConfig.projectId as string)
   ) {
-    const errorMessage = "Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing. These values should be provided by environment variables (e.g., process.env.NEXT_PUBLIC_FIREBASE_API_KEY). Ensure your .env file is correctly set up and prefixed with NEXT_PUBLIC_ and that you have restarted your Next.js development server.";
+    const errorMessage = "Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing or contains placeholder values. Please check your .env file and ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set with your project credentials.";
     console.error(errorMessage);
-    // Bu noktada bir hata fırlatmak, sunucu tarafında bir sorun olduğunda daha belirgin olabilir.
-    // Ancak, Next.js'in bu hatayı nasıl ele alacağı uygulamadan uygulamaya değişebilir.
-    // Şimdilik sadece logluyoruz, ama bir sonraki adımda hata fırlatmayı düşünebiliriz.
-    // throw new Error(errorMessage); 
+    // Make the error fatal to prevent the server from starting in a broken state.
+    throw new Error(errorMessage);
   }
 
   if (getApps().length === 0) {
     console.log("Initializing new Firebase app...");
     app = initializeApp(firebaseConfig);
-    console.log("Firebase app initialized successfully.");
   } else {
     console.log("Getting existing Firebase app...");
     app = getApp();
-    console.log("Existing Firebase app retrieved.");
   }
 
   if (app) {
     db = getFirestore(app);
     storage = getStorage(app);
     auth = getAuth(app);
-    console.log("Firestore, Storage, and Auth services initialized.");
+    console.log("Firestore, Storage, and Auth services initialized successfully.");
   } else {
     const appInitErrorMessage = "Firebase Init Error: Firebase app object could not be initialized or retrieved. This is a critical issue.";
     console.error(appInitErrorMessage);
-    // throw new Error(appInitErrorMessage);
+    throw new Error(appInitErrorMessage);
   }
 
 } catch (error: any) {
   console.error("CRITICAL FIREBASE INITIALIZATION FAILED:", error.message);
-  console.error("Full error object:", error);
-  // throw error; // Hatanın daha yukarıya fırlatılması, Next.js'in bunu yakalamasına yardımcı olabilir.
+  // Re-throw the error to ensure the Next.js server fails loudly and clearly.
+  throw error;
 }
 
 
