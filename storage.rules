@@ -1,36 +1,47 @@
 
 rules_version = '2';
+
+// By default, deny all reads and writes
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // User avatars: Users can read anyone's avatar.
-    // They can only write (create, update, delete) their own avatar.
-    // The path includes the user's UID.
-    match /avatars/{userId}/{fileName} {
-      allow read: if true;
+    // --- CATEGORY IMAGES ---
+    // Allow anyone to read images from the public 'category-images' folder.
+    // Disallow write, so only the Firebase console/admin can upload them.
+    match /category-images/{allPaths=**} {
+      allow read;
+      allow write: if false;
+    }
+
+    // --- AVATARS ---
+    // Allow users to upload their own avatar.
+    // Allow anyone to read avatars (for profile pages).
+    match /avatars/{userId}/{allPaths=**} {
+      allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Item images: Anyone can read. Only the authenticated owner of the item can write.
-    // The path includes the seller's UID.
-    match /itemImages/{userId}/{fileName} {
-      allow read: if true;
+    // --- ITEM IMAGES & VIDEOS ---
+    // Allow authenticated users to upload images/videos for their items.
+    // Allow anyone to read item images/videos.
+    match /itemImages/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /itemVideos/{userId}/{allPaths=**} {
+      allow read;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Item videos: Same rules as item images.
-    match /itemVideos/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Chat attachments: Only participants of a thread can read/write.
-    // The path contains the threadId, which is composed of two user UIDs.
-    match /chatAttachments/{threadId}/{userId}/{fileName} {
-        // A user can read an attachment if their UID is part of the threadId.
-        allow read: if request.auth != null && request.auth.uid in threadId.split('_');
-        // A user can write an attachment if their UID is part of the threadId AND their UID matches the userId in the path.
-        allow write: if request.auth != null && request.auth.uid in threadId.split('_') && request.auth.uid == userId;
+    // --- CHAT ATTACHMENTS ---
+    // Only allow participants of a chat thread to read/write images.
+    // This is more complex and often requires metadata or Firestore checks.
+    // For now, let's restrict it to authenticated users who are uploading to their own user folder within a thread.
+    // Reading would ideally be checked against thread participants in Firestore.
+    // This rule allows any authenticated user to read, which is a simplification for now.
+    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

@@ -3,84 +3,71 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can read any profile, but only create/update their own.
+    
+    // --- Users Collection ---
+    // Any authenticated user can create their own user document.
+    // Users can only read/update their own document.
     match /users/{userId} {
-      allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false; // Deletion should be handled by an admin process.
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
-
-    // Items can be read by anyone. Create/delete by seller. Update by seller or by anyone reporting an item.
+    
+    // --- Items Collection ---
+    // Anyone can read items.
+    // Authenticated users can create items.
+    // Only the seller can update or delete their own item.
     match /items/{itemId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.sellerId == request.auth.uid;
-      // An update is allowed if you are the seller OR if you are an authenticated user ONLY changing the 'suspectedSold' flag.
-      allow update: if request.auth != null && (
-        (resource.data.sellerId == request.auth.uid) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspectedSold']) && resource.data.sellerId != request.auth.uid)
-      );
-      allow delete: if request.auth != null && resource.data.sellerId == request.auth.uid;
+      allow read;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.sellerId;
 
       // Subcollection for views
       match /views/{viewId} {
-        allow create: if true;
-        allow read, update, delete: if false;
+        allow create; // Anyone can create a view log
+        allow read, update, delete: if false; // No one can read/modify view logs
       }
     }
-
-    // Favorites can be read, created, and deleted only by the owning user.
-    match /userFavorites/{favoriteId} {
-      allow read, create, delete: if request.auth != null && request.auth.uid == favoriteId.split('_')[0];
-    }
     
-    // Reviews can be read by anyone. Create is allowed if you are authenticated and not the seller.
-    // Update/delete is allowed only by the reviewer.
+    // --- Reviews Collection ---
+    // Anyone can read reviews.
+    // Only authenticated users can create reviews.
+    // Users cannot review their own items.
+    // Users cannot update/delete reviews.
     match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if request.auth != null 
-                    && request.resource.data.sellerId != request.auth.uid 
-                    && request.resource.data.reviewerId == request.auth.uid;
-        allow update, delete: if request.auth != null && resource.data.reviewerId == request.auth.uid;
+      allow read;
+      allow create: if request.auth != null && request.auth.uid != request.resource.data.sellerId;
+      allow update, delete: if false;
     }
 
-    // Users can read/write to threads and messages they are a part of.
+    // --- User Favorites Collection ---
+    // Users can only create/delete their own favorites.
+    // The document ID is {userId}_{itemId}.
+    match /userFavorites/{favoriteId} {
+        allow read, create, delete: if request.auth != null && request.auth.uid == favoriteId.split('_')[0];
+        allow update: if false;
+    }
+
+    // --- Message Threads Collection ---
+    // Participants can read/update their own threads.
+    // Participants can create threads.
     match /messageThreads/{threadId} {
-      function isParticipant() {
-        return request.auth != null && request.auth.uid in resource.data.participantIds;
-      }
-      function isCreatingParticipant() {
-        return request.auth != null && request.auth.uid in request.resource.data.participantIds;
-      }
+      allow read, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      // Creation is handled by the API route with Admin SDK, but this rule allows client-side creation if needed.
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participantIds;
 
-      allow read, update: if isParticipant();
-      allow create: if isCreatingParticipant();
-      allow delete: if false;
-
+      // Messages Subcollection
       match /messages/{messageId} {
-        function isThreadParticipant() {
-            return request.auth != null && (get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid
-                                || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid);
-        }
-
-        allow read, create: if isThreadParticipant();
-        // Allow updating the 'readBy' field by any participant in the thread.
-        allow update: if isThreadParticipant() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']);
-        allow delete: if false;
+        allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        allow update, delete: if false; // Generally, don't allow message editing/deletion by users.
       }
     }
-    
-    // Reports can be created by any authenticated user for themselves.
-    match /productReports/{itemId} {
-        // This collection itself doesn't hold data, it's a container.
-        allow read, write: if false;
 
-        match /reports/{userId} {
-            allow read: if request.auth.uid == userId;
-            allow create: if request.auth.uid == userId;
-            allow update, delete: if false;
-        }
+    // --- Product Reports ---
+    // Anyone authenticated can create a report.
+    // No one can read/update/delete reports directly. This should be handled by admin/functions.
+    match /productReports/{itemId}/reports/{userId} {
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow read, update, delete: if false;
     }
-
   }
 }
