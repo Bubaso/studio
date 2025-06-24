@@ -1,32 +1,14 @@
-rules_version = '2';
 
+rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permettre la lecture publique uniquement pour le dossier des images de catégories.
-    match /category-images/{allPaths=**} {
-      allow read;
-    }
-
-    // Les autres chemins restent privés par défaut, sauf si des règles spécifiques sont ajoutées.
-    // Par exemple, les images téléversées par les utilisateurs pour les articles ou les avatars.
-    match /itemImages/{userId}/{allPaths=**} {
-        allow read; // Tout le monde peut voir les images des articles
-        allow write: if request.auth != null && request.auth.uid == userId; // Seul l'utilisateur authentifié peut écrire dans son propre dossier
-    }
-
-    match /itemVideos/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /avatars/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
+    // This rule allows public read access to all files, which is suitable
+    // for a prototype where images (categories, avatars, items) are meant to be public.
+    // Writes are restricted to authenticated users.
+    // For a production app, you might want more specific rules.
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

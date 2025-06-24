@@ -11,7 +11,7 @@ const onboardingSlides = [
     },
     {
       title: "Découvrez",
-      description: "Explorez des milliers d'articles uniques mis en vente par des vendeurs.",
+      description: "Explorez des milliers d'articles mis en vente par des vendeurs.",
     },
     {
       title: "Vendez Facilement",

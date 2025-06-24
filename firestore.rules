@@ -1,71 +1,13 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Fonction d'aide pour vérifier si l'utilisateur est authentifié
-    function isAuthenticated() {
-      return request.auth != null;
+    // This is a basic rule for prototyping. It allows anyone to read data,
+    // but only authenticated users to write data.
+    // For a production app, you would implement more granular security rules.
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-    
-    // Utilisateurs : Peut lire n'importe quel profil, mais ne peut écrire que sur le sien.
-    match /users/{userId} {
-      allow read;
-      allow create, update, delete: if isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Articles : Tout le monde peut lire. Seul le vendeur peut créer, mettre à jour ou supprimer ses articles.
-    match /items/{itemId} {
-      allow read;
-      // Permettre la création si l'utilisateur est authentifié et que le sellerId correspond à son UID
-      allow create: if isAuthenticated() && request.resource.data.sellerId == request.auth.uid;
-      // Permettre la mise à jour/suppression si l'utilisateur est authentifié et est le vendeur de l'article existant
-      allow update, delete: if isAuthenticated() && resource.data.sellerId == request.auth.uid;
-      
-      // Vues : Permettre à quiconque d'ajouter une vue. Personne ne peut lire/lister/supprimer les vues pour des raisons de confidentialité.
-      match /views/{viewId} {
-        allow create;
-        allow read, list, update, delete: if false; 
-      }
-    }
-    
-    // Avis : Tout le monde peut lire. Les utilisateurs authentifiés peuvent écrire un avis.
-    match /reviews/{reviewId} {
-      allow read;
-      allow create: if isAuthenticated() && request.resource.data.reviewerId == request.auth.uid;
-      // Seul l'auteur de l'avis peut le mettre à jour/supprimer
-      allow update, delete: if isAuthenticated() && resource.data.reviewerId == request.auth.uid;
-    }
-    
-    // Favoris de l'utilisateur : Les utilisateurs ne peuvent gérer que leurs propres favoris.
-    match /userFavorites/{favoriteId} {
-      // L'ID du favori est userId_itemId. Nous vérifions si la partie userId correspond à l'utilisateur authentifié.
-      allow read, create, delete: if isAuthenticated() && request.auth.uid == favoriteId.split('_')[0];
-      allow list: if isAuthenticated() && request.query.where.field == 'userId' && request.query.where.value == request.auth.uid;
-      allow update: if false; // Les favoris sont généralement créés/supprimés, pas mis à jour.
-    }
-    
-    // Fils de discussion
-    match /messageThreads/{threadId} {
-        // Les utilisateurs ne peuvent accéder qu'aux fils de discussion dont ils font partie.
-        allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-        // La création est gérée par un backend sécurisé (route API ou Cloud Function) qui contourne ces règles.
-        allow create: if false;
-        
-        // Sous-collection des messages
-        match /messages/{messageId} {
-             // Les utilisateurs peuvent lire/écrire des messages dans les fils dont ils font partie.
-             allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
-             // Les utilisateurs ne peuvent mettre à jour que leurs propres messages.
-             allow update: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
-             allow delete: if false; // Interdire la suppression des messages pour le moment.
-        }
-    }
-    
-     // Signalements : Autoriser les utilisateurs authentifiés à écrire des signalements.
-    match /productReports/{itemId}/reports/{userId} {
-        allow create, read: if isAuthenticated() && request.auth.uid == userId;
-    }
-    
   }
 }
