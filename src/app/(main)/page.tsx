@@ -5,6 +5,7 @@ import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
+import { Search, PlusCircle } from 'lucide-react';
 
 // Map categories to their AI hints for image generation
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -59,6 +60,21 @@ export default async function HomePage() {
   return (
     <div className="space-y-4 md:space-y-6">
       <HeroOnboarding />
+
+      <div className="hidden md:flex justify-center items-center gap-4 py-4">
+        <Link href="/sell">
+            <Button size="lg">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Vendre
+            </Button>
+        </Link>
+        <Link href="/browse">
+            <Button size="lg" variant="secondary">
+                <Search className="mr-2 h-5 w-5" />
+                Explorer
+            </Button>
+        </Link>
+      </div>
 
       <section className="mb-4 md:mb-8">
         <h2 className="text-lg sm:text-xl font-bold font-headline text-primary mb-2 md:mb-3 px-1">Explorer par Catégorie</h2>

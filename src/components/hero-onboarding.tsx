@@ -10,7 +10,7 @@ const onboardingCards = [
       icon: null,
       title: "Votre Marché d'Occasion",
       description: "Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.",
-      buttons: true,
+      buttons: false,
     },
     {
       icon: <Search className="h-8 w-8 text-primary" />,
