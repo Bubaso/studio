@@ -88,7 +88,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
   }
   
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
-  const otherImageUrls = (item.imageUrls && item.imageUrls.length > 1) ? item.imageUrls.slice(1) : [];
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
   let similarItems: Item[] = [];
@@ -173,7 +172,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           )}
 
           {/* Image thumbnails (always show if they exist) */}
-          {(otherImageUrls.length > 0 || item.videoUrl) && (
+          {(item.imageUrls?.length > 0 || item.videoUrl) && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {item.videoUrl && (
                  <Dialog>
@@ -181,7 +180,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                         <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer">
                             <Image
                                 src={primaryImageUrl}
-                                alt={`${item.name} - image principale`}
+                                alt="Aperçu de la vidéo"
                                 fill
                                 sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
                                 className="object-cover"
@@ -200,13 +199,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     </DialogContent>
                  </Dialog>
               )}
-              {otherImageUrls.map((url, index) => (
+              {item.imageUrls && item.imageUrls.map((url, index) => (
                 <Dialog key={index}>
                     <DialogTrigger asChild>
                         <div className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity cursor-pointer">
                           <Image
                             src={url}
-                            alt={`${item.name} - image ${index + 2}`}
+                            alt={`${item.name} - image ${index + 1}`}
                             fill
                             sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
                             className="object-cover"
@@ -216,10 +215,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     </DialogTrigger>
                     <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
                          <DialogHeader>
-                           <DialogTitle className="sr-only">Aperçu de l'image {index + 2}</DialogTitle>
+                           <DialogTitle className="sr-only">Aperçu de l'image {index + 1}</DialogTitle>
                         </DialogHeader>
                         <div className="relative w-full h-full">
-                            <Image src={url} alt={`${item.name} - image ${index + 2}`} fill className="object-contain rounded-md" unoptimized={true}/>
+                            <Image src={url} alt={`${item.name} - image ${index + 1}`} fill className="object-contain rounded-md" unoptimized={true}/>
                         </div>
                     </DialogContent>
                 </Dialog>
