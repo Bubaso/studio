@@ -61,15 +61,15 @@ export default async function HomePage() {
     <div className="space-y-4 md:space-y-6">
       <HeroOnboarding />
 
-      <div className="hidden md:flex justify-center items-center gap-4 py-4">
+      <div className="hidden md:flex justify-center items-center gap-8 py-4">
         <Link href="/sell">
-            <Button size="lg">
+            <Button size="lg" className="px-12">
                 <PlusCircle className="mr-2 h-5 w-5" />
                 Vendre
             </Button>
         </Link>
         <Link href="/browse">
-            <Button size="lg" variant="secondary">
+            <Button size="lg" variant="secondary" className="px-12">
                 <Search className="mr-2 h-5 w-5" />
                 Explorer
             </Button>
