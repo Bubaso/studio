@@ -19,6 +19,7 @@ import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
 import { ItemStatsDisplay } from '@/components/item-stats-display';
 import { ReportItemButton } from '@/components/report-item-button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface ItemPageProps {
   params: { id: string };
@@ -112,70 +113,116 @@ export default async function ItemPage({ params }: ItemPageProps) {
         <div className="space-y-4">
           {item.videoUrl ? (
             <Card className="shadow-lg rounded-lg overflow-hidden">
-                <div className="relative aspect-video bg-black">
-                    <video
-                        src={item.videoUrl}
-                        controls
-                        className="w-full h-full object-contain"
-                        preload="metadata"
-                    >
-                        Votre navigateur ne supporte pas la lecture de vidéos.
-                    </video>
-                </div>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <div className="relative aspect-video bg-black cursor-pointer group">
+                            <video
+                                src={item.videoUrl}
+                                controls
+                                className="w-full h-full object-contain"
+                                preload="metadata"
+                            >
+                                Votre navigateur ne supporte pas la lecture de vidéos.
+                            </video>
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Video className="h-12 w-12 text-white" />
+                            </div>
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">Aperçu de la vidéo</DialogTitle>
+                        </DialogHeader>
+                        <video src={item.videoUrl} controls autoPlay className="w-full h-full object-contain rounded-md" />
+                    </DialogContent>
+                </Dialog>
             </Card>
           ) : (
             <Card className="shadow-lg rounded-lg overflow-hidden">
-              <div className="relative aspect-video">
-                <Image
-                  src={primaryImageUrl}
-                  alt={item.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="object-cover"
-                  data-ai-hint={imageHint}
-                  priority
-                />
-                 {item.isSold && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
-                      <Badge variant="destructive" className="text-base sm:text-lg py-2 px-4 border-2 border-white/50 transform-gpu scale-110">
-                          <CheckCircle className="h-5 w-5 mr-2" /> VENDU
-                      </Badge>
-                  </div>
-                 )}
-              </div>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <div className="relative aspect-video cursor-pointer">
+                            <Image
+                                src={primaryImageUrl}
+                                alt={item.name}
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="object-cover"
+                                data-ai-hint={imageHint}
+                                priority
+                            />
+                            {item.isSold && (
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4">
+                                    <Badge variant="destructive" className="text-base sm:text-lg py-2 px-4 border-2 border-white/50 transform-gpu scale-110">
+                                        <CheckCircle className="h-5 w-5 mr-2" /> VENDU
+                                    </Badge>
+                                </div>
+                            )}
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                         <DialogHeader>
+                           <DialogTitle className="sr-only">Aperçu de l'image : {item.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative w-full h-full">
+                            <Image src={primaryImageUrl} alt={item.name} fill className="object-contain rounded-md" unoptimized={true} />
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </Card>
           )}
 
           {/* Image thumbnails (always show if they exist) */}
-          {otherImageUrls.length > 0 && (
+          {(otherImageUrls.length > 0 || item.videoUrl) && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {/* If there's a video, the first image can also be a thumbnail */}
               {item.videoUrl && (
-                 <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer">
-                    <Image
-                        src={primaryImageUrl}
-                        alt={`${item.name} - image principale`}
-                        fill
-                        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
-                        className="object-cover"
-                        data-ai-hint={imageHint}
-                    />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <Video className="h-8 w-8 text-white" />
-                    </div>
-                </div>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer">
+                            <Image
+                                src={primaryImageUrl}
+                                alt={`${item.name} - image principale`}
+                                fill
+                                sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+                                className="object-cover"
+                                data-ai-hint={imageHint}
+                            />
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <Video className="h-8 w-8 text-white" />
+                            </div>
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">Aperçu de la vidéo</DialogTitle>
+                        </DialogHeader>
+                        <video src={item.videoUrl} controls autoPlay className="w-full h-full object-contain rounded-md" />
+                    </DialogContent>
+                 </Dialog>
               )}
               {otherImageUrls.map((url, index) => (
-                <div key={index} className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity">
-                  <Image
-                    src={url}
-                    alt={`${item.name} - image ${index + 2}`}
-                    fill
-                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
-                    className="object-cover"
-                    data-ai-hint={imageHint}
-                  />
-                </div>
+                <Dialog key={index}>
+                    <DialogTrigger asChild>
+                        <div className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity cursor-pointer">
+                          <Image
+                            src={url}
+                            alt={`${item.name} - image ${index + 2}`}
+                            fill
+                            sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
+                            className="object-cover"
+                            data-ai-hint={imageHint}
+                          />
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                         <DialogHeader>
+                           <DialogTitle className="sr-only">Aperçu de l'image {index + 2}</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative w-full h-full">
+                            <Image src={url} alt={`${item.name} - image ${index + 2}`} fill className="object-contain rounded-md" unoptimized={true}/>
+                        </div>
+                    </DialogContent>
+                </Dialog>
               ))}
             </div>
           )}
