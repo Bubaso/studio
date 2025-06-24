@@ -177,18 +177,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
               {item.videoUrl && (
                  <Dialog>
                     <DialogTrigger asChild>
-                        <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer">
-                            <Image
-                                src={primaryImageUrl}
-                                alt="Aperçu de la vidéo"
-                                fill
-                                sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, 20vw"
-                                className="object-cover"
-                                data-ai-hint={imageHint}
-                            />
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                <Video className="h-8 w-8 text-white" />
-                            </div>
+                        <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer bg-black flex items-center justify-center hover:bg-zinc-800 transition-colors">
+                           <Video className="h-10 w-10 text-white" />
                         </div>
                     </DialogTrigger>
                     <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
