@@ -769,13 +769,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
           {isSubmitting && (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
-                <div className="flex items-center justify-center text-sm font-medium text-muted-foreground">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {uploadStatusText || "Soumission de l'annonce..."}
+              <div className="flex items-center justify-center text-sm font-medium text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {uploadStatusText || "Soumission de l'annonce..."}
+              </div>
+              {uploadProgress !== null && (
+                <div className="flex items-center gap-2">
+                  <Progress value={uploadProgress} className="w-full" />
+                  <span className="text-sm font-mono text-muted-foreground min-w-[4ch]">
+                    {`${Math.round(uploadProgress)}%`}
+                  </span>
                 </div>
-                {uploadProgress !== null && (
-                    <Progress value={uploadProgress} className="w-full" />
-                )}
+              )}
             </div>
           )}
 
