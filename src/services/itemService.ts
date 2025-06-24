@@ -3,7 +3,7 @@ import { db, storage } from '@/lib/firebase';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -189,56 +189,87 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
   }
 };
 
-export const uploadImageAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
-  if (!userId) {
-     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID (param) is required for image upload.";
-     console.error(errorMsg);
-     throw new Error(errorMsg);
-  }
-  if (!storage) {
-    const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
+export const uploadImageAndGetURL = (imageFile: File, userId: string): Promise<string> => {
+    if (!userId) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for image upload.";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+    }
+    if (!storage) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+    }
 
-  const uniqueFileName = `${Date.now()}_${imageFile.name}`;
-  const imagePath = `itemImages/${userId}/${uniqueFileName}`;
-  const imageRef = storageRef(storage, imagePath);
-  try {
-    const snapshot = await uploadBytes(imageRef, imageFile);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
-  } catch (error: any) {
-    console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
-    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    throw error;
-  }
+    const uniqueFileName = `${Date.now()}_${imageFile.name}`;
+    const imagePath = `itemImages/${userId}/${uniqueFileName}`;
+    const imageRef = storageRef(storage, imagePath);
+    const uploadTask = uploadBytesResumable(imageRef, imageFile);
+
+    return new Promise((resolve, reject) => {
+        uploadTask.on(
+            'state_changed',
+            null, // No progress tracking for images in this implementation
+            (error) => {
+                console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
+                console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+                reject(error);
+            },
+            async () => {
+                try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        );
+    });
 };
 
-export const uploadVideoAndGetURL = async (videoFile: File, userId: string): Promise<string> => {
-  if (!userId) {
-     const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for video upload.";
-     console.error(errorMsg);
-     throw new Error(errorMsg);
-  }
-  if (!storage) {
-    const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
-    console.error(errorMsg);
-    throw new Error(errorMsg);
-  }
+export const uploadVideoAndGetURL = (
+    videoFile: File,
+    userId: string,
+    onProgress: (progress: number) => void
+): Promise<string> => {
+    if (!userId) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for video upload.";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+    }
+    if (!storage) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+    }
 
-  const uniqueFileName = `${Date.now()}_${videoFile.name}`;
-  const videoPath = `itemVideos/${userId}/${uniqueFileName}`;
-  const videoRef = storageRef(storage, videoPath);
-  try {
-    const snapshot = await uploadBytes(videoRef, videoFile);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
-  } catch (error: any) {
-    console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${videoPath}.`);
-    console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    throw error;
-  }
+    const uniqueFileName = `${Date.now()}_${videoFile.name}`;
+    const videoPath = `itemVideos/${userId}/${uniqueFileName}`;
+    const videoRef = storageRef(storage, videoPath);
+    const uploadTask = uploadBytesResumable(videoRef, videoFile);
+
+    return new Promise((resolve, reject) => {
+        uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                onProgress(progress);
+            },
+            (error) => {
+                console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${videoPath}.`);
+                console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+                reject(error);
+            },
+            async () => {
+                try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    resolve(downloadURL);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        );
+    });
 };
 
 

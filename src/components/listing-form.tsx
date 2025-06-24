@@ -30,6 +30,7 @@ import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
 import { suggestDescription } from "@/ai/flows/suggest-description-flow";
 import Image from "next/image";
 import Link from "next/link";
+import { Progress } from "@/components/ui/progress";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -77,6 +78,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStatusText, setUploadStatusText] = useState('');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -300,6 +303,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
+    setUploadStatusText('');
+    setUploadProgress(null);
+
     if (!currentUser) {
       toast({ title: "Erreur", description: "Vous devez être connecté.", variant: "destructive" });
       router.push('/auth/signin');
@@ -313,51 +319,47 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
     const newFilesForUpload = values.imageFiles || [];
 
-    if (newFilesForUpload.length > 0) {
-      try {
+    try {
+      if (newFilesForUpload.length > 0) {
+        setUploadStatusText('Téléversement des images...');
         const uploadedNewUrls = await Promise.all(
           newFilesForUpload.map(file => uploadImageAndGetURL(file, currentUser.uid))
         );
         finalImageUrls.push(...uploadedNewUrls);
-      } catch (uploadError) {
-        toast({ title: "Erreur de téléversement", description: "Certaines images n'ont pas pu être téléversées.", variant: "destructive"});
-        setIsSubmitting(false);
-        return;
       }
-    }
-    
-    if (finalImageUrls.length === 0 && !isEditMode) { 
-      finalImageUrls.push("https://placehold.co/600x400.png");
-    }
-
-    let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
-    if (values.videoFile) {
-      try {
-        finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, currentUser.uid);
-      } catch (uploadError) {
-        toast({ title: "Erreur de téléversement vidéo", description: "La vidéo n'a pas pu être téléversée.", variant: "destructive"});
-        setIsSubmitting(false);
-        return;
+      
+      if (finalImageUrls.length === 0 && !isEditMode) { 
+        finalImageUrls.push("https://placehold.co/600x400.png");
       }
-    } else if (removeExistingVideo) {
-      finalVideoUrl = undefined;
-    }
-    
-    const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
 
-    const commonItemData: Partial<Item> = { 
-      name: values.name,
-      description: values.description,
-      price: Math.round(values.price),
-      category: values.category,
-      condition: values.condition,
-      location: values.location || '',
-      imageUrls: finalImageUrls, 
-      videoUrl: finalVideoUrl,
-      dataAiHint: dataAiHintForImage,
-    };
+      let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
+      if (values.videoFile) {
+        setUploadStatusText('Téléversement de la vidéo...');
+        finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, currentUser.uid, (progress) => {
+          setUploadProgress(progress);
+        });
+        setUploadProgress(100); 
+      } else if (removeExistingVideo) {
+        finalVideoUrl = undefined;
+      }
+      
+      setUploadStatusText("Sauvegarde de l'annonce...");
+      setUploadProgress(null);
+      
+      const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
 
-    try {
+      const commonItemData: Partial<Item> = { 
+        name: values.name,
+        description: values.description,
+        price: Math.round(values.price),
+        category: values.category,
+        condition: values.condition,
+        location: values.location || '',
+        imageUrls: finalImageUrls, 
+        videoUrl: finalVideoUrl,
+        dataAiHint: dataAiHintForImage,
+      };
+
       if (isEditMode && initialItemData?.id) {
         await updateItemInFirestore(initialItemData.id, commonItemData);
         toast({
@@ -388,6 +390,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       });
     } finally {
         setIsSubmitting(false);
+        setUploadStatusText('');
+        setUploadProgress(null);
     }
   }
 
@@ -668,7 +672,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     multiple
                     onChange={handleFileChange}
                     className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                    disabled={imagePreviews.length >= MAX_FILES}
+                    disabled={isSubmitting || imagePreviews.length >= MAX_FILES}
                   />
                 </FormControl>
                 {(imagePreviews.length >= MAX_FILES) && (
@@ -692,6 +696,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                             size="icon"
                             className="absolute top-1 right-1 h-6 w-6 opacity-70 group-hover:opacity-100 transition-opacity z-10"
                             onClick={() => removeImage(index)}
+                            disabled={isSubmitting}
                             >
                             <XCircle className="h-4 w-4" />
                             <span className="sr-only">Supprimer l'image {index + 1}</span>
@@ -726,11 +731,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                             accept="video/mp4,video/webm,video/mov,video/quicktime"
                             onChange={(e) => field.onChange(e.target.files?.[0])}
                             className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                            disabled={isSubmitting}
                         />
                     </FormControl>
                     <FormMessage />
                     
-                    {/* Video Preview Logic */}
                     {(videoPreview || (initialItemData?.videoUrl && !removeExistingVideo)) && (
                         <div className="mt-4 relative w-full max-w-sm aspect-video">
                             <video 
@@ -747,6 +752,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                                 size="icon"
                                 className="absolute top-2 right-2 h-7 w-7 opacity-80 hover:opacity-100 transition-opacity z-10"
                                 onClick={handleVideoRemove}
+                                disabled={isSubmitting}
                             >
                                 <XCircle className="h-5 w-5" />
                                 <span className="sr-only">Supprimer la vidéo</span>
@@ -761,9 +767,21 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             )}
            />
 
+          {isSubmitting && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                <div className="flex items-center justify-center text-sm font-medium text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {uploadStatusText || "Soumission de l'annonce..."}
+                </div>
+                {uploadProgress !== null && (
+                    <Progress value={uploadProgress} className="w-full" />
+                )}
+            </div>
+          )}
+
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
-            {isSubmitting ? (isEditMode ? "Sauvegarde..." : "Publication...") : (isEditMode ? "Sauvegarder les modifications" : "Créer l'annonce")}
+            {isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" /> }
+            {isEditMode ? "Sauvegarder les modifications" : "Créer l'annonce"}
           </Button>
         </form>
       </Form>
