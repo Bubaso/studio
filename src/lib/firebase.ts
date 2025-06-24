@@ -26,14 +26,15 @@ let auth;
 
 try {
   // Check for placeholder values from the .env template
-  const isConfigPlaceholder = (value: string | undefined) => value?.includes('REPLACE_WITH');
+  const isConfigPlaceholder = (value: string | undefined) => !value || value.includes('REPLACE_WITH');
 
   if (
-    !firebaseConfig.apiKey || isConfigPlaceholder(firebaseConfig.apiKey as string) ||
-    !firebaseConfig.authDomain || isConfigPlaceholder(firebaseConfig.authDomain as string) ||
-    !firebaseConfig.projectId || isConfigPlaceholder(firebaseConfig.projectId as string)
+    isConfigPlaceholder(firebaseConfig.apiKey as string) ||
+    isConfigPlaceholder(firebaseConfig.authDomain as string) ||
+    isConfigPlaceholder(firebaseConfig.projectId as string) ||
+    isConfigPlaceholder(firebaseConfig.storageBucket as string)
   ) {
-    const errorMessage = "Firebase Init Error: Critical configuration (apiKey, authDomain, projectId) is missing or contains placeholder values. Please check your .env file and ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set with your project credentials.";
+    const errorMessage = "Firebase Init Error: Critical configuration (apiKey, authDomain, projectId, storageBucket) is missing or contains placeholder values. Please check your .env file and ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set with your project credentials.";
     console.error(errorMessage);
     // Make the error fatal to prevent the server from starting in a broken state.
     throw new Error(errorMessage);
