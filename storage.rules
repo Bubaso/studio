@@ -1,46 +1,31 @@
-
 rules_version = '2';
 
-// By default, deny all reads and writes
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // --- CATEGORY IMAGES ---
-    // Allow anyone to read images from the public 'category-images' folder.
-    // Disallow write, so only the Firebase console/admin can upload them.
+    // Permettre la lecture publique uniquement pour le dossier des images de catégories.
     match /category-images/{allPaths=**} {
       allow read;
-      allow write: if false;
     }
 
-    // --- AVATARS ---
-    // Allow users to upload their own avatar.
-    // Allow anyone to read avatars (for profile pages).
-    match /avatars/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // --- ITEM IMAGES & VIDEOS ---
-    // Allow authenticated users to upload images/videos for their items.
-    // Allow anyone to read item images/videos.
+    // Les autres chemins restent privés par défaut, sauf si des règles spécifiques sont ajoutées.
+    // Par exemple, les images téléversées par les utilisateurs pour les articles ou les avatars.
     match /itemImages/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /itemVideos/{userId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+        allow read; // Tout le monde peut voir les images des articles
+        allow write: if request.auth != null && request.auth.uid == userId; // Seul l'utilisateur authentifié peut écrire dans son propre dossier
     }
 
-    // --- CHAT ATTACHMENTS ---
-    // Only allow participants of a chat thread to read/write images.
-    // This is more complex and often requires metadata or Firestore checks.
-    // For now, let's restrict it to authenticated users who are uploading to their own user folder within a thread.
-    // Reading would ideally be checked against thread participants in Firestore.
-    // This rule allows any authenticated user to read, which is a simplification for now.
+    match /itemVideos/{userId}/{allPaths=**} {
+        allow read;
+        allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
-        allow read: if request.auth != null;
+        allow read;
+        allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /avatars/{userId}/{allPaths=**} {
+        allow read;
         allow write: if request.auth != null && request.auth.uid == userId;
     }
   }

@@ -1,73 +1,71 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // --- Users Collection ---
-    // Any authenticated user can create their own user document.
-    // Users can only read/update their own document.
-    match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+
+    // Fonction d'aide pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // --- Items Collection ---
-    // Anyone can read items.
-    // Authenticated users can create items.
-    // Only the seller can update or delete their own item.
+    // Utilisateurs : Peut lire n'importe quel profil, mais ne peut écrire que sur le sien.
+    match /users/{userId} {
+      allow read;
+      allow create, update, delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Articles : Tout le monde peut lire. Seul le vendeur peut créer, mettre à jour ou supprimer ses articles.
     match /items/{itemId} {
       allow read;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.sellerId;
-
-      // Subcollection for views
+      // Permettre la création si l'utilisateur est authentifié et que le sellerId correspond à son UID
+      allow create: if isAuthenticated() && request.resource.data.sellerId == request.auth.uid;
+      // Permettre la mise à jour/suppression si l'utilisateur est authentifié et est le vendeur de l'article existant
+      allow update, delete: if isAuthenticated() && resource.data.sellerId == request.auth.uid;
+      
+      // Vues : Permettre à quiconque d'ajouter une vue. Personne ne peut lire/lister/supprimer les vues pour des raisons de confidentialité.
       match /views/{viewId} {
-        allow create; // Anyone can create a view log
-        allow read, update, delete: if false; // No one can read/modify view logs
+        allow create;
+        allow read, list, update, delete: if false; 
       }
     }
     
-    // --- Reviews Collection ---
-    // Anyone can read reviews.
-    // Only authenticated users can create reviews.
-    // Users cannot review their own items.
-    // Users cannot update/delete reviews.
+    // Avis : Tout le monde peut lire. Les utilisateurs authentifiés peuvent écrire un avis.
     match /reviews/{reviewId} {
       allow read;
-      allow create: if request.auth != null && request.auth.uid != request.resource.data.sellerId;
-      allow update, delete: if false;
+      allow create: if isAuthenticated() && request.resource.data.reviewerId == request.auth.uid;
+      // Seul l'auteur de l'avis peut le mettre à jour/supprimer
+      allow update, delete: if isAuthenticated() && resource.data.reviewerId == request.auth.uid;
     }
-
-    // --- User Favorites Collection ---
-    // Users can only create/delete their own favorites.
-    // The document ID is {userId}_{itemId}.
+    
+    // Favoris de l'utilisateur : Les utilisateurs ne peuvent gérer que leurs propres favoris.
     match /userFavorites/{favoriteId} {
-        allow read, create, delete: if request.auth != null && request.auth.uid == favoriteId.split('_')[0];
-        allow update: if false;
+      // L'ID du favori est userId_itemId. Nous vérifions si la partie userId correspond à l'utilisateur authentifié.
+      allow read, create, delete: if isAuthenticated() && request.auth.uid == favoriteId.split('_')[0];
+      allow list: if isAuthenticated() && request.query.where.field == 'userId' && request.query.where.value == request.auth.uid;
+      allow update: if false; // Les favoris sont généralement créés/supprimés, pas mis à jour.
     }
-
-    // --- Message Threads Collection ---
-    // Participants can read/update their own threads.
-    // Participants can create threads.
+    
+    // Fils de discussion
     match /messageThreads/{threadId} {
-      allow read, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
-      // Creation is handled by the API route with Admin SDK, but this rule allows client-side creation if needed.
-      allow create: if request.auth != null && request.auth.uid in request.resource.data.participantIds;
-
-      // Messages Subcollection
-      match /messages/{messageId} {
-        allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
-        allow update, delete: if false; // Generally, don't allow message editing/deletion by users.
-      }
+        // Les utilisateurs ne peuvent accéder qu'aux fils de discussion dont ils font partie.
+        allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+        // La création est gérée par un backend sécurisé (route API ou Cloud Function) qui contourne ces règles.
+        allow create: if false;
+        
+        // Sous-collection des messages
+        match /messages/{messageId} {
+             // Les utilisateurs peuvent lire/écrire des messages dans les fils dont ils font partie.
+             allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+             // Les utilisateurs ne peuvent mettre à jour que leurs propres messages.
+             allow update: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+             allow delete: if false; // Interdire la suppression des messages pour le moment.
+        }
     }
-
-    // --- Product Reports ---
-    // Anyone authenticated can create a report.
-    // No one can read/update/delete reports directly. This should be handled by admin/functions.
+    
+     // Signalements : Autoriser les utilisateurs authentifiés à écrire des signalements.
     match /productReports/{itemId}/reports/{userId} {
-        allow create: if request.auth != null && request.auth.uid == userId;
-        allow read, update, delete: if false;
+        allow create, read: if isAuthenticated() && request.auth.uid == userId;
     }
+    
   }
 }
