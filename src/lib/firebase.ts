@@ -1,8 +1,8 @@
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAuth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getAuth, type Auth } from 'firebase/auth';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,57 +13,41 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Only add measurementId if it's set in the environment variables
 if (process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID) {
   firebaseConfig.measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 }
 
-// Initialize Firebase
-let app;
-let db;
-let storage;
-let auth;
+let app: ReturnType<typeof getApp> | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let auth: Auth | null = null;
 
-try {
-  // Check for placeholder values from the .env template
-  const isConfigPlaceholder = (value: string | undefined) => !value || value.includes('REPLACE_WITH');
+const isConfigPlaceholder = (value: string | undefined) => !value || value.includes('REPLACE_WITH');
 
-  if (
-    isConfigPlaceholder(firebaseConfig.apiKey as string) ||
-    isConfigPlaceholder(firebaseConfig.authDomain as string) ||
-    isConfigPlaceholder(firebaseConfig.projectId as string) ||
-    isConfigPlaceholder(firebaseConfig.storageBucket as string)
-  ) {
-    const errorMessage = "Firebase Init Error: Critical configuration (apiKey, authDomain, projectId, storageBucket) is missing or contains placeholder values. Please check your .env file and ensure all NEXT_PUBLIC_FIREBASE_... variables are correctly set with your project credentials.";
-    console.error(errorMessage);
-    // Make the error fatal to prevent the server from starting in a broken state.
-    throw new Error(errorMessage);
-  }
+const isConfigValid = !(
+  isConfigPlaceholder(firebaseConfig.apiKey) ||
+  isConfigPlaceholder(firebaseConfig.authDomain) ||
+  isConfigPlaceholder(firebaseConfig.projectId) ||
+  isConfigPlaceholder(firebaseConfig.storageBucket)
+);
 
-  if (getApps().length === 0) {
-    console.log("Initializing new Firebase app...");
-    app = initializeApp(firebaseConfig);
-  } else {
-    console.log("Getting existing Firebase app...");
-    app = getApp();
-  }
-
-  if (app) {
-    db = getFirestore(app);
-    storage = getStorage(app);
-    auth = getAuth(app);
-    console.log("Firestore, Storage, and Auth services initialized successfully.");
-  } else {
-    const appInitErrorMessage = "Firebase Init Error: Firebase app object could not be initialized or retrieved. This is a critical issue.";
-    console.error(appInitErrorMessage);
-    throw new Error(appInitErrorMessage);
-  }
-
-} catch (error: any) {
-  console.error("CRITICAL FIREBASE INITIALIZATION FAILED:", error.message);
-  // Re-throw the error to ensure the Next.js server fails loudly and clearly.
-  throw error;
+if (!isConfigValid) {
+  console.error("CRITICAL FIREBASE CLIENT ERROR: Firebase configuration is missing or contains placeholder values in .env. The application will not be able to connect to Firebase services. Please update your environment variables.");
+} else {
+    try {
+        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+        db = getFirestore(app);
+        storage = getStorage(app);
+        auth = getAuth(app);
+    } catch (error: any) {
+        console.error("CRITICAL FIREBASE INITIALIZATION FAILED:", error.message);
+        // Reset to null on failure
+        app = null;
+        db = null;
+        storage = null;
+        auth = null;
+    }
 }
 
-
+// Export potentially null services. The app will crash upon usage, which is intended for debugging.
 export { app, db, storage, auth, firebaseConfig };
