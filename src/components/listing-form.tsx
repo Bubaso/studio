@@ -330,11 +330,15 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
     try {
       if (newFilesForUpload.length > 0) {
-        setUploadStatusText('Téléversement des images...');
-        const uploadedNewUrls = await Promise.all(
-          newFilesForUpload.map(file => uploadImageAndGetURL(file, currentUser.uid))
-        );
-        finalImageUrls.push(...uploadedNewUrls);
+        for (let i = 0; i < newFilesForUpload.length; i++) {
+          const file = newFilesForUpload[i];
+          setUploadStatusText(`Téléversement de l'image ${i + 1}/${newFilesForUpload.length}...`);
+          const url = await uploadImageAndGetURL(file, currentUser.uid, (progress) => {
+            setUploadProgress(progress);
+          });
+          finalImageUrls.push(url);
+        }
+        setUploadProgress(100);
       }
       
       if (finalImageUrls.length === 0 && !isEditMode) { 
@@ -344,6 +348,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
       if (values.videoFile) {
         setUploadStatusText('Téléversement de la vidéo...');
+        setUploadProgress(0);
         finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, currentUser.uid, (progress) => {
           setUploadProgress(progress);
         });

@@ -192,7 +192,11 @@ export const getUserListingsFromFirestore = async (userId: string): Promise<Item
   }
 };
 
-export const uploadImageAndGetURL = (imageFile: File, userId: string): Promise<string> => {
+export const uploadImageAndGetURL = (
+    imageFile: File,
+    userId: string,
+    onProgress: (progress: number) => void
+): Promise<string> => {
     if (!userId) {
         const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for image upload.";
         console.error(errorMsg);
@@ -212,7 +216,10 @@ export const uploadImageAndGetURL = (imageFile: File, userId: string): Promise<s
     return new Promise((resolve, reject) => {
         uploadTask.on(
             'state_changed',
-            null, // No progress tracking for images in this implementation
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                onProgress(progress);
+            },
             (error) => {
                 console.error(`ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage operation failed for path ${imagePath}.`);
                 console.error("ITEM_SERVICE_UPLOAD_ERROR_FULL_OBJECT:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
