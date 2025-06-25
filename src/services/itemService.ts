@@ -78,14 +78,13 @@ export const getItemsFromFirestore = async (filters?: {
   condition?: ItemCondition;
   pageSize?: number;
   lastVisibleItemId?: string;
-  excludeSellerId?: string;
+  // excludeSellerId is now handled client-side to avoid invalid queries
 }): Promise<{ items: Item[]; lastItemId: string | null; }> => {
   try {
     const itemsCollectionRef = collection(db, 'items');
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    // Note: Firestore requires the first orderBy to be on the same field as inequality filters.
     const hasPriceFilter = filters?.priceMin !== undefined || filters?.priceMax !== undefined;
     
     if (filters?.category) {
@@ -93,9 +92,6 @@ export const getItemsFromFirestore = async (filters?: {
     }
     if (filters?.condition) {
       queryConstraints.push(where('condition', '==', filters.condition));
-    }
-     if (filters?.excludeSellerId) {
-      queryConstraints.push(where('sellerId', '!=', filters.excludeSellerId));
     }
     if (filters?.priceMin !== undefined) {
       queryConstraints.push(where('price', '>=', filters.priceMin));
@@ -105,6 +101,8 @@ export const getItemsFromFirestore = async (filters?: {
     }
     
     // --- Sorting ---
+    // Firestore requires the first orderBy to be on the same field as an inequality filter.
+    // Since we now handle seller exclusion on the client, we can reliably sort by price then date.
     if (hasPriceFilter) {
         queryConstraints.push(orderBy('price'));
     }
@@ -143,8 +141,8 @@ export const getItemsFromFirestore = async (filters?: {
     const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
 
-    // Note: True text search ('query') and partial location matching require a dedicated service like Algolia or Typesense.
-    // The previous implementation did this on the client, which is inefficient. This version prioritizes server performance.
+    // Note: True text search ('query') and partial location matching must be handled client-side or with a dedicated search service.
+    // This function prioritizes efficient, paginated fetching from Firestore.
 
     return { items, lastItemId };
 

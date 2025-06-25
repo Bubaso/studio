@@ -64,12 +64,15 @@ function ItemGrid() {
             priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
             location: locationParam || undefined,
             condition: conditionParam || undefined,
-            excludeSellerId: currentUser?.uid,
             pageSize: ITEMS_PER_PAGE,
             lastVisibleItemId: cursor ?? undefined,
         });
 
-        setPageData(result);
+        const finalItems = currentUser
+          ? result.items.filter((item) => item.sellerId !== currentUser.uid)
+          : result.items;
+
+        setPageData({ items: finalItems, lastItemId: result.lastItemId });
 
         if (result.lastItemId && !cursors.includes(result.lastItemId)) {
           setCursors(prev => {
