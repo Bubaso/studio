@@ -42,20 +42,25 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
       return;
     }
 
-    const previousFavoritedState = isFavoritedState;
-    setIsFavoritedState(!previousFavoritedState); // Optimistic update
+    const originalState = isFavoritedState;
+    setIsFavoritedState(!originalState);
 
     startTransition(async () => {
-      const action = previousFavoritedState ? removeFavorite : addFavorite;
-      const result = await action(currentUser.uid, itemId);
+      try {
+        const action = originalState ? removeFavorite : addFavorite;
+        const result = await action(currentUser.uid, itemId);
 
-      if (!result.success) {
+        if (!result.success) {
+          // Throw an error to be caught by the catch block
+          throw new Error(result.error || "La mise à jour de vos favoris a échoué.");
+        }
+      } catch (error: any) {
         // On failure, revert the state and show an error toast.
-        setIsFavoritedState(previousFavoritedState);
+        setIsFavoritedState(originalState);
         toast({
           variant: "destructive",
-          title: "Erreur",
-          description: result.error || "La mise à jour de vos favoris a échoué.",
+          title: "Action échouée",
+          description: `Impossible de mettre à jour les favoris. L'affichage a été restauré.`,
         });
       }
     });
