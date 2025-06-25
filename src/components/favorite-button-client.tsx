@@ -33,7 +33,7 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
     }
   }, [itemId, currentUser, isLoadingAuth]);
 
-  const handleToggleFavorite = async () => {
+  const handleToggleFavorite = () => {
     if (!currentUser) {
       toast({
         title: "Connexion requise",
@@ -43,20 +43,20 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
       return;
     }
 
+    const previousFavoritedState = isFavoritedState;
+    setIsFavoritedState(!previousFavoritedState); // Optimistic update
+
     startTransition(async () => {
-      const action = isFavoritedState ? removeFavorite : addFavorite;
+      const action = previousFavoritedState ? removeFavorite : addFavorite;
       const result = await action(currentUser.uid, itemId);
-      if (result.success) {
-        setIsFavoritedState(!isFavoritedState);
-        toast({
-          title: isFavoritedState ? "Retiré des favoris" : "Ajouté aux favoris!",
-          description: isFavoritedState ? "L'article a été retiré de vos favoris." : "L'article a été ajouté à vos favoris.",
-        });
-      } else {
+
+      if (!result.success) {
+        // On failure, revert the state and show an error toast.
+        setIsFavoritedState(previousFavoritedState);
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: result.error || "Une erreur s'est produite.",
+          description: result.error || "La mise à jour de vos favoris a échoué.",
         });
       }
     });
