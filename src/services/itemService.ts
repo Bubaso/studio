@@ -1,6 +1,7 @@
+
 import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 
@@ -75,18 +76,26 @@ export const getItemsFromFirestore = async (filters?: {
   location?: string;
   query?: string;
   condition?: ItemCondition;
-  count?: number;
-  excludeSellerId?: string; 
-}): Promise<Item[]> => {
+  pageSize?: number;
+  lastVisibleItemId?: string;
+  excludeSellerId?: string;
+}): Promise<{ items: Item[]; lastItemId: string | null; }> => {
   try {
     const itemsCollectionRef = collection(db, 'items');
     const queryConstraints: QueryConstraint[] = [];
 
+    // --- Server-side Filters ---
+    // Note: Firestore requires the first orderBy to be on the same field as inequality filters.
+    const hasPriceFilter = filters?.priceMin !== undefined || filters?.priceMax !== undefined;
+    
     if (filters?.category) {
       queryConstraints.push(where('category', '==', filters.category));
     }
     if (filters?.condition) {
       queryConstraints.push(where('condition', '==', filters.condition));
+    }
+     if (filters?.excludeSellerId) {
+      queryConstraints.push(where('sellerId', '!=', filters.excludeSellerId));
     }
     if (filters?.priceMin !== undefined) {
       queryConstraints.push(where('price', '>=', filters.priceMin));
@@ -95,61 +104,56 @@ export const getItemsFromFirestore = async (filters?: {
       queryConstraints.push(where('price', '<=', filters.priceMax));
     }
     
+    // --- Sorting ---
+    if (hasPriceFilter) {
+        queryConstraints.push(orderBy('price'));
+    }
     queryConstraints.push(orderBy('postedDate', 'desc'));
 
-    if (filters?.count && !filters.excludeSellerId) { 
-      queryConstraints.push(limit(filters.count));
-    } else if (filters?.count && filters.excludeSellerId) {
-      queryConstraints.push(limit(filters.count * 2)); 
+    // --- Pagination ---
+    if (filters?.lastVisibleItemId) {
+      const lastVisibleDoc = await getDoc(doc(db, 'items', filters.lastVisibleItemId));
+      if (lastVisibleDoc.exists()) {
+        queryConstraints.push(startAfter(lastVisibleDoc));
+      } else {
+        console.warn(`Pagination cursor error: Item with ID ${filters.lastVisibleItemId} not found.`);
+      }
     }
+    
+    const pageSize = filters?.pageSize || 12;
+    queryConstraints.push(limit(pageSize));
 
+    // Execute the query
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
-    let allItems = querySnapshot.docs.map(mapDocToItem);
+    
+    let items = querySnapshot.docs.map(mapDocToItem);
 
-    // Filter for sold items older than 15 days
+    // This client-side filter is only for sold items that are older than a certain date.
+    // This is acceptable as it's a minor filter on a small, paginated dataset.
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-    
-    let fetchedItems = allItems.filter(item => {
+    items = items.filter(item => {
         if (!item.isSold) return true; // Keep if not sold
         if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true; // Keep if sold recently
         return false; // Hide if sold more than 15 days ago
     });
 
-    if (filters?.location) {
-      fetchedItems = fetchedItems.filter(item => item.location?.toLowerCase().includes(filters.location!.toLowerCase()));
-    }
-    if (filters?.query) {
-      const lq = filters.query.toLowerCase();
-      fetchedItems = fetchedItems.filter(item =>
-        item.name.toLowerCase().includes(lq) ||
-        item.description.toLowerCase().includes(lq) ||
-        item.category.toLowerCase().includes(lq)
-      );
-    }
-    
-    // Sort items to push low-activity items to the bottom, effectively lowering their priority.
-    fetchedItems.sort((a, b) => {
-        const aScore = a.lowActivity ? 1 : 0;
-        const bScore = b.lowActivity ? 1 : 0;
-        return aScore - bScore;
-    });
+    // Determine the next cursor
+    const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
+    const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
 
-    if (filters?.excludeSellerId) {
-      fetchedItems = fetchedItems.filter(item => item.sellerId !== filters.excludeSellerId);
-    }
+    // Note: True text search ('query') and partial location matching require a dedicated service like Algolia or Typesense.
+    // The previous implementation did this on the client, which is inefficient. This version prioritizes server performance.
 
-    if (filters?.count && filters.excludeSellerId) { 
-        fetchedItems = fetchedItems.slice(0, filters.count);
-    }
+    return { items, lastItemId };
 
-    return fetchedItems;
   } catch (error) {
     console.error("Error fetching items from Firestore: ", error);
-    return [];
+    return { items: [], lastItemId: null };
   }
 };
+
 
 export const getItemByIdFromFirestore = async (id: string): Promise<Item | null> => {
   if (!id || typeof id !== 'string' || id.length === 0 || id.includes('/')) {
@@ -389,3 +393,5 @@ export async function deleteItem(itemId: string): Promise<void> {
   const itemDocRef = doc(db, 'items', itemId);
   await deleteDoc(itemDocRef);
 }
+
+    
