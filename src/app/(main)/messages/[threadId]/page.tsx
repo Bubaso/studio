@@ -80,7 +80,7 @@ export default function MessageThreadPage() {
     } else if (!currentUser && !isLoadingAuth) {
         setIsLoadingThreadInfo(false);
     }
-  }, [threadId, currentUser, isLoadingAuth, toast, router]);
+  }, [threadId, currentUser, isLoadingAuth]);
 
 
   useEffect(() => {
