@@ -31,6 +31,7 @@ import { suggestDescription } from "@/ai/flows/suggest-description-flow";
 import Image from "next/image";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
+import { TitleSuggestion } from "./title-suggestion";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -214,6 +215,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   const handlePriceSuggested = (price: number) => {
     form.setValue("price", Math.round(price));
+  };
+
+  const handleTitleSuggested = (title: string) => {
+    form.setValue("name", title, { shouldValidate: true });
+    toast({
+      title: "Titre Appliqué",
+      description: `Le titre de l'annonce a été mis à jour.`,
+    });
   };
 
   const applyCategorySuggestion = () => {
@@ -428,6 +437,12 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               </FormItem>
             )}
           />
+
+          <TitleSuggestion
+            itemDescription={itemDescriptionForAISuggestions}
+            onTitleSuggested={handleTitleSuggested}
+          />
+
           <FormField
             control={form.control}
             name="description"
