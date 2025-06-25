@@ -1,11 +1,8 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import type { Item } from '@/lib/types';
-import { getUserFavoriteItems } from '@/services/favoriteService';
+import { useAuth } from '@/context/AuthContext';
+import { useFavorites } from '@/hooks/use-favorites';
 import { ItemCard } from '@/components/item-card';
 import { Loader2, HeartCrack, LogIn, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -13,36 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function FavoritesPage() {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [favoriteItems, setFavoriteItems] = useState<Item[]>([]);
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
-
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-      if (!user) {
-        setIsLoadingFavorites(false);
-      }
-    });
-    return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser) {
-      setIsLoadingFavorites(true);
-      getUserFavoriteItems(currentUser.uid)
-        .then(setFavoriteItems)
-        .catch(err => {
-          console.error("Failed to fetch favorites:", err);
-          setFavoriteItems([]); // Set to empty on error
-        })
-        .finally(() => setIsLoadingFavorites(false));
-    } else {
-      setFavoriteItems([]); // Clear if user logs out
-    }
-  }, [currentUser]);
+  const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
+  const { favoriteItems, isLoading: isLoadingFavorites } = useFavorites();
 
   if (isLoadingAuth) {
     return (
