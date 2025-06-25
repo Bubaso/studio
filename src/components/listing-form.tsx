@@ -429,25 +429,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     <div className="grid md:grid-cols-3 gap-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="md:col-span-2 space-y-8 p-6 border rounded-lg shadow-sm bg-card">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nom de l'article</FormLabel>
-                <FormControl>
-                  <Input placeholder="ex: Veste en cuir vintage" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <TitleSuggestion
-            itemDescription={itemDescriptionForAISuggestions}
-            onTitleSuggested={handleTitleSuggested}
-          />
-
+          
           <FormField
             control={form.control}
             name="description"
@@ -511,6 +493,25 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 )}
               </FormItem>
             )}
+          />
+
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom de l'article</FormLabel>
+                <FormControl>
+                  <Input placeholder="ex: Veste en cuir vintage" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <TitleSuggestion
+            itemDescription={itemDescriptionForAISuggestions}
+            onTitleSuggested={handleTitleSuggested}
           />
 
           {/* --- DESKTOP LAYOUT --- */}
