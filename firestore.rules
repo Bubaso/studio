@@ -1,13 +1,102 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This is a basic rule for prototyping. It allows anyone to read data,
-    // but only authenticated users to write data.
-    // For a production app, you would implement more granular security rules.
-    match /{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+
+    // Helper function to check for authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper function for user's own data
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users: Can read any profile, can only write to their own.
+    match /users/{userId} {
+      allow read;
+      allow create, update, delete: if isOwner(userId);
+    }
+
+    // Items: Anyone can read. Only the seller can manage their items.
+    match /items/{itemId} {
+      allow read;
+
+      // Allow create with proper data validation
+      allow create: if isOwner(request.resource.data.sellerId)
+                    && request.resource.data.name is string
+                    && request.resource.data.price is number
+                    && request.resource.data.category is string
+                    && request.resource.data.imageUrls is list
+                    && (!('isSold' in request.resource.data) || request.resource.data.isSold == false); // Cannot create an already sold item
+
+      // Allow update only by the owner with data validation
+      allow update: if isOwner(resource.data.sellerId)
+                    && request.resource.data.name is string
+                    && request.resource.data.price is number
+                    && request.resource.data.category is string;
+
+      allow delete: if isOwner(resource.data.sellerId);
+
+      // Views: Allow any authenticated user to add a view. Deny all reads/deletes for privacy.
+      match /views/{viewId} {
+        allow create: if isAuthenticated();
+        allow read, list, update, delete: if false;
+      }
+    }
+
+    // Reviews: Anyone can read. Authenticated users can write one review per item, but not for their own items.
+    match /reviews/{reviewId} {
+      allow read;
+
+      // Create rule with advanced validation
+      allow create: if isAuthenticated()
+                    && request.resource.data.reviewerId == request.auth.uid
+                    && get(/databases/$(database)/documents/items/$(request.resource.data.itemId)).data.sellerId != request.auth.uid // Cannot review own item
+                    && !exists(/databases/$(database)/documents/reviews/$(request.resource.data.reviewerId + '_' + request.resource.data.itemId)) // Prevent multiple reviews
+                    && request.resource.data.rating is number && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+                    && request.resource.data.comment is string && request.resource.data.comment.size() < 1000;
+
+      // Only the author of the review can update/delete it.
+      allow update, delete: if isOwner(resource.data.reviewerId);
+    }
+
+    // User Favorites: Users can only manage their own favorites.
+    match /userFavorites/{favoriteId} {
+      // The favoriteId is userId_itemId. We verify that the userId part matches the authenticated user.
+      allow read, create, delete: if isOwner(favoriteId.split('_')[0]);
+
+      // Secure list query
+      allow list: if isAuthenticated() && request.query.where[0][1] == 'userId' && request.query.where[0][2] == request.auth.uid;
+
+      allow update: if false; // Favorites are created/deleted, not updated.
+    }
+
+    // Message Threads
+    match /messageThreads/{threadId} {
+        // Users can only access threads they are a part of.
+        allow read, update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+
+        // Creation is handled by a secure backend (API route or Cloud Function) which bypasses these rules.
+        allow create: if false;
+
+        // Messages Subcollection
+        match /messages/{messageId} {
+            // Users can read/write messages in threads they are part of.
+            allow read, create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+
+            // Users can only update their own messages (e.g., to add to 'readBy' array).
+            // A more restrictive rule could be `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy'])` if needed.
+            allow update: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+
+            allow delete: if false; // Prohibit message deletion for now.
+        }
+    }
+
+    // Reports: Allow authenticated users to write reports.
+    match /productReports/{itemId}/reports/{userId} {
+        allow create, read: if isOwner(userId);
     }
   }
 }
