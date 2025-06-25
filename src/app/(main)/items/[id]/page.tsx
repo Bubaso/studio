@@ -32,6 +32,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
     return <div className="text-center py-10">ID d'article manquant.</div>;
   }
 
+  // First, fetch the main item. The other fetches depend on this data.
   const item = await getItemByIdFromFirestore(itemId);
 
   if (!item) {
@@ -50,59 +51,38 @@ export default async function ItemPage({ params }: ItemPageProps) {
     );
   }
 
-  let seller: UserProfile | null = null;
-  try {
-    if (item.sellerId && typeof item.sellerId === 'string' && item.sellerId.trim() !== '' && !item.sellerId.includes('/')) {
-      seller = await getUserDocument(item.sellerId);
-    } else {
-      console.warn(`Item ${itemId} has an invalid or missing sellerId: ${String(item.sellerId)}`);
-    }
-  } catch (error: any) {
-    const sellerIdString = String(item?.sellerId); 
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
-        console.warn(`Permission denied fetching seller (ID: ${sellerIdString}) for item ${itemId}. Check Firestore rules for 'users' collection.`);
-        seller = null; 
-    } else {
-        let errorMessageLog = `Unexpected error fetching seller (ID: ${sellerIdString}) for item ${itemId}.`;
-        if (error instanceof Error) {
-            errorMessageLog += ` Message: ${error.message}.`;
-        } else {
-            errorMessageLog += ` Details: ${String(error)}.`;
-        }
-        console.error(errorMessageLog);
-        seller = null; 
-    }
-  }
+  const currentUser = auth.currentUser;
+  
+  // Prepare all other data fetching promises to run in parallel.
+  const sellerPromise = getUserDocument(item.sellerId);
+  const reviewsPromise = getReviewsForItem(itemId);
+  const hasUserAlreadyReviewedPromise = currentUser ? checkIfUserHasReviewedItem(currentUser.uid, itemId) : Promise.resolve(false);
+  const similarItemsPromise = (item.price !== undefined && item.category) ? getItemsFromFirestore({
+      category: item.category as ItemCategory,
+      priceMin: Math.round(item.price * 0.8),
+      priceMax: Math.round(item.price * 1.2),
+      pageSize: 10, 
+    }) : Promise.resolve({ items: [], lastItemId: null });
 
-  let reviews: Review[] = [];
-  try {
-    reviews = await getReviewsForItem(itemId);
-  } catch (error: any) {
-    console.error(`Error fetching reviews for item ${itemId}. Check Firestore rules for 'reviews' collection.`, error);
-  }
-  
-  const currentUser = auth.currentUser; 
-  let hasUserAlreadyReviewedInitial = false;
-  if (currentUser?.uid && itemId) { 
-    hasUserAlreadyReviewedInitial = await checkIfUserHasReviewedItem(currentUser.uid, itemId);
-  }
-  
+  // Await all promises concurrently
+  const [
+    seller,
+    reviews,
+    hasUserAlreadyReviewedInitial,
+    { items: fetchedSimilarItems }
+  ] = await Promise.all([
+    sellerPromise,
+    reviewsPromise,
+    hasUserAlreadyReviewedPromise,
+    similarItemsPromise
+  ]);
+
+  // Process the results
+  const similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
+
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
-  let similarItems: Item[] = [];
-  if (item && item.price !== undefined && item.category) {
-    const priceMin = Math.round(item.price * 0.8);
-    const priceMax = Math.round(item.price * 1.2);
-
-    const { items: fetchedSimilarItems } = await getItemsFromFirestore({
-      category: item.category as ItemCategory,
-      priceMin: priceMin,
-      priceMax: priceMax,
-      pageSize: 10, 
-    });
-    similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
-  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
