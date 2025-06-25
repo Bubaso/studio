@@ -1,7 +1,6 @@
-
 import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 
@@ -277,8 +276,13 @@ export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
   try {
+    const dataToSend: any = { ...itemData };
+    if (dataToSend.videoUrl === undefined) {
+      delete dataToSend.videoUrl;
+    }
+
     const docRef = await addDoc(collection(db, "items"), {
-      ...itemData,
+      ...dataToSend,
       postedDate: serverTimestamp(),
     });
     return docRef.id;
@@ -302,6 +306,12 @@ export async function updateItemInFirestore(
   if (dataToUpdate.price !== undefined) {
     dataToUpdate.price = Number(dataToUpdate.price);
   }
+  
+  // If the videoUrl key is present with an undefined value, it means we want to remove the field.
+  if ('videoUrl' in dataToUpdate && dataToUpdate.videoUrl === undefined) {
+      dataToUpdate.videoUrl = deleteField();
+  }
+  
   dataToUpdate.lastUpdated = serverTimestamp();
 
   try {
