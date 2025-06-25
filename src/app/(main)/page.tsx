@@ -4,13 +4,12 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
-import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
-import admin from '@/lib/firebaseAdmin'; // HATA DÜZELTMESİ: 'adminDb' yerine ana admin nesnesini içe aktar
+import { Search, ShoppingBag, MessageCircleHeart } from 'lucide-react';
+import admin from '@/lib/firebaseAdmin';
+import { HeroOnboarding } from '@/components/hero-onboarding';
 
 // Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
 const getStorageBucket = () => {
-  // HATA DÜZELTMESİ: storage() fonksiyonu, Firestore veritabanı (adminDb) yerine
-  // ana admin nesnesinden çağrılmalıdır.
   if (admin) {
     return admin.storage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
   }
@@ -77,39 +76,21 @@ export default async function HomePage() {
   let allFetchedItems: Item[] = [];
 
   try {
-    allFetchedItems = await getItemsFromFirestore({
-      count: 8,
-      query: '',
+    const { items } = await getItemsFromFirestore({
+      pageSize: 8,
     });
+    allFetchedItems = items;
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <section className="text-center py-4 md:py-6">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-headline text-primary mb-2 md:mb-3">
-          Votre Marché d'Occasion
-        </h1>
-        <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-lg mx-auto">
-          Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.
-        </p>
-        <div className="hidden md:flex flex-row gap-2 sm:gap-3 justify-center">
-          <Link href="/sell" className="flex-1 max-w-[200px] sm:max-w-xs">
-            <Button size="lg" variant="default" className="w-full text-sm sm:text-base">
-              <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Vendre Maintenant
-            </Button>
-          </Link>
-          <Link href="/browse" className="flex-1 max-w-[200px] sm:max-w-xs">
-            <Button size="lg" variant="outline" className="w-full text-sm sm:text-base">
-              <Search className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Explorer
-            </Button>
-          </Link>
-        </div>
-      </section>
+    <div className="space-y-4 md:space-y-8">
+      
+      <HeroOnboarding />
 
-      <section className="mb-4 md:mb-8">
-        <h2 className="text-lg sm:text-xl font-bold font-headline text-primary mb-2 md:mb-3 px-1">Explorer par Catégorie</h2>
+      <section className="py-4 md:py-8">
+        <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
         <CategoryCarousel categories={carouselCategories} />
       </section>
 
