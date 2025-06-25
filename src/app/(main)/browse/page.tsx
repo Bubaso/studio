@@ -19,19 +19,21 @@ const ITEMS_PER_PAGE = 12;
 // ItemGrid component - no longer takes searchParams prop
 function ItemGrid() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
+  const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null }>({ items: [], lastItemId: null });
   const [isLoading, setIsLoading] = useState(true);
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [cursors, setCursors] = useState<(string|null)[]>([null]);
 
-  const actualSearchParams = useSearchParams(); // Use the hook in ItemGrid
+  const actualSearchParams = useSearchParams();
 
+  // Rebuild the filter params for dependencies and fetching
   const queryParam = actualSearchParams.get('q');
   const categoryParam = actualSearchParams.get('category') as ItemCategory | null;
   const minPriceParam = actualSearchParams.get('minPrice');
   const maxPriceParam = actualSearchParams.get('maxPrice');
   const locationParam = actualSearchParams.get('location');
   const conditionParam = actualSearchParams.get('condition') as ItemCondition | null;
-  const pageParam = actualSearchParams.get('page');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -41,83 +43,105 @@ function ItemGrid() {
     return () => unsubscribe();
   }, []);
 
+  // Effect to reset pagination when filters change
   useEffect(() => {
-    if (!initialAuthCheckDone) {
-      return;
-    }
+    setPageNumber(1);
+    setCursors([null]);
+  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam]);
 
-    setIsLoading(true);
-    getItemsFromFirestore({
-      query: queryParam || undefined,
-      category: categoryParam || undefined,
-      priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
-      priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
-      location: locationParam || undefined,
-      condition: conditionParam || undefined,
-      excludeSellerId: currentUser?.uid,
-    }).then(fetchedItems => {
-      setItems(fetchedItems);
-      setIsLoading(false);
-    }).catch(error => {
-      console.error("Error fetching items in ItemGrid:", error);
-      setItems([]);
-      setIsLoading(false);
+  useEffect(() => {
+    if (!initialAuthCheckDone) return;
+
+    const fetchPageData = async () => {
+        setIsLoading(true);
+        const cursor = cursors[pageNumber - 1];
+
+        const result = await getItemsFromFirestore({
+            query: queryParam || undefined,
+            category: categoryParam || undefined,
+            priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
+            priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
+            location: locationParam || undefined,
+            condition: conditionParam || undefined,
+            excludeSellerId: currentUser?.uid,
+            pageSize: ITEMS_PER_PAGE,
+            lastVisibleItemId: cursor ?? undefined,
+        });
+
+        setPageData(result);
+
+        if (result.lastItemId && !cursors.includes(result.lastItemId)) {
+          setCursors(prev => {
+             const newCursors = [...prev];
+             newCursors[pageNumber] = result.lastItemId;
+             return newCursors;
+          });
+        }
+        
+        setIsLoading(false);
+    };
+
+    fetchPageData().catch(error => {
+        console.error("Error fetching items in ItemGrid:", error);
+        setPageData({ items: [], lastItemId: null });
+        setIsLoading(false);
     });
-  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam, currentUser, initialAuthCheckDone, pageParam]);
+
+  }, [
+    pageNumber,
+    currentUser, 
+    initialAuthCheckDone, 
+    queryParam, 
+    categoryParam, 
+    minPriceParam, 
+    maxPriceParam, 
+    locationParam, 
+    conditionParam
+  ]);
+
+  const { items, lastItemId } = pageData;
 
   if (isLoading && items.length === 0) {
     return <ItemGridSkeleton />;
   }
 
-  const currentPage = parseInt(pageParam || '1');
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  const paginatedItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const handleNextPage = () => {
+    if(lastItemId) {
+      setPageNumber(prev => prev + 1);
+    }
+  }
 
-  const buildPageUrl = (pageNumber: number) => {
-    const newParams = new URLSearchParams(); // Standard URLSearchParams
-    if (queryParam) newParams.set('q', queryParam);
-    if (categoryParam) newParams.set('category', categoryParam);
-    if (minPriceParam) newParams.set('minPrice', minPriceParam);
-    if (maxPriceParam) newParams.set('maxPrice', maxPriceParam);
-    if (locationParam) newParams.set('location', locationParam);
-    if (conditionParam) newParams.set('condition', conditionParam);
-    newParams.set('page', pageNumber.toString());
-    return `/browse?${newParams.toString()}`;
-  };
+  const handlePrevPage = () => {
+    setPageNumber(prev => Math.max(1, prev - 1));
+  }
+
 
   return (
     <div className="flex-1">
-      {isLoading && items.length === 0 ? (
+      {isLoading ? (
          <ItemGridSkeleton />
       ) : items.length > 0 ? (
         <>
           <p className="mb-4 text-muted-foreground">
-            Affichage de {paginatedItems.length} sur {items.length} articles
+            Affichage de {items.length} articles
             {queryParam && ` pour "${queryParam}"`}
           </p>
           <div className="grid grid-cols-2 gap-6">
-            {paginatedItems.map((item) => (
+            {items.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
           </div>
-          {totalPages > 1 && (
+          {(pageNumber > 1 || lastItemId) && (
             <Pagination className="mt-8">
               <PaginationContent>
-                {currentPage > 1 && (
-                  <PaginationPrevious href={buildPageUrl(currentPage - 1)} />
+                {pageNumber > 1 && (
+                  <PaginationPrevious onClick={handlePrevPage} style={{cursor: 'pointer'}} />
                 )}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      href={buildPageUrl(page)}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                {currentPage < totalPages && (
-                  <PaginationNext href={buildPageUrl(currentPage + 1)} />
+                <PaginationItem>
+                  <PaginationLink isActive>{pageNumber}</PaginationLink>
+                </PaginationItem>
+                {lastItemId && (
+                  <PaginationNext onClick={handleNextPage} style={{cursor: 'pointer'}} />
                 )}
               </PaginationContent>
             </Pagination>
