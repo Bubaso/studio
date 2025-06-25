@@ -284,7 +284,7 @@ export default function MessageThreadPage() {
                            <DialogTitle className="sr-only">Image en plein écran</DialogTitle>
                         </DialogHeader>
                         <div className="relative w-full h-full">
-                         <Image src={msg.imageUrl} alt="Pièce jointe en grand" fill className="object-contain rounded-md" unoptimized={true} data-ai-hint="message image" />
+                         <Image src={msg.imageUrl} alt="Pièce jointe en grand" fill className="object-contain rounded-md" data-ai-hint="message image" />
                         </div>
                     </DialogContent>
                    </Dialog>

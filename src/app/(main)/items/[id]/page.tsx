@@ -95,11 +95,11 @@ export default async function ItemPage({ params }: ItemPageProps) {
     const priceMin = Math.round(item.price * 0.8);
     const priceMax = Math.round(item.price * 1.2);
 
-    const fetchedSimilarItems = await getItemsFromFirestore({
+    const { items: fetchedSimilarItems } = await getItemsFromFirestore({
       category: item.category as ItemCategory,
       priceMin: priceMin,
       priceMax: priceMax,
-      count: 10, 
+      pageSize: 10, 
     });
     similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
   }
@@ -164,7 +164,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                            <DialogTitle className="sr-only">Aperçu de l'image : {item.name}</DialogTitle>
                         </DialogHeader>
                         <div className="relative w-full h-full">
-                            <Image src={primaryImageUrl} alt={item.name} fill className="object-contain rounded-md" unoptimized={true} />
+                            <Image src={primaryImageUrl} alt={item.name} fill className="object-contain rounded-md" />
                         </div>
                     </DialogContent>
                 </Dialog>
@@ -208,7 +208,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                            <DialogTitle className="sr-only">Aperçu de l'image {index + 1}</DialogTitle>
                         </DialogHeader>
                         <div className="relative w-full h-full">
-                            <Image src={url} alt={`${item.name} - image ${index + 1}`} fill className="object-contain rounded-md" unoptimized={true}/>
+                            <Image src={url} alt={`${item.name} - image ${index + 1}`} fill className="object-contain rounded-md"/>
                         </div>
                     </DialogContent>
                 </Dialog>
