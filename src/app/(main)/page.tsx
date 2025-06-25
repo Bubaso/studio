@@ -107,40 +107,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="py-4 md:py-6 bg-card/30 rounded-lg">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-3 md:gap-4 text-center">
-            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
-              <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
-                <Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              </div>
-              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Découvrez</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Explorez des milliers d'articles uniques mis en vente par des vendeurs.
-              </p>
-            </div>
-            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
-              <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
-                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              </div>
-              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Vendez Facilement</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Mettez en vente vos articles en quelques clics et fixez votre prix.
-              </p>
-            </div>
-            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
-               <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
-                <MessageCircleHeart className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              </div>
-              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Connectez-vous</h3>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Communiquez directement avec les acheteurs et vendeurs via messagerie.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
