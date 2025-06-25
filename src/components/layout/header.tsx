@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase'; 
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth'; 
+import { signOut } from 'firebase/auth'; 
 import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { MessageThread } from '@/lib/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavLink {
   href: string;
@@ -32,9 +33,8 @@ const initialUserLinks: NavLink[] = [
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
@@ -46,13 +46,6 @@ export function Header() {
       setTheme(storedTheme);
       document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
-
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-    });
-
-    return () => unsubscribeAuth(); 
   }, []);
 
   useEffect(() => {
@@ -66,12 +59,10 @@ export function Header() {
       unsubscribeThreads = onSnapshot(threadsQuery, (querySnapshot) => {
         const newActivity = querySnapshot.docs.some(doc => {
           const threadData = doc.data() as MessageThread;
-          // New activity if last message is not from current user AND current user hasn't seen the latest in this thread
           return threadData.lastMessageSenderId && 
                  threadData.lastMessageSenderId !== currentUser.uid &&
                  (!threadData.participantsWhoHaveSeenLatest || !threadData.participantsWhoHaveSeenLatest.includes(currentUser.uid));
         });
-        // Hide dot if user is anywhere in messages section
         setHasNewMessageActivity(newActivity && !pathname.startsWith('/messages'));
       }, (error) => {
         console.error("Error fetching message threads for notification: ", error);
@@ -87,7 +78,6 @@ export function Header() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      setCurrentUser(null);
       router.push('/');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -206,4 +196,3 @@ export function Header() {
     </header>
   );
 }
-

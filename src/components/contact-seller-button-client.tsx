@@ -1,13 +1,12 @@
 
 "use client";
 
-import { useEffect, useState, useTransition } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/context/AuthContext';
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
@@ -17,17 +16,8 @@ interface ContactSellerButtonClientProps {
 export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerButtonClientProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const handleContactSeller = () => {
     if (!currentUser) {
@@ -78,7 +68,6 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     });
   };
 
-
   if (isLoadingAuth) {
     return (
       <Button size="lg" variant="outline" className="w-full flex-1" disabled>
@@ -88,7 +77,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   }
 
   if (currentUser && currentUser.uid === sellerId) {
-    return null; // Don't show button if it's the seller's own item
+    return null;
   }
 
   if (!currentUser) {
@@ -101,14 +90,12 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     );
   }
 
-  // User is logged in and is not the seller
   return (
-    // Removed form, using onClick for fetch
     <Button 
         onClick={handleContactSeller} 
         size="lg" 
         variant="outline" 
-        className="w-full flex-1" // Ensure className is correctly applied
+        className="w-full flex-1"
         disabled={isPending}
     >
       {isPending ? (

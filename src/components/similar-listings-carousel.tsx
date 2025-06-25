@@ -5,8 +5,7 @@ import { ItemCard } from '@/components/item-card';
 import type { Item } from '@/lib/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { useAuth } from '@/context/AuthContext';
 
 interface SimilarListingsCarouselProps {
   items: Item[];
@@ -16,27 +15,18 @@ interface SimilarListingsCarouselProps {
 export function SimilarListingsCarousel({ items: initialItems, currentItemId }: SimilarListingsCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const { firebaseUser: currentUser, authLoading } = useAuth();
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
-  const [authCheckCompleted, setAuthCheckCompleted] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setAuthCheckCompleted(true);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!authCheckCompleted) return; // Wait for auth check
-
-    let displayItems = initialItems.filter(item => item.id !== currentItemId); 
-    if (currentUser) {
-      displayItems = displayItems.filter(item => item.sellerId !== currentUser.uid); 
+    if (!authLoading) {
+      let displayItems = initialItems.filter(item => item.id !== currentItemId); 
+      if (currentUser) {
+        displayItems = displayItems.filter(item => item.sellerId !== currentUser.uid); 
+      }
+      setFilteredItems(displayItems);
     }
-    setFilteredItems(displayItems);
-  }, [initialItems, currentUser, currentItemId, authCheckCompleted]);
+  }, [initialItems, currentUser, currentItemId, authLoading]);
 
   useEffect(() => {
     const checkScrollability = () => {
@@ -46,17 +36,17 @@ export function SimilarListingsCarousel({ items: initialItems, currentItemId }: 
       }
     };
 
-    if (filteredItems.length > 0) { // Only check if there are items to scroll
+    if (filteredItems.length > 0) {
         checkScrollability();
         window.addEventListener('resize', checkScrollability);
-        const timeoutId = setTimeout(checkScrollability, 100); // For dynamic content
+        const timeoutId = setTimeout(checkScrollability, 100);
 
         return () => {
-        window.removeEventListener('resize', checkScrollability);
-        clearTimeout(timeoutId);
+          window.removeEventListener('resize', checkScrollability);
+          clearTimeout(timeoutId);
         };
     } else {
-        setShowScrollButtons(false); // No buttons if no items
+        setShowScrollButtons(false);
     }
   }, [filteredItems]); 
 
@@ -67,7 +57,7 @@ export function SimilarListingsCarousel({ items: initialItems, currentItemId }: 
     }
   };
 
-  if (!filteredItems || filteredItems.length === 0) {
+  if (authLoading || filteredItems.length === 0) {
     return null;
   }
 
@@ -78,7 +68,7 @@ export function SimilarListingsCarousel({ items: initialItems, currentItemId }: 
         className="flex space-x-3 sm:space-x-4 overflow-x-auto py-2 sm:py-4 px-1 scrollbar-hide overscroll-x-contain"
       >
         {filteredItems.map((item) => (
-          <div key={item.id} className="w-56 sm:w-60 md:w-64 flex-shrink-0 h-full"> {/* Slightly smaller width for carousel context */}
+          <div key={item.id} className="w-56 sm:w-60 md:w-64 flex-shrink-0 h-full">
             <ItemCard item={item} />
           </div>
         ))}

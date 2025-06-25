@@ -1,17 +1,16 @@
 
 "use client";
 
-import { useTransition, useState, useEffect } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash, CheckCircle, Edit3 } from 'lucide-react';
 import { markItemAsSold, deleteItem } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/context/AuthContext';
 
 interface SellerActionsClientProps {
   item: Item;
@@ -22,16 +21,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
   const [isDeleting, startDeleting] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
 
   const handleMarkAsSold = () => {
      if (!currentUser || currentUser.uid !== item.sellerId) {
@@ -76,7 +66,6 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
     );
   }
 
-  // Only render actions if the current user is the seller
   if (!currentUser || currentUser.uid !== item.sellerId) {
     return null;
   }

@@ -2,8 +2,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Flag, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +11,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
+import { useAuth } from '@/context/AuthContext';
 
 interface ReportItemButtonProps {
   itemId: string;
@@ -22,26 +21,26 @@ interface ReportItemButtonProps {
 }
 
 export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportItemButtonProps) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { firebaseUser: currentUser, authLoading } = useAuth();
   const [hasReported, setHasReported] = useState(false);
+  const [isCheckingReport, setIsCheckingReport] = useState(true);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (user) {
-        hasUserReportedItem(itemId, user.uid).then(reported => {
+    if (!authLoading) {
+      if (currentUser) {
+        setIsCheckingReport(true);
+        hasUserReportedItem(itemId, currentUser.uid).then(reported => {
           setHasReported(reported);
-          setIsLoading(false);
+          setIsCheckingReport(false);
         });
       } else {
-        setIsLoading(false);
+        setHasReported(false);
+        setIsCheckingReport(false);
       }
-    });
-    return () => unsubscribe();
-  }, [itemId]);
+    }
+  }, [itemId, currentUser, authLoading]);
 
   const handleReport = () => {
     if (!currentUser) {
@@ -62,7 +61,6 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
         });
         setHasReported(true);
         if (result.triggeredSuspectedSold) {
-          // Refresh the page to show the new badge
           window.location.reload(); 
         }
       } else {
@@ -75,7 +73,7 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
     });
   };
 
-  if (isLoading) {
+  if (authLoading || isCheckingReport) {
     return (
         <Button variant="outline" size={asIcon ? "icon" : "sm"} disabled className="text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -84,7 +82,7 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
   }
   
   if (!currentUser || currentUser.uid === sellerId) {
-      return null; // Don't show if not logged in or if current user is the seller
+      return null;
   }
 
   if (hasReported) {

@@ -2,41 +2,36 @@
 "use client";
 
 import { useEffect, useState, useTransition } from 'react';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Heart, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { addFavorite, removeFavorite, isFavorited } from '@/services/favoriteService';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 interface FavoriteButtonClientProps {
   itemId: string;
   className?: string;
-  size?: 'sm' | 'default' | 'lg' | 'icon'; // To control button size
+  size?: 'sm' | 'default' | 'lg' | 'icon';
 }
 
 export function FavoriteButtonClient({ itemId, className, size = 'icon' }: FavoriteButtonClientProps) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [isFavoritedState, setIsFavoritedState] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-      if (user && itemId) {
-        isFavorited(user.uid, itemId).then(setIsFavoritedState);
+    if (!isLoadingAuth && itemId) {
+      if (currentUser) {
+        isFavorited(currentUser.uid, itemId).then(setIsFavoritedState);
       } else {
         setIsFavoritedState(false);
       }
-    });
-    return () => unsubscribe();
-  }, [itemId]);
+    }
+  }, [itemId, currentUser, isLoadingAuth]);
 
   const handleToggleFavorite = async () => {
     if (!currentUser) {
