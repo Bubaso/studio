@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { getUserDocument } from '@/services/userService';
-import { getUserListingsFromFirestore } from '@/services/itemService';
 import type { UserProfile, Item, Review } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -14,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
 import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 function UserProfileContent({ user, listings, reviews }: { user: UserProfile; listings: Item[]; reviews: Review[] }) {
   return (
@@ -81,7 +80,7 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
                     <span className="ml-2 text-sm font-semibold">{review.reviewerName}</span>
                   </div>
                   <p className="text-muted-foreground mb-1 text-sm">{review.comment}</p>
-                  <p className="text-xs text-muted-foreground/80">{new Date(review.date).toLocaleDateString('fr-FR')}</p>
+                  <p className="text-xs text-muted-foreground/80">{new Date(review.createdAt).toLocaleDateString('fr-FR')}</p>
                 </CardContent>
               </Card>
             ))}
@@ -101,32 +100,19 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
 
 export default function ProfilePage() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [listings, setListings] = useState<Item[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  
+  const { userProfile, listings, isLoading: isProfileLoading } = useUserProfile(firebaseUser?.uid || null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setFirebaseUser(user);
-        const profile = await getUserDocument(user.uid);
-        setUserProfile(profile);
-        if (profile) {
-          const userListings = await getUserListingsFromFirestore(profile.uid);
-          setListings(userListings);
-          setReviews([]); 
-        }
-      } else {
-        setFirebaseUser(null);
-        setUserProfile(null);
-        setListings([]);
-        setReviews([]);
-      }
-      setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  const isLoading = isAuthLoading || isProfileLoading;
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -147,5 +133,6 @@ export default function ProfilePage() {
     );
   }
 
-  return <UserProfileContent user={userProfile} listings={listings} reviews={reviews} />;
+  // Passing an empty array for reviews as it's not part of the hook's responsibility yet.
+  return <UserProfileContent user={userProfile} listings={listings} reviews={[]} />;
 }
