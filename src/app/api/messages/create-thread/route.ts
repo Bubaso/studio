@@ -1,6 +1,7 @@
+
 // src/app/api/messages/create-thread/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin'; // Import adminDb
+import { adminDb, adminAuth } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
 import type { UserProfile, Item, MessageThread } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
 
@@ -51,19 +52,39 @@ async function getAdminItemDetails(itemId: string): Promise<Item | null> {
 
 export async function POST(request: NextRequest) {
   console.log('API_ROUTE: POST /api/messages/create-thread invoked.');
-  if (!adminDb) {
-    console.error('API_ROUTE_ERROR: Firebase Admin SDK (adminDb) is not initialized.');
-    return NextResponse.json({ error: "Erreur critique de configuration du serveur (AdminDB). L'administrateur a été notifié." }, { status: 500 });
+  if (!adminDb || !adminAuth) {
+    console.error('API_ROUTE_ERROR: Firebase Admin SDK (adminDb or adminAuth) is not initialized.');
+    return NextResponse.json({ error: "Erreur critique de configuration du serveur (Admin SDK). L'administrateur a été notifié." }, { status: 500 });
   }
+
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader) {
+      return NextResponse.json({ error: "Aucun en-tête d'autorisation fourni." }, { status: 401 });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  if (!idToken) {
+      return NextResponse.json({ error: "Format de l'en-tête d'autorisation invalide." }, { status: 401 });
+  }
+
+  let decodedToken;
+  try {
+      decodedToken = await adminAuth.verifyIdToken(idToken);
+  } catch (error) {
+      console.error('API_ROUTE_AUTH_ERROR: Invalid ID token', error);
+      return NextResponse.json({ error: 'Session invalide ou expirée. Veuillez vous reconnecter.' }, { status: 403 });
+  }
+
+  const currentUserId = decodedToken.uid;
 
   try {
     const body = await request.json();
-    const { currentUserId, otherUserId, itemId } = body;
-    console.log(`API_ROUTE_DATA: currentUserId=${currentUserId}, otherUserId=${otherUserId}, itemId=${itemId}`);
+    const { otherUserId, itemId } = body;
+    console.log(`API_ROUTE_DATA: currentUserId=${currentUserId} (from token), otherUserId=${otherUserId}, itemId=${itemId}`);
 
     if (!currentUserId || !otherUserId) {
-      console.error('API_ROUTE_VALIDATION_ERROR: currentUserId or otherUserId is missing.');
-      return NextResponse.json({ error: "Les identifiants utilisateurs (currentUserId, otherUserId) sont requis." }, { status: 400 });
+      console.error('API_ROUTE_VALIDATION_ERROR: currentUserId (from token) or otherUserId is missing.');
+      return NextResponse.json({ error: "Les identifiants utilisateurs (votre session ou celle du vendeur) sont manquants." }, { status: 400 });
     }
     if (currentUserId === otherUserId) {
       console.error('API_ROUTE_VALIDATION_ERROR: currentUserId and otherUserId are the same.');

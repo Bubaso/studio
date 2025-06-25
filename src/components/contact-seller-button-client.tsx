@@ -29,13 +29,14 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
 
     startTransition(async () => {
         try {
+        const idToken = await currentUser.getIdToken();
         const response = await fetch('/api/messages/create-thread', {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
             },
             body: JSON.stringify({
-            currentUserId: currentUser.uid,
             otherUserId: sellerId,
             itemId: itemId,
             }),
