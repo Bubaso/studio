@@ -1,42 +1,18 @@
-
 import { getUserDocument } from '@/services/userService';
 import { getUserListingsFromFirestore } from '@/services/itemService';
 import type { UserProfile } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
-import { MapPin, CalendarDays, MessageSquare } from 'lucide-react';
-import { auth } from '@/lib/firebase'; // For current user
-import { createOrGetThreadAndRedirect } from '@/actions/messageActions'; // Server Action
+import { MapPin, CalendarDays } from 'lucide-react';
+import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
 
 interface UserProfilePageProps {
   params: { userId: string };
 }
 
-// Helper component for the contact button
-function ContactUserButton({ targetUserId, currentUserId }: { targetUserId: string; currentUserId: string | null }) {
-  if (!currentUserId || currentUserId === targetUserId) {
-    return null; // Don't show button if not logged in or if it's the user's own profile
-  }
-
-  return (
-    <form action={async () => {
-      if (currentUserId) {
-         await createOrGetThreadAndRedirect(currentUserId, targetUserId);
-      }
-    }}>
-      <Button type="submit" variant="outline">
-        <MessageSquare className="mr-2 h-4 w-4" /> Contacter
-      </Button>
-    </form>
-  );
-}
-
-
 export default async function UserProfilePage({ params }: UserProfilePageProps) {
   const user = await getUserDocument(params.userId);
-  const currentUser = auth.currentUser; // This will be null on server, auth state is client-side
 
   if (!user) {
     return <div className="text-center py-10">Utilisateur non trouvé. Vérifiez que l'UID est correct et que l'utilisateur existe dans Firestore.</div>;
@@ -62,7 +38,9 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            <ContactUserButton targetUserId={user.uid} currentUserId={currentUser?.uid || null} />
+            {/* The ContactSellerButtonClient handles auth check and hides itself if the user is viewing their own profile */}
+            {/* It also correctly uses the API route instead of the deprecated server action */}
+            <ContactSellerButtonClient sellerId={user.uid} itemId="" />
           </div>
         </CardContent>
       </Card>
@@ -70,7 +48,7 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
       <section>
         <h2 className="text-2xl font-bold font-headline mb-4">Annonces de {user.name ? user.name.split(' ')[0] : 'cet utilisateur'} ({listings.length})</h2>
         {listings.length > 0 ? (
-          <div className="grid grid-cols-2 gap-6"> {/* Updated grid classes */}
+          <div className="grid grid-cols-2 gap-6">
             {listings.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
