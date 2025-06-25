@@ -4,8 +4,19 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
-import { HeroOnboarding } from '@/components/hero-onboarding';
-import { Search, PlusCircle } from 'lucide-react';
+import { Search, ShoppingBag, MessageCircleHeart, PlusCircle } from 'lucide-react';
+import admin from '@/lib/firebaseAdmin'; // HATA DÜZELTMESİ: 'adminDb' yerine ana admin nesnesini içe aktar
+
+// Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
+const getStorageBucket = () => {
+  // HATA DÜZELTMESİ: storage() fonksiyonu, Firestore veritabanı (adminDb) yerine
+  // ana admin nesnesinden çağrılmalıdır.
+  if (admin) {
+    return admin.storage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
+  }
+  return null;
+};
+
 
 // Map categories to their AI hints for image generation
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -28,30 +39,47 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 
 
 export default async function HomePage() {
-  const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+  const bucket = getStorageBucket();
 
-  // Dynamically create carousel categories from the master list
-  const carouselCategories = ItemCategories.map(categoryName => {
-    const imageName = `${categoryName}.png`;
-    const encodedPath = `category-images/${encodeURIComponent(imageName)}`;
-    const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${storageBucket}/o/${encodedPath}?alt=media`;
+  // Kategori URL'lerini asenkron olarak ve güvenli bir şekilde al
+  const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
+    let imageUrl = `https://placehold.co/400x300.png?text=${encodeURIComponent(categoryName)}`; // Varsayılan placeholder
+    
+    if (bucket) {
+      const imageName = `${categoryName}.png`;
+      const filePath = `category-images/${imageName}`;
+      const file = bucket.file(filePath);
+
+      try {
+        // Dosyanın var olup olmadığını kontrol et
+        const [exists] = await file.exists();
+        if (exists) {
+          // Varsa, herkese açık URL'sini al
+          imageUrl = file.publicUrl();
+        } else {
+            console.warn(`Category image not found in Storage: ${filePath}`);
+        }
+      } catch (error) {
+        console.error(`Error fetching public URL for ${filePath}:`, error);
+      }
+    }
     
     return {
       name: categoryName,
-      dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(), // Fallback to category name if hint is missing
+      dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
       imageUrl: imageUrl,
       link: `/browse?category=${encodeURIComponent(categoryName)}`
-    }
+    };
   });
+
+  const carouselCategories = await Promise.all(carouselCategoriesPromises);
   
   let allFetchedItems: Item[] = [];
 
   try {
-    // Fetch more items than needed initially, client component will filter and slice
     allFetchedItems = await getItemsFromFirestore({
-      count: 8, // Fetch a bit more to allow for filtering by client component
+      count: 8,
       query: '',
-      // excludeSellerId cannot be reliably determined in Server Component without server session
     });
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
@@ -59,22 +87,26 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <HeroOnboarding />
-
-      <div className="hidden md:flex justify-center items-center gap-8 py-4">
-        <Link href="/sell">
-            <Button size="lg" className="px-12">
-                <PlusCircle className="mr-2 h-5 w-5" />
-                Vendre
+      <section className="text-center py-4 md:py-6">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-headline text-primary mb-2 md:mb-3">
+          Votre Marché d'Occasion
+        </h1>
+        <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-4 md:mb-6 max-w-lg mx-auto">
+          Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.
+        </p>
+        <div className="hidden md:flex flex-row gap-2 sm:gap-3 justify-center">
+          <Link href="/sell" className="flex-1 max-w-[200px] sm:max-w-xs">
+            <Button size="lg" variant="default" className="w-full text-sm sm:text-base">
+              <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Vendre Maintenant
             </Button>
-        </Link>
-        <Link href="/browse">
-            <Button size="lg" variant="secondary" className="px-12">
-                <Search className="mr-2 h-5 w-5" />
-                Explorer
+          </Link>
+          <Link href="/browse" className="flex-1 max-w-[200px] sm:max-w-xs">
+            <Button size="lg" variant="outline" className="w-full text-sm sm:text-base">
+              <Search className="mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Explorer
             </Button>
-        </Link>
-      </div>
+          </Link>
+        </div>
+      </section>
 
       <section className="mb-4 md:mb-8">
         <h2 className="text-lg sm:text-xl font-bold font-headline text-primary mb-2 md:mb-3 px-1">Explorer par Catégorie</h2>
@@ -95,7 +127,39 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* The old 3-column section has been removed as its content is now in the hero carousel. */}
+      <section className="py-4 md:py-6 bg-card/30 rounded-lg">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4 text-center">
+            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
+              <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
+                <Search className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Découvrez</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Explorez des milliers d'articles uniques mis en vente par des vendeurs.
+              </p>
+            </div>
+            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
+              <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
+                <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Vendez Facilement</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Mettez en vente vos articles en quelques clics et fixez votre prix.
+              </p>
+            </div>
+            <div className="p-3 md:p-4 bg-background rounded-lg hover:shadow-lg transition-shadow">
+               <div className="p-2 bg-primary/10 rounded-full inline-block mb-1 sm:mb-2">
+                <MessageCircleHeart className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <h3 className="text-md sm:text-lg font-semibold font-headline mb-1">Connectez-vous</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Communiquez directement avec les acheteurs et vendeurs via messagerie.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
