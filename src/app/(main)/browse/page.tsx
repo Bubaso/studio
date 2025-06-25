@@ -3,7 +3,7 @@
 
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
@@ -11,6 +11,7 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
 
@@ -135,13 +136,13 @@ function ItemGrid() {
             <Pagination className="mt-8">
               <PaginationContent>
                 {pageNumber > 1 && (
-                  <PaginationPrevious onClick={handlePrevPage} style={{cursor: 'pointer'}} />
+                  <PaginationPrevious onClick={handlePrevPage} />
                 )}
                 <PaginationItem>
-                  <PaginationLink isActive>{pageNumber}</PaginationLink>
+                   <Button variant="outline" size="icon" disabled>{pageNumber}</Button>
                 </PaginationItem>
                 {lastItemId && (
-                  <PaginationNext onClick={handleNextPage} style={{cursor: 'pointer'}} />
+                  <PaginationNext onClick={handleNextPage} />
                 )}
               </PaginationContent>
             </Pagination>
