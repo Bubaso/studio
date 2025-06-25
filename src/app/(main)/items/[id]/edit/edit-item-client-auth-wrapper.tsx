@@ -1,51 +1,38 @@
-
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import type { Item } from '@/lib/types';
 import { ListingForm } from '@/components/listing-form';
-import { Loader2, LogIn, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast"; 
+import { useToast } from "@/hooks/use-toast";
 
 interface EditItemClientAuthWrapperProps {
   item: Item;
 }
 
 export function EditItemClientAuthWrapper({ item }: EditItemClientAuthWrapperProps) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  // Le middleware gère maintenant la vérification "est connecté".
+  // La seule tâche de ce composant est de vérifier que l'utilisateur connecté est le propriétaire de l'article.
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-      
-      // Run checks only after initial auth state is determined
-      if (!isLoadingAuth && item) { 
-          if (user && user.uid !== item.sellerId) {
-            toast({ variant: "destructive", title: "Accès non autorisé", description: "Vous ne pouvez pas modifier cet article." });
-            router.push(`/items/${item.id}`);
-          } else if (!user) { 
-            toast({ variant: "destructive", title: "Connexion requise", description: "Vous devez être connecté pour modifier un article." });
-            router.push(`/auth/signin?redirect=/items/${item.id}/edit`);
-          }
+    // Cet effet s'exécute une fois que l'état d'authentification de l'utilisateur est résolu.
+    if (!loading && user) {
+      if (user.uid !== item.sellerId) {
+        toast({ variant: "destructive", title: "Accès non autorisé", description: "Vous ne pouvez pas modifier cet article." });
+        router.push(`/items/${item.id}`);
       }
-    });
-    return () => unsubscribe();
-  // Add item to dependency array to re-run effect if item changes, though not expected here.
-  // isLoadingAuth is used to delay checks until auth is ready.
-  }, [item, router, isLoadingAuth, toast]);
+    }
+  }, [user, loading, item, router, toast]);
 
 
-  if (isLoadingAuth || !item) { // Also check if item is loaded, though page.tsx should handle !item
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -54,34 +41,22 @@ export function EditItemClientAuthWrapper({ item }: EditItemClientAuthWrapperPro
     );
   }
 
-  // These are fallbacks, useEffect should handle redirection earlier
-  if (!currentUser) { 
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)] text-center p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <LogIn className="h-4 w-4" />
-          <AlertTitle>Connexion requise</AlertTitle>
-          <AlertDescription>
-            Vous devez être connecté pour modifier un article. Redirection...
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-  
-  if (currentUser.uid !== item.sellerId) { 
-     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)] text-center p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertTriangle className="h-4 w-4"/>
-          <AlertTitle>Accès non autorisé</AlertTitle>
-          <AlertDescription>
-            Vous n'êtes pas autorisé à modifier cet article. Redirection...
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  // Si le chargement est terminé et que l'utilisateur est le propriétaire, afficher le formulaire.
+  // Le useEffect gère la redirection pour les non-propriétaires.
+  if (user && user.uid === item.sellerId) {
+      return <ListingForm initialItemData={item} />;
   }
 
-  return <ListingForm initialItemData={item} />;
+  // Interface de secours affichée brièvement pendant la redirection pour les non-propriétaires.
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)] text-center p-4">
+      <Alert variant="destructive" className="max-w-md">
+        <AlertTriangle className="h-4 w-4"/>
+        <AlertTitle>Accès non autorisé</AlertTitle>
+        <AlertDescription>
+          Vous n'êtes pas autorisé à modifier cet article. Redirection...
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
 }
