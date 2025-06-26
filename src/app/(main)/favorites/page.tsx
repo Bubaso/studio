@@ -43,7 +43,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-4xl font-bold font-headline text-primary">Mes Articles Favoris</h1>
+      <h1 className="text-3xl font-bold font-headline text-primary">Mes Articles Favoris</h1>
       
       {isLoadingFavorites ? (
         <div className="flex flex-col items-center justify-center py-10">

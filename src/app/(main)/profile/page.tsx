@@ -24,7 +24,7 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
             <AvatarFallback className="text-4xl">{(user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl md:text-4xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur'}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur'}</h1>
             {user.location && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2" /> {user.location}
