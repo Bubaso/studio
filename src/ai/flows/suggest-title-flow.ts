@@ -42,10 +42,11 @@ Follow these rules:
 1.  **Analyze the Description:** Read the provided item description to understand its key features, brand, condition, and purpose.
 2.  **Generate Multiple Options:** Create a list of 3 to 5 distinct title options.
 3.  **Be Concise and Clear:** Titles should be short and easy to understand.
-4.  **Include Keywords:** Use important keywords from the description that a buyer might search for (e.g., "iPhone 12", "robe en wax", "neuf").
-5.  **Highlight Condition:** If the condition is mentioned (e.g., "comme neuf", "excellent état"), include it.
-6.  **Language:** All titles must be in French.
-7.  **Format:** Return the result as a JSON object with a "suggestedTitles" array.
+4.  **Length:** Titles must not exceed 40 characters.
+5.  **Include Keywords:** Use important keywords from the description that a buyer might search for (e.g., "iPhone 12", "robe en wax", "neuf").
+6.  **Highlight Condition:** If the condition is mentioned (e.g., "comme neuf", "excellent état"), include it.
+7.  **Language:** All titles must be in French.
+8.  **Format:** Return the result as a JSON object with a "suggestedTitles" array.
 
 Item Description from seller:
 {{{itemDescription}}}
