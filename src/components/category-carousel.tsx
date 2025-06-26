@@ -1,10 +1,9 @@
-
 "use client";
 
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 
 interface CarouselCategory {
@@ -61,15 +60,21 @@ export function CategoryCarousel({ categories }: CategoryCarouselProps) {
           <Link href={category.link} key={index} className="block flex-shrink-0 w-32 sm:w-36 md:w-40 group">
             <Card className="overflow-hidden h-full hover:shadow-lg transition-shadow duration-200 border-border hover:border-primary/50">
               <div className="relative w-full aspect-[4/3]">
-                <Image
-                  src={category.imageUrl}
-                  alt={category.name}
-                  fill
-                  sizes="(max-width: 640px) 128px, (max-width: 768px) 144px, 160px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-200"
-                  data-ai-hint={category.dataAiHint || category.name.toLowerCase()}
-                  priority={index < 3} // Prioritize the first 3 images
-                />
+                {category.imageUrl ? (
+                  <Image
+                    src={category.imageUrl}
+                    alt={category.name}
+                    fill
+                    sizes="(max-width: 640px) 128px, (max-width: 768px) 144px, 160px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                    data-ai-hint={category.dataAiHint || category.name.toLowerCase()}
+                    priority={index < 3} // Prioritize the first 3 images
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <ImageIcon className="h-10 w-10 text-muted-foreground/50" />
+                  </div>
+                )}
               </div>
               <CardContent className="p-2 text-center">
                 <h3 className="text-xs sm:text-sm font-semibold font-headline truncate group-hover:text-primary transition-colors">
