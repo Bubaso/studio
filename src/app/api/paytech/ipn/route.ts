@@ -1,7 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
-import { FieldValue } from 'firebase-admin/firestore';
+import admin, { adminDb } from '@/lib/firebaseAdmin';
 import { createHash } from 'crypto';
 
 const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
         console.error("CRITICAL PAYTECH IPN ERROR: PayTech API Key or Secret is not defined in environment variables.");
         return NextResponse.json({ error: "Configuration du serveur de paiement IPN manquante." }, { status: 500 });
     }
-     if (!adminDb) {
+    if (!admin || !adminDb) {
         console.error("CRITICAL FIREBASE ADMIN IPN ERROR: Firebase Admin SDK is not initialized.");
         return NextResponse.json({ error: "Configuration du serveur de base de données IPN manquante." }, { status: 500 });
     }
@@ -73,12 +72,12 @@ export async function POST(request: NextRequest) {
                 }
                 
                 transaction.update(userRef, {
-                    credits: FieldValue.increment(creditAmount)
+                    credits: admin.firestore.FieldValue.increment(creditAmount)
                 });
 
                 transaction.update(paymentIntentRef, {
                     status: 'success',
-                    updatedAt: FieldValue.serverTimestamp(),
+                    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     ipnPayload: body // Store the successful payload for reference
                 });
             });
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest) {
             await paymentIntentRef.update({
                 status: 'failed',
                 error: `Événement reçu: ${type_event}`,
-                updatedAt: FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                 ipnPayload: body // Store the failed payload for reference
             });
             console.log(`Payment failed or was canceled for command ${ref_command}. Event: ${type_event}`);

@@ -1,9 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 import axios from 'axios';
 import { randomBytes } from 'crypto';
-import { serverTimestamp } from 'firebase-admin/firestore';
 
 const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
 const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
         console.error("CRITICAL PAYTECH ERROR: PayTech API Key or Secret is not defined in environment variables.");
         return NextResponse.json({ error: "Configuration du serveur de paiement manquante. L'administrateur a été notifié." }, { status: 500 });
     }
-    if (!adminAuth || !adminDb) {
+    if (!admin || !adminAuth || !adminDb) {
         console.error("CRITICAL FIREBASE ADMIN ERROR: Firebase Admin SDK is not initialized. Check server logs.");
         return NextResponse.json({ error: "Configuration du serveur de base de données manquante. L'administrateur a été notifié." }, { status: 500 });
     }
@@ -45,8 +44,8 @@ export async function POST(request: NextRequest) {
             price: price,
             creditAmount: creditAmount,
             status: 'pending',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
         const paytechRequestData = new URLSearchParams();
