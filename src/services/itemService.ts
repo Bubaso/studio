@@ -1,7 +1,7 @@
 
 import { db, storage } from '@/lib/firebase'; 
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, writeBatch, increment } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 
@@ -294,25 +294,49 @@ export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
   if (!db) {
-    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
     throw new Error("Firestore (db) is not initialized.");
   }
+  const userId = itemData.sellerId;
+  if (!userId) {
+    throw new Error("Seller ID is missing from item data.");
+  }
+
+  const batch = writeBatch(db);
+  const userRef = doc(db, 'users', userId);
+
   try {
-    const dataToSend: any = { ...itemData };
-    if (dataToSend.videoUrl === undefined) {
-      delete dataToSend.videoUrl;
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      throw new Error("User profile not found.");
     }
+    const userProfile = userSnap.data();
+    const hasFreeListings = (userProfile.freeListingsRemaining || 0) > 0;
+    const hasEnoughCredits = (userProfile.credits || 0) >= 1;
+
+    if (hasFreeListings) {
+      batch.update(userRef, { freeListingsRemaining: increment(-1) });
+    } else if (hasEnoughCredits) {
+      batch.update(userRef, { credits: increment(-1) });
+    } else {
+      throw new Error("Fonds insuffisants pour publier l'annonce.");
+    }
+
+    const dataToSend: any = { ...itemData };
+    if (dataToSend.videoUrl === undefined) delete dataToSend.videoUrl;
     if (dataToSend.latitude === undefined) delete dataToSend.latitude;
     if (dataToSend.longitude === undefined) delete dataToSend.longitude;
 
-
-    const docRef = await addDoc(collection(db, "items"), {
+    const newItemRef = doc(collection(db, "items"));
+    batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
     });
-    return docRef.id;
+
+    await batch.commit();
+    return newItemRef.id;
+
   } catch (error) {
-    console.error("SERVER: Error creating item in Firestore: ", error);
+    console.error("SERVER: Error creating item in Firestore within transaction: ", error);
     throw error; 
   }
 }

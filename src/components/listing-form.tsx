@@ -17,15 +17,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition } from "@/lib/types";
+import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition, UserProfile } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
+import { getUserDocument } from "@/services/userService";
 import Image from "next/image";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
@@ -33,6 +34,8 @@ import { TitleSuggestion } from "./title-suggestion";
 import { DescriptionSuggestion } from "./description-suggestion";
 import { LocationPicker } from "./location-picker";
 import { CategorySuggestion } from "./category-suggestion";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useAuth } from "@/context/AuthContext";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -81,18 +84,21 @@ interface ListingFormProps {
 export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { firebaseUser, authLoading } = useAuth();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadStatusText, setUploadStatusText] = useState('');
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [showCreditsDialog, setShowCreditsDialog] = useState(false);
 
   const isEditMode = !!initialItemData?.id;
 
   const [imagePreviews, setImagePreviews] = useState<string[]>(initialItemData?.imageUrls || []);
   const [objectUrlToFileMap, setObjectUrlToFileMap] = useState<Map<string, File>>(new Map());
 
-  // Video state management
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [removeExistingVideo, setRemoveExistingVideo] = useState(false);
 
@@ -112,6 +118,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     },
   });
   
+  useEffect(() => {
+    if (firebaseUser) {
+      setIsLoadingProfile(true);
+      getUserDocument(firebaseUser.uid)
+        .then(profile => setUserProfile(profile))
+        .finally(() => setIsLoadingProfile(false));
+    } else if (!authLoading) {
+      setIsLoadingProfile(false);
+      setUserProfile(null);
+    }
+  }, [firebaseUser, authLoading]);
+
   const selectedVideoFile = form.watch("videoFile");
 
   useEffect(() => {
@@ -130,7 +148,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         });
         setImagePreviews(initialItemData.imageUrls || []);
         setRemoveExistingVideo(false);
-        setVideoPreview(null); // Clear blob preview
+        setVideoPreview(null);
     }
   }, [initialItemData, form]);
 
@@ -145,12 +163,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   }, [selectedVideoFile]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setIsLoadingAuth(false);
-    });
     return () => {
-      unsubscribe();
       objectUrlToFileMap.forEach((_file, url) => URL.revokeObjectURL(url));
       imagePreviews.forEach(url => {
         if (url.startsWith("blob:")) URL.revokeObjectURL(url);
@@ -262,15 +275,26 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   async function onSubmit(values: ListingFormValues) {
     setIsSubmitting(true);
-    setUploadStatusText('');
-    setUploadProgress(null);
-
-    if (!currentUser) {
-      toast({ title: "Erreur", description: "Vous devez être connecté.", variant: "destructive" });
-      router.push('/auth/signin');
+    
+    if (!firebaseUser || !userProfile) {
+      toast({ title: "Erreur", description: "Vous devez être connecté pour effectuer cette action.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
+    
+    if (!isEditMode) {
+      const hasFreeListings = userProfile.freeListingsRemaining > 0;
+      const hasEnoughCredits = userProfile.credits >= 1; // Assuming 1 credit per listing
+
+      if (!hasFreeListings && !hasEnoughCredits) {
+        setShowCreditsDialog(true);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    setUploadStatusText('');
+    setUploadProgress(null);
 
     let finalImageUrls: string[] = [];
     const keptExistingUrls = imagePreviews.filter(url => url.startsWith("http"));
@@ -283,7 +307,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         for (let i = 0; i < newFilesForUpload.length; i++) {
           const file = newFilesForUpload[i];
           setUploadStatusText(`Téléversement de l'image ${i + 1}/${newFilesForUpload.length}...`);
-          const url = await uploadImageAndGetURL(file, currentUser.uid, (progress) => {
+          const url = await uploadImageAndGetURL(file, firebaseUser.uid, (progress) => {
             setUploadProgress(progress);
           });
           finalImageUrls.push(url);
@@ -299,7 +323,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       if (values.videoFile) {
         setUploadStatusText('Téléversement de la vidéo...');
         setUploadProgress(0);
-        finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, currentUser.uid, (progress) => {
+        finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, firebaseUser.uid, (progress) => {
           setUploadProgress(progress);
         });
         setUploadProgress(100); 
@@ -336,8 +360,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       } else {
         const newItemFullData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'> = {
           ...(commonItemData as Omit<Item, 'id' | 'postedDate' | 'lastUpdated' | 'sellerId' | 'sellerName'>), 
-          sellerId: currentUser.uid,
-          sellerName: currentUser.displayName || currentUser.email || 'Vendeur Anonyme',
+          sellerId: firebaseUser.uid,
+          sellerName: firebaseUser.displayName || firebaseUser.email || 'Vendeur Anonyme',
           imageUrls: finalImageUrls.length > 0 ? finalImageUrls : ["https://placehold.co/600x400.png"], 
         };
         const newItemId = await createItemInFirestore(newItemFullData);
@@ -361,11 +385,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     }
   }
 
-  if (isLoadingAuth) {
+  if (authLoading) {
     return <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
-  if (!currentUser && !isLoadingAuth) {
+  if (!firebaseUser && !authLoading) {
      return (
         <div className="text-center py-10 p-6 border rounded-lg shadow-sm bg-card">
             <h2 className="text-2xl font-semibold mb-2">Connexion requise</h2>
@@ -379,6 +403,23 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   return (
     <div className="max-w-4xl mx-auto">
+      <AlertDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Crédits Insuffisants</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez utilisé toutes vos annonces gratuites. Pour continuer, vous devez acheter des crédits.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Plus tard</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/credits')}>
+              <Gem className="mr-2 h-4 w-4" /> Acheter des crédits
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6 border rounded-lg shadow-sm bg-card">
           
@@ -623,8 +664,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             </div>
           )}
 
-          <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || isLoadingAuth || !currentUser}>
-            {isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" /> }
+          <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || authLoading || isLoadingProfile}>
+            {isSubmitting || isLoadingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
             {isEditMode ? "Sauvegarder les modifications" : "Créer l'annonce"}
           </Button>
         </form>
