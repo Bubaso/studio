@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getItemsFromFirestore } from '@/services/itemService';
 import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
-import { Search, ShoppingBag, MessageCircleHeart } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import admin from '@/lib/firebaseAdmin';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 
@@ -101,13 +100,55 @@ export default async function HomePage() {
 
   let allFetchedItems: Item[] = [];
 
-  try {
-    const { items } = await getItemsFromFirestore({
-      pageSize: 8,
-    });
-    allFetchedItems = items;
-  } catch (error) {
-    console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
+  if (db) {
+    try {
+      const itemsSnapshot = await db.collection('items')
+                                    .where('isSold', '==', false)
+                                    .orderBy('postedDate', 'desc')
+                                    .limit(8)
+                                    .get();
+      
+      allFetchedItems = itemsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          const postDate = data.postedDate ? data.postedDate.toDate() : new Date();
+          const now = new Date();
+          const ageInDays = (now.getTime() - postDate.getTime()) / (1000 * 3600 * 24);
+
+          const lowActivity = ageInDays > 45 && (data.price % 7 !== 0);
+
+          let imageUrls: string[] = ['https://placehold.co/600x400.png'];
+          if (Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
+            imageUrls = data.imageUrls;
+          } else if (typeof data.imageUrl === 'string') {
+            imageUrls = [data.imageUrl];
+          }
+
+          return {
+            id: doc.id,
+            name: data.name || '',
+            description: data.description || '',
+            price: data.price || 0,
+            category: data.category || 'Autre',
+            location: data.location || '',
+            latitude: data.latitude,
+            longitude: data.longitude,
+            imageUrls: imageUrls,
+            videoUrl: data.videoUrl,
+            sellerId: data.sellerId || 'unknown',
+            sellerName: data.sellerName || 'Vendeur inconnu',
+            postedDate: postDate.toISOString(),
+            condition: data.condition,
+            dataAiHint: data.dataAiHint,
+            lastUpdated: data.lastUpdated ? data.lastUpdated.toDate().toISOString() : undefined,
+            suspectedSold: data.suspectedSold || false,
+            lowActivity: lowActivity,
+            isSold: data.isSold || false,
+            soldAt: data.soldAt ? data.soldAt.toDate().toISOString() : undefined,
+          } as Item;
+      });
+    } catch (error) {
+      console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
+    }
   }
 
   return (
