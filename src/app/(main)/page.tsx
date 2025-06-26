@@ -106,11 +106,9 @@ export default async function HomePage() {
         signedUrl = url;
       } catch (error) {
         console.error(`Error generating signed URL for ${imageFile.name}. Check permissions (e.g., 'Service Account Token Creator').`, error);
-        signedUrl = ''; // Fallback to empty on error
+        // Fallback to empty on error, the component will handle it gracefully.
+        signedUrl = ''; 
       }
-    } else {
-        // If no image is found in storage, the imageUrl will be an empty string.
-        signedUrl = '';
     }
     
     return {
@@ -128,14 +126,13 @@ export default async function HomePage() {
   categoriesWithData.sort((a, b) => b.count - a.count);
 
   let allFetchedItems: Item[] = [];
-  if (db) { // Check if db is initialized before using it
-    try {
-      const { items } = await getItemsFromFirestore({ pageSize: 8 });
-      allFetchedItems = items;
-    } catch (error) {
-      console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
-    }
+  try {
+    const { items } = await getItemsFromFirestore({ pageSize: 8 });
+    allFetchedItems = items;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
   }
+
 
   return (
     <div className="space-y-4 md:space-y-8">
