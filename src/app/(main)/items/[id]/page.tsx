@@ -91,9 +91,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <FavoriteButtonClient itemId={itemId} size="lg" />
-          </div>
+          
           {item.videoUrl ? (
             <Card className="shadow-lg rounded-lg overflow-hidden">
                 <Dialog>
@@ -209,6 +207,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
+          
+          <FavoriteButtonClient itemId={itemId} size="default" />
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
