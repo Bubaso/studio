@@ -85,8 +85,6 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    const hasPriceFilter = filters?.priceMin !== undefined || filters?.priceMax !== undefined;
-    
     if (filters?.category) {
       queryConstraints.push(where('category', '==', filters.category));
     }
@@ -101,13 +99,8 @@ export const getItemsFromFirestore = async (filters?: {
     }
     
     // --- Sorting ---
-    // If filtering by price, we must order by price first. Otherwise, order by date.
-    // This avoids needing a composite index for (price, postedDate).
-    if (hasPriceFilter) {
-      queryConstraints.push(orderBy('price'));
-    } else {
-      queryConstraints.push(orderBy('postedDate', 'desc'));
-    }
+    // Always sort by date. The composite index created by the user will handle this.
+    queryConstraints.push(orderBy('postedDate', 'desc'));
 
     // --- Pagination ---
     if (filters?.lastVisibleItemId) {
