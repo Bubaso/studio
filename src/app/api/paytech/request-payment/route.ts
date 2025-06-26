@@ -10,11 +10,17 @@ const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
 const PAYTECH_BASE_URL = 'https://paytech.sn';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-if (!PAYTECH_API_KEY || !PAYTECH_API_SECRET) {
-    console.error("CRITICAL PAYTECH ERROR: PayTech API Key or Secret is not defined in environment variables.");
-}
-
 export async function POST(request: NextRequest) {
+    // --- Configuration Checks ---
+    if (!PAYTECH_API_KEY || !PAYTECH_API_SECRET) {
+        console.error("CRITICAL PAYTECH ERROR: PayTech API Key or Secret is not defined in environment variables.");
+        return NextResponse.json({ error: "Configuration du serveur de paiement manquante. L'administrateur a été notifié." }, { status: 500 });
+    }
+    if (!adminAuth || !adminDb) {
+        console.error("CRITICAL FIREBASE ADMIN ERROR: Firebase Admin SDK is not initialized. Check server logs.");
+        return NextResponse.json({ error: "Configuration du serveur de base de données manquante. L'administrateur a été notifié." }, { status: 500 });
+    }
+
     try {
         const authHeader = request.headers.get('authorization');
         if (!authHeader?.startsWith('Bearer ')) {
@@ -33,7 +39,6 @@ export async function POST(request: NextRequest) {
 
         const ref_command = `REF-${userId}-${randomBytes(8).toString('hex')}`;
         
-        // Create a payment intent document in Firestore to track the transaction
         const paymentIntentRef = adminDb.collection('paymentIntents').doc(ref_command);
         await paymentIntentRef.set({
             userId: userId,
@@ -48,7 +53,7 @@ export async function POST(request: NextRequest) {
         paytechRequestData.append('item_price', price.toString());
         paytechRequestData.append('command_name', packageName);
         paytechRequestData.append('ref_command', ref_command);
-        paytechRequestData.append('env', 'prod'); // or 'test' depending on your setup
+        paytechRequestData.append('env', 'prod');
         paytechRequestData.append('ipn_url', `${APP_URL}/api/paytech/ipn`);
         paytechRequestData.append('success_url', `${APP_URL}/credits/success?ref=${ref_command}`);
         paytechRequestData.append('cancel_url', `${APP_URL}/credits/cancel?ref=${ref_command}`);
@@ -67,7 +72,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (response.data.success === 1 && response.data.redirect_url) {
-            // Store the token from PayTech in our payment intent for reference
             await paymentIntentRef.update({ paytechToken: response.data.token });
             return NextResponse.json({ redirect_url: response.data.redirect_url });
         } else {
