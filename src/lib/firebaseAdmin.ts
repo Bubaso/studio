@@ -15,6 +15,7 @@ if (!isConfigValid) {
   try {
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccountPath),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
     adminDb = admin.firestore(app);
     adminAuth = admin.auth(app);
