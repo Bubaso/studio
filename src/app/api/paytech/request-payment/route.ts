@@ -1,7 +1,5 @@
-
 import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
-import axios from 'axios';
 import { randomBytes } from 'crypto';
 
 const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
@@ -43,6 +41,7 @@ export async function POST(request: NextRequest) {
             userId: userId,
             price: price,
             creditAmount: creditAmount,
+            packageName: packageName,
             status: 'pending',
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -57,25 +56,26 @@ export async function POST(request: NextRequest) {
         paytechRequestData.append('success_url', `${APP_URL}/credits/success?ref=${ref_command}`);
         paytechRequestData.append('cancel_url', `${APP_URL}/credits/cancel?ref=${ref_command}`);
 
-        const response = await axios.post(
-            `${PAYTECH_BASE_URL}/api/payment/request-payment`,
-            paytechRequestData,
-            {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'API_KEY': PAYTECH_API_KEY,
-                    'API_SECRET': PAYTECH_API_SECRET,
-                },
-            }
-        );
+        const response = await fetch(`${PAYTECH_BASE_URL}/api/payment/request-payment`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'API_KEY': PAYTECH_API_KEY,
+                'API_SECRET': PAYTECH_API_SECRET,
+            },
+            body: paytechRequestData
+        });
 
-        if (response.data.success === 1 && response.data.redirect_url) {
-            await paymentIntentRef.update({ paytechToken: response.data.token });
-            return NextResponse.json({ redirect_url: response.data.redirect_url });
+        const data = await response.json();
+
+        if (response.ok && data.success === 1 && data.redirect_url) {
+            await paymentIntentRef.update({ paytechToken: data.token });
+            return NextResponse.json({ redirect_url: data.redirect_url });
         } else {
-            const errorMessage = response.data.errors?.[0] || "Erreur inconnue de PayTech.";
+            const errorMessage = data.errors?.[0] || `Erreur PayTech: ${data.message || 'Réponse inattendue.'}`;
             await paymentIntentRef.update({ status: 'failed', error: errorMessage });
+            console.error("PayTech API Error:", data);
             return NextResponse.json({ error: errorMessage }, { status: 500 });
         }
 
@@ -83,13 +83,12 @@ export async function POST(request: NextRequest) {
         console.error('Error in request-payment endpoint:', error);
 
         let errorMessage = "Erreur interne du serveur lors de la demande de paiement.";
-        // Check for axios-specific error structure
         if (error.response) {
-            console.error('Axios Error Response Data:', error.response.data);
-            console.error('Axios Error Response Status:', error.response.status);
+            console.error('Axios/Fetch Error Response Data:', error.response.data);
+            console.error('Axios/Fetch Error Response Status:', error.response.status);
             errorMessage = `Erreur de communication avec le service de paiement (Status: ${error.response.status}). Détails: ${JSON.stringify(error.response.data)}`;
         } else if (error.request) {
-            console.error('Axios Error: No response received. Request:', error.request);
+            console.error('Axios/Fetch Error: No response received. Request:', error.request);
             errorMessage = "Aucune réponse reçue du service de paiement. Vérifiez la connectivité.";
         } else {
             console.error('Generic Error Message:', error.message);
