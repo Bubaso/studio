@@ -129,7 +129,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center border-none">
+        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-8 bg-background/80 backdrop-blur-sm flex items-center justify-center border-none">
           <DialogHeader className="sr-only">
             <DialogTitle>Aperçu des médias pour {item.name}</DialogTitle>
           </DialogHeader>
