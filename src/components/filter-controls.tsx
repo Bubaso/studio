@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -33,6 +32,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   
   const [isLocationFilterActive, setIsLocationFilterActive] = useState(!!searchParams.get('lat'));
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [radius, setRadius] = useState(parseInt(searchParams.get('radius') || '25', 10));
 
   useEffect(() => {
     setCategory(searchParams.get('category') || ALL_ITEMS_VALUE);
@@ -42,7 +42,11 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
       parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
     ]);
     setLocation(searchParams.get('location') || '');
-    setIsLocationFilterActive(!!searchParams.get('lat'));
+    const isLocationActive = !!searchParams.get('lat');
+    setIsLocationFilterActive(isLocationActive);
+    if (isLocationActive) {
+      setRadius(parseInt(searchParams.get('radius') || '25', 10));
+    }
   }, [searchParams]);
 
   const handleApplyFilters = () => {
@@ -53,11 +57,11 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
     params.set('maxPrice', priceRange[1].toString());
     if (location) params.set('location', location); else params.delete('location');
     
-    // Preserve location filter if active
+    // Preserve location filter if active and update radius
     if (isLocationFilterActive && searchParams.get('lat')) {
         params.set('lat', searchParams.get('lat')!);
         params.set('lng', searchParams.get('lng')!);
-        params.set('radius', searchParams.get('radius') || '25');
+        params.set('radius', radius.toString()); // Use the state value
     }
     
     const query = searchParams.get('q');
@@ -79,7 +83,11 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
           const params = new URLSearchParams(searchParams);
           params.set('lat', position.coords.latitude.toString());
           params.set('lng', position.coords.longitude.toString());
-          params.set('radius', '25'); // Default 25km radius
+
+          const newRadius = 25; // Default radius when enabling
+          setRadius(newRadius);
+          params.set('radius', newRadius.toString());
+
           router.replace(`${pathname}?${params.toString()}`);
         },
         (error) => {
@@ -114,7 +122,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
 
   return (
     <div className="space-y-6 pt-6">
-       <div className="space-y-2 rounded-lg border p-4">
+       <div className="space-y-4 rounded-lg border p-4">
         <div className="flex items-center justify-between">
             <Label htmlFor="location-filter" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -132,6 +140,20 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Obtention de votre position...
             </div>
+        )}
+        {isLocationFilterActive && (
+          <div className="pt-2">
+            <Label htmlFor="radius-slider">Rayon de recherche : {radius} km</Label>
+            <Slider
+              id="radius-slider"
+              value={[radius]}
+              onValueChange={(value) => setRadius(value[0])}
+              min={1}
+              max={100}
+              step={1}
+              className="mt-2"
+            />
+          </div>
         )}
       </div>
 
