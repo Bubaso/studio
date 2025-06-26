@@ -21,6 +21,7 @@ import { ItemStatsDisplay } from '@/components/item-stats-display';
 import { ReportItemButton } from '@/components/report-item-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ItemMediaGallery } from '@/components/item-media-gallery';
+import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 
 interface ItemPageProps {
   params: { id: string };
@@ -134,7 +135,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
 
-          <FavoriteButtonClient itemId={itemId} size="sm" />
+          <div className="flex items-center gap-2">
+            <FavoriteButtonClient itemId={itemId} size="default" />
+            <WhatsAppShareButton item={item} />
+          </div>
           
           <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
