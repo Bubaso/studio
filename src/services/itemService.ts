@@ -4,6 +4,7 @@ import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, writeBatch, increment } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { LISTING_COST_IN_CREDITS } from '@/lib/config';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -311,12 +312,12 @@ export async function createItemInFirestore(
     }
     const userProfile = userSnap.data();
     const hasFreeListings = (userProfile.freeListingsRemaining || 0) > 0;
-    const hasEnoughCredits = (userProfile.credits || 0) >= 1;
+    const hasEnoughCredits = (userProfile.credits || 0) >= LISTING_COST_IN_CREDITS;
 
     if (hasFreeListings) {
       batch.update(userRef, { freeListingsRemaining: increment(-1) });
     } else if (hasEnoughCredits) {
-      batch.update(userRef, { credits: increment(-1) });
+      batch.update(userRef, { credits: increment(-LISTING_COST_IN_CREDITS) });
     } else {
       throw new Error("Fonds insuffisants pour publier l'annonce.");
     }

@@ -36,6 +36,7 @@ import { LocationPicker } from "./location-picker";
 import { CategorySuggestion } from "./category-suggestion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/context/AuthContext";
+import { LISTING_COST_IN_CREDITS } from "@/lib/config";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -284,7 +285,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     
     if (!isEditMode) {
       const hasFreeListings = userProfile.freeListingsRemaining > 0;
-      const hasEnoughCredits = userProfile.credits >= 1; // Assuming 1 credit per listing
+      const hasEnoughCredits = userProfile.credits >= LISTING_COST_IN_CREDITS;
 
       if (!hasFreeListings && !hasEnoughCredits) {
         setShowCreditsDialog(true);
