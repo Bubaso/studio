@@ -159,6 +159,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   }, [objectUrlToFileMap, imagePreviews]);
 
   const itemDescriptionForAISuggestions = form.watch("description");
+  const currentCategoryForAISuggestions = form.watch("category");
 
   const handlePriceSuggested = (price: number) => {
     form.setValue("price", Math.round(price));
@@ -438,6 +439,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                    <CategorySuggestion
+                      itemDescription={itemDescriptionForAISuggestions}
+                      onCategorySuggested={handleCategorySuggested}
+                      currentCategory={currentCategoryForAISuggestions}
+                    />
                   </FormItem>
                 )}
               />
@@ -456,11 +462,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   </FormItem>
                 )} />
             </div>
-
-            <CategorySuggestion
-              itemDescription={itemDescriptionForAISuggestions}
-              onCategorySuggested={handleCategorySuggested}
-            />
             
             <FormField
                 control={form.control}
