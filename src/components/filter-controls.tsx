@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   const [isLocationFilterActive, setIsLocationFilterActive] = useState(!!searchParams.get('lat'));
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [radius, setRadius] = useState(parseInt(searchParams.get('radius') || '25', 10));
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<ReactNode | null>(null);
 
 
   useEffect(() => {
@@ -100,32 +101,54 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
           setIsGettingLocation(false);
           setIsLocationFilterActive(false);
           
-          let description = "Une erreur inconnue est survenue.";
+          let title = "Erreur de localisation";
+          let description: ReactNode = "Une erreur inconnue est survenue.";
 
           switch (error.code) {
               case error.PERMISSION_DENIED:
-                  description = "L'accès à la localisation a été refusé. Pour l'activer, vous devez aller dans les paramètres de votre navigateur, trouver les autorisations pour ce site et autoriser l'accès à la localisation.";
+                  title = "Accès à la localisation refusé";
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+                  if (isIOS) {
+                      description = (
+                          <>
+                              <p>Pour réactiver l'accès sur votre appareil iOS :</p>
+                              <ol className="list-decimal list-inside mt-2 space-y-1 text-left text-xs">
+                                  <li>Ouvrez <strong>Réglages</strong> &gt; <strong>Confidentialité et sécurité</strong> &gt; <strong>Service de localisation</strong>.</li>
+                                  <li>Assurez-vous que le <strong>Service de localisation</strong> est activé.</li>
+                                  <li>Faites défiler vers le bas, trouvez votre navigateur (ex: <strong>Safari</strong>) et appuyez dessus.</li>
+                                  <li>Sélectionnez <strong>"Demander la prochaine fois"</strong> ou <strong>"Lorsque l'app est active"</strong>.</li>
+                                  <li>Revenez sur cette page et réessayez.</li>
+                              </ol>
+                          </>
+                      );
+                  } else {
+                      description = "L'accès à la localisation a été refusé. Pour l'activer, vous devez aller dans les paramètres de votre navigateur, trouver les autorisations pour ce site et autoriser l'accès à la localisation.";
+                  }
                   break;
               case error.POSITION_UNAVAILABLE:
+                  title = "Position non disponible";
                   description = "Informations de localisation non disponibles. Vérifiez votre connexion réseau ou votre signal GPS.";
                   break;
               case error.TIMEOUT:
+                  title = "Délai d'attente dépassé";
                   description = "La demande de localisation a expiré. Veuillez réessayer.";
                   break;
               default:
+                  title = "Erreur inconnue";
                   description = "Impossible d'accéder à votre position. Veuillez vérifier les autorisations de votre navigateur.";
           }
 
-          if (error.message && (error.message.toLowerCase().includes("secure origin") || error.message.toLowerCase().includes("secure context"))) {
-              description = "La géolocalisation nécessite une connexion sécurisée (HTTPS). Il est possible que cet environnement de développement ne soit pas considéré comme sécurisé par votre navigateur sur mobile.";
+          if (typeof description === 'string' && error.message && (error.message.toLowerCase().includes("secure origin") || error.message.toLowerCase().includes("secure context"))) {
+              title = "Contexte non sécurisé";
+              description = "La géolocalisation nécessite une connexion sécurisée (HTTPS). Il est possible que cet environnement de développement ne soit pas considéré comme sécurisé par votre navigateur.";
           }
           
           setLocationError(description);
 
           toast({
             variant: "destructive",
-            title: "Erreur de localisation",
-            description: "Impossible d'activer le filtre de proximité. Voir les détails ci-dessous.",
+            title: title,
+            description: "Voir les détails dans le panneau de filtres.",
           });
         }
       );
