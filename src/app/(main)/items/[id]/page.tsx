@@ -92,17 +92,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
-          <ItemMediaGallery item={item} />
+            <ItemMediaGallery item={item} />
         </div>
 
         {/* Right Column: Item Details, Seller Info, Actions */}
         <div className="space-y-6">
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
-
-          <FavoriteButtonClient itemId={itemId} size="sm" />
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
@@ -135,6 +133,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
               </Badge>
             )}
           </div>
+
+          <FavoriteButtonClient itemId={itemId} size="sm" />
           
           <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
