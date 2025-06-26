@@ -51,7 +51,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
       params.set('q', query);
     }
     
-    router.push(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
     onApplied?.();
   };
 
@@ -61,7 +61,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
     if (query) {
       params.set('q', query); 
     }
-    router.push(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`);
     onApplied?.();
   };
 

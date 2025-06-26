@@ -47,12 +47,12 @@ function ActiveFilters() {
 
     const removeFilter = (keyToRemove: string) => {
         // Create a new, mutable URLSearchParams object from the current read-only one.
-        const newParams = new URLSearchParams(searchParams.toString());
+        const newParams = new URLSearchParams(searchParams);
         newParams.delete(keyToRemove);
         
         const newSearchString = newParams.toString();
         const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
-        router.push(newUrl);
+        router.replace(newUrl);
     };
     
     const clearAllFilters = () => {
@@ -63,7 +63,7 @@ function ActiveFilters() {
          }
          const newSearchString = newParams.toString();
          const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
-         router.push(newUrl);
+         router.replace(newUrl);
     }
 
     return (
