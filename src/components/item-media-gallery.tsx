@@ -49,8 +49,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
         >
             {hasVideo ? (
                 <video
-                    // By appending #t=0.1, we encourage browsers to show the first frame as a poster/thumbnail
-                    src={`${item.videoUrl}#t=0.1`}
+                    src={item.videoUrl}
                     controls={false}
                     autoPlay={false}
                     muted
@@ -101,8 +100,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
                   <>
                     <video
                         key={mediaUrl}
-                        // Use the #t=0.1 trick to show the first frame as a thumbnail
-                        src={`${mediaUrl}#t=0.1`}
+                        src={mediaUrl}
                         muted
                         playsInline
                         preload="metadata"

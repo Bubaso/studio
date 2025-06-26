@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Les détails du paquet de crédits sont manquants." }, { status: 400 });
         }
 
-        const ref_command = `REF-${userId}-${randomBytes(8).toString('hex')}`;
+        const ref_command = `REF-${userId.substring(0,5)}-${randomBytes(8).toString('hex')}`;
         
         const paymentIntentRef = adminDb.collection('paymentIntents').doc(ref_command);
         await paymentIntentRef.set({
@@ -82,12 +82,21 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Error in request-payment endpoint:', error);
-        let errorMessage = "Erreur interne du serveur.";
-        if (error.response?.data) {
-            errorMessage = error.response.data.errors?.[0] || JSON.stringify(error.response.data);
-        } else if (error.message) {
+
+        let errorMessage = "Erreur interne du serveur lors de la demande de paiement.";
+        // Check for axios-specific error structure
+        if (error.response) {
+            console.error('Axios Error Response Data:', error.response.data);
+            console.error('Axios Error Response Status:', error.response.status);
+            errorMessage = `Erreur de communication avec le service de paiement (Status: ${error.response.status}). Détails: ${JSON.stringify(error.response.data)}`;
+        } else if (error.request) {
+            console.error('Axios Error: No response received. Request:', error.request);
+            errorMessage = "Aucune réponse reçue du service de paiement. Vérifiez la connectivité.";
+        } else {
+            console.error('Generic Error Message:', error.message);
             errorMessage = error.message;
         }
+
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

@@ -22,17 +22,14 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
 
         // --- Security Check ---
-        const hash = createHash('sha256');
-        const hashedApiKey = hash.copy().update(PAYTECH_API_KEY).digest('hex');
-        
-        // Re-use the hash object for the next digest
-        const hash2 = createHash('sha256');
-        const hashedApiSecret = hash2.update(PAYTECH_API_SECRET).digest('hex');
-        
-        if (body.api_key_sha256 !== hashedApiKey || body.api_secret_sha256 !== hashedApiSecret) {
-            console.warn("PayTech IPN validation failed: API key hashes do not match.", { 
+        const apiKeyHash = createHash('sha256').update(PAYTECH_API_KEY).digest('hex');
+        const apiSecretHash = createHash('sha256').update(PAYTECH_API_SECRET).digest('hex');
+
+        if (body.api_key_sha256 !== apiKeyHash || body.api_secret_sha256 !== apiSecretHash) {
+            console.warn("PayTech IPN validation failed: API key/secret hashes do not match.", { 
                 receivedKeyHash: body.api_key_sha256, 
-                expectedKeyHash: hashedApiKey 
+                expectedKeyHash: apiKeyHash,
+                receivedSecretHash: body.api_secret_sha256,
             });
             return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
         }
@@ -54,12 +51,19 @@ export async function POST(request: NextRequest) {
         const paymentIntent = paymentIntentSnap.data()!;
         
         if (paymentIntent.status === 'success') {
+            console.log(`PayTech IPN Info: Transaction ${ref_command} already processed successfully.`);
             return NextResponse.json({ message: "Transaction déjà traitée" });
         }
 
         if (type_event === 'sale_success') {
             const userId = paymentIntent.userId;
             const creditAmount = paymentIntent.creditAmount;
+
+            if (!userId || !creditAmount) {
+                 console.error(`PayTech IPN Error: Missing userId or creditAmount in payment intent ${ref_command}.`);
+                 return NextResponse.json({ error: "Données de transaction invalides." }, { status: 400 });
+            }
+
             const userRef = adminDb.collection('users').doc(userId);
 
             await adminDb.runTransaction(async (transaction) => {
@@ -75,6 +79,7 @@ export async function POST(request: NextRequest) {
                 transaction.update(paymentIntentRef, {
                     status: 'success',
                     updatedAt: FieldValue.serverTimestamp(),
+                    ipnPayload: body // Store the successful payload for reference
                 });
             });
 
@@ -85,6 +90,7 @@ export async function POST(request: NextRequest) {
                 status: 'failed',
                 error: `Événement reçu: ${type_event}`,
                 updatedAt: FieldValue.serverTimestamp(),
+                ipnPayload: body // Store the failed payload for reference
             });
             console.log(`Payment failed or was canceled for command ${ref_command}. Event: ${type_event}`);
         }
@@ -93,6 +99,6 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error("Error in PayTech IPN handler:", error);
-        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur lors du traitement IPN." }, { status: 500 });
     }
 }
