@@ -7,24 +7,6 @@ import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import admin from '@/lib/firebaseAdmin';
 import { HeroOnboarding } from '@/components/hero-onboarding';
-import type { File } from '@google-cloud/storage';
-
-
-// Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
-const getStorageBucket = () => {
-  if (admin) {
-    try {
-      // The storageBucket is configured during admin.initializeApp.
-      // Calling bucket() without arguments gets the default bucket.
-      return admin.storage().bucket();
-    } catch (e: any) {
-      console.error("Firebase Admin: Failed to get default storage bucket. Was `storageBucket` configured during initialization in firebaseAdmin.ts?", e.message);
-      return null;
-    }
-  }
-  console.warn("Firebase Admin: SDK not initialized. Storage operations will be disabled.");
-  return null;
-};
 
 
 // Map categories to their AI hints for image generation
@@ -48,74 +30,27 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 
 
 export default async function HomePage() {
-  const bucket = getStorageBucket();
   const db = admin?.firestore();
 
-  // 1. Fetch all category image files and create a lookup map.
-  // This is more robust than checking for each file individually.
-  const categoryImageMap = new Map<string, File>();
-  if (bucket) {
-    try {
-      const [files] = await bucket.getFiles({ prefix: 'category-images/' });
-      files.forEach(file => {
-        // Decode URI component to handle special characters like 'é' and spaces correctly.
-        const decodedName = decodeURIComponent(file.name);
-        
-        // Normalize the filename to create a key, e.g., "category-images/Bébés et Enfants.png" -> "bébés et enfants"
-        const key = decodedName
-          .replace('category-images/', '')
-          .replace(/\.(png|jpg|jpeg|webp)$/i, '') // Handle multiple extensions
-          .toLowerCase();
-        
-        if (key) { // Ensure we don't add the folder itself as a key
-           categoryImageMap.set(key, file);
-        }
-      });
-    } catch (error) {
-      console.error("Error listing category images from Storage. Check service account permissions (e.g., 'Storage Object Viewer').", error);
-    }
-  }
-
-  // 2. Map over our app's categories, get their item counts, and find their corresponding image from the map.
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
     let itemCount = 0;
-    let signedUrl = '';
-
-    // Fetch item count from Firestore
+    
     if (db) {
         try {
             const itemsRef = db.collection('items');
-            // Use get() for promises, not onSnapshot
             const snapshot = await itemsRef.where('category', '==', categoryName).get();
             itemCount = snapshot.size;
         } catch (error) {
             console.error(`Error fetching count for category ${categoryName}:`, error);
         }
     }
-
-    // Find the image file from our map using a normalized key
-    const imageFile = categoryImageMap.get(categoryName.toLowerCase());
-
-    if (imageFile) {
-      try {
-        // Generate a temporary signed URL for the image
-        const [url] = await imageFile.getSignedUrl({
-          action: 'read',
-          expires: Date.now() + 1000 * 60 * 60, // 1 hour expiry
-        });
-        signedUrl = url;
-      } catch (error) {
-        console.error(`Error generating signed URL for ${imageFile.name}. Check permissions (e.g., 'Service Account Token Creator').`, error);
-        // Fallback to empty on error, the component will handle it gracefully.
-        signedUrl = ''; 
-      }
-    }
     
+    // The CategoryCarousel component will now fetch its own images.
+    // We only pass the necessary data from the server.
     return {
       name: categoryName,
       count: itemCount,
       dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
-      imageUrl: signedUrl,
       link: `/browse?category=${encodeURIComponent(categoryName)}`
     };
   });
@@ -141,6 +76,7 @@ export default async function HomePage() {
 
       <section className="py-4 md:py-8">
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
+        {/* Pass categories without image URLs. The component handles fetching. */}
         <CategoryCarousel categories={categoriesWithData} />
       </section>
 
