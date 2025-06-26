@@ -71,8 +71,8 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
 
   if (isLoadingAuth) {
     return (
-      <Button size="lg" variant="outline" className="w-full flex-1" disabled>
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Contacter le vendeur
+      <Button variant="outline" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base" disabled>
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Contacter le vendeur
       </Button>
     );
   }
@@ -85,8 +85,8 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
     const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
-      <Button size="lg" variant="outline" className="w-full flex-1" onClick={() => router.push(redirectTo)}>
-        <MessageSquare className="mr-2 h-5 w-5" /> Contacter le vendeur (Connexion requise)
+      <Button variant="outline" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base" onClick={() => router.push(redirectTo)}>
+        <MessageSquare className="mr-2 h-6 w-6" /> Contacter le vendeur (Connexion requise)
       </Button>
     );
   }
@@ -94,15 +94,14 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
   return (
     <Button 
         onClick={handleContactSeller} 
-        size="lg" 
         variant="outline" 
-        className="w-full flex-1"
+        className="w-full flex-1 h-16 text-lg md:h-12 md:text-base"
         disabled={isPending}
     >
       {isPending ? (
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
       ) : (
-        <MessageSquare className="mr-2 h-5 w-5" />
+        <MessageSquare className="mr-2 h-6 w-6" />
       )}
       {isPending ? "Envoi..." : "Contacter le vendeur"}
     </Button>
