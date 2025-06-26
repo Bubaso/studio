@@ -91,6 +91,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
+          <div className="md:hidden"> {/* Mobile only favorite button */}
+             <FavoriteButtonClient itemId={itemId} size="sm" />
+          </div>
           
           {item.videoUrl ? (
             <Card className="shadow-lg rounded-lg overflow-hidden">
@@ -208,6 +211,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
 
+          <div className="hidden md:block"> {/* Desktop only favorite button */}
+            <FavoriteButtonClient itemId={itemId} size="sm" />
+          </div>
+
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
                   <CheckCircle className="h-4 w-4 mr-2" />
@@ -240,8 +247,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
-          <FavoriteButtonClient itemId={itemId} size="sm" />
-
           <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
           <Card>
@@ -252,6 +257,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
             </CardContent>
           </Card>
+          
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+            {item && item.sellerId && !item.isSold && (
+                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
+            )}
+          </div>
           
           {similarItems.length > 0 && (
             <section className="space-y-4"> 
@@ -288,12 +299,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
               </CardContent>
             </Card>
           )}
-
-          <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-            {item && item.sellerId && !item.isSold && (
-                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
-            )}
-          </div>
           
           {item && <SellerActionsClient item={item} />}
 
