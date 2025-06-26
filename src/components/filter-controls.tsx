@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ItemCategories, ItemConditions, ItemCondition } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
-import { X, MapPin, Loader2 } from 'lucide-react';
+import { X, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const MAX_PRICE_FCFA = 500000; // Max price for slider in FCFA
 const PRICE_STEP_FCFA = 1000;
@@ -34,6 +35,8 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   const [isLocationFilterActive, setIsLocationFilterActive] = useState(!!searchParams.get('lat'));
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [radius, setRadius] = useState(parseInt(searchParams.get('radius') || '25', 10));
+  const [locationError, setLocationError] = useState<string | null>(null);
+
 
   useEffect(() => {
     setCategory(searchParams.get('category') || ALL_ITEMS_VALUE);
@@ -75,6 +78,8 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   };
   
   const handleLocationFilterChange = (checked: boolean) => {
+    setLocationError(null); // Clear previous errors on new attempt
+    
     if (checked) {
       setIsGettingLocation(true);
       navigator.geolocation.getCurrentPosition(
@@ -96,9 +101,12 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
           setIsLocationFilterActive(false);
           
           let description = "Une erreur inconnue est survenue.";
+          let isPermissionError = false;
+
           switch (error.code) {
               case error.PERMISSION_DENIED:
-                  description = "Vous avez refusé l'accès à la localisation. Veuillez l'autoriser dans les paramètres de votre navigateur ou de votre appareil.";
+                  description = "L'accès à la localisation semble bloqué. C'est peut-être parce que vous l'avez refusé précédemment. Veuillez vérifier les permissions pour ce site dans les paramètres de votre navigateur.";
+                  isPermissionError = true;
                   break;
               case error.POSITION_UNAVAILABLE:
                   description = "Informations de localisation non disponibles. Vérifiez votre connexion réseau ou votre signal GPS.";
@@ -112,6 +120,11 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
 
           if (error.message && (error.message.toLowerCase().includes("secure origin") || error.message.toLowerCase().includes("secure context"))) {
               description = "La géolocalisation nécessite une connexion sécurisée (HTTPS). Il est possible que cet environnement de développement ne soit pas considéré comme sécurisé par votre navigateur sur mobile.";
+              isPermissionError = true;
+          }
+          
+          if(isPermissionError) {
+              setLocationError(description);
           }
 
           toast({
@@ -175,6 +188,13 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
               className="mt-2"
             />
           </div>
+        )}
+        {locationError && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Accès à la localisation bloqué</AlertTitle>
+            <AlertDescription>{locationError}</AlertDescription>
+          </Alert>
         )}
       </div>
 
