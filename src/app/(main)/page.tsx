@@ -92,7 +92,7 @@ export default async function HomePage() {
 
     if (imageFile) {
       try {
-        // Generate a temporary URL for the image
+        // Generate a temporary signed URL for the image
         const [url] = await imageFile.getSignedUrl({
           action: 'read',
           expires: Date.now() + 1000 * 60 * 60, // 1 hour expiry
