@@ -32,6 +32,7 @@ import { Progress } from "@/components/ui/progress";
 import { TitleSuggestion } from "./title-suggestion";
 import { DescriptionSuggestion } from "./description-suggestion";
 import { LocationPicker } from "./location-picker";
+import { CategorySuggestion } from "./category-suggestion";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -175,6 +176,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     form.setValue("description", description, { shouldValidate: true });
   };
   
+  const handleCategorySuggested = (category: ItemCategory) => {
+    form.setValue("category", category, { shouldValidate: true });
+  };
+
   const handleLocationSelected = useCallback(({ lat, lng, address }: { lat: number; lng: number; address: string; }) => {
     form.setValue('latitude', lat);
     form.setValue('longitude', lng);
@@ -452,6 +457,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 )} />
             </div>
 
+            <CategorySuggestion
+              itemDescription={itemDescriptionForAISuggestions}
+              onCategorySuggested={handleCategorySuggested}
+            />
+            
             <FormField
                 control={form.control}
                 name="price"
