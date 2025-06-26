@@ -135,20 +135,20 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/20 hover:bg-black/50 text-white hover:text-white"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/30 hover:bg-black/60 text-white hover:text-white transition-all"
                 onClick={handlePrev}
                 aria-label="Média précédent"
               >
-                <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-black/20 hover:bg-black/50 text-white hover:text-white"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/30 hover:bg-black/60 text-white hover:text-white transition-all"
                 onClick={handleNext}
                 aria-label="Média suivant"
               >
-                <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10" />
               </Button>
             </>
           )}
