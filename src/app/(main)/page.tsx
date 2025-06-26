@@ -39,22 +39,35 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 
 export default async function HomePage() {
   const bucket = getStorageBucket();
+  const db = admin?.firestore();
 
-  // Kategori URL'lerini asenkron olarak ve güvenli bir şekilde al
+  // Kategori URL'lerini ve ilan sayılarını asenkron olarak al
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
-    let imageUrl = `https://placehold.co/400x300.png?text=${encodeURIComponent(categoryName)}`; // Varsayılan placeholder
+    let imageUrl = `https://placehold.co/400x300.png?text=${encodeURIComponent(categoryName)}`;
+    let itemCount = 0;
+
+    // İlgili kategorideki ilan sayısını Firestore'dan çek
+    if (db) {
+        try {
+            const itemsRef = db.collection('items');
+            const q = itemsRef.where('category', '==', categoryName);
+            const snapshot = await q.get();
+            itemCount = snapshot.size;
+        } catch (error) {
+            console.error(`Error fetching count for category ${categoryName}:`, error);
+            itemCount = 0; // Hata durumunda sayıyı 0 olarak ayarla
+        }
+    }
     
+    // Kategori görselini Storage'dan al
     if (bucket) {
       const imageName = `${categoryName}.png`;
       const filePath = `category-images/${imageName}`;
       const file = bucket.file(filePath);
 
       try {
-        // Dosyanın var olup olmadığını kontrol et
         const [exists] = await file.exists();
         if (exists) {
-          // Generate a long-lived signed URL instead of a public URL.
-          // This is more reliable as it doesn't require the object to be publicly accessible.
           const oneYearFromNow = new Date();
           oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
           
@@ -74,14 +87,18 @@ export default async function HomePage() {
     
     return {
       name: categoryName,
+      count: itemCount, // Sıralama için ilan sayısını ekle
       dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
       imageUrl: imageUrl,
       link: `/browse?category=${encodeURIComponent(categoryName)}`
     };
   });
 
-  const carouselCategories = await Promise.all(carouselCategoriesPromises);
+  const categoriesWithData = await Promise.all(carouselCategoriesPromises);
   
+  // Kategorileri ilan sayısına göre büyükten küçüğe doğru sırala
+  categoriesWithData.sort((a, b) => b.count - a.count);
+
   let allFetchedItems: Item[] = [];
 
   try {
@@ -100,7 +117,7 @@ export default async function HomePage() {
 
       <section className="py-4 md:py-8">
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
-        <CategoryCarousel categories={carouselCategories} />
+        <CategoryCarousel categories={categoriesWithData} />
       </section>
 
       {allFetchedItems.length > 0 && (
