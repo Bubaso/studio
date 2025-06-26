@@ -1,21 +1,82 @@
 
-"use client"; // Make BrowsePage a client component
+"use client";
 
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Suspense, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
 import { getItemsFromFirestore } from '@/services/itemService';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
-import { Button } from '@/components/ui/button';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Filter, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 const ITEMS_PER_PAGE = 12;
+
+// ActiveFilters component displays current filters as removable badges
+function ActiveFilters() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    
+    const activeFilters: { key: string; label: string; value: string }[] = [];
+
+    const category = searchParams.get('category');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const condition = searchParams.get('condition');
+    const location = searchParams.get('location');
+
+    if (category) activeFilters.push({ key: 'category', label: 'Catégorie', value: category });
+    if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: 'Prix Min', value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: 'Prix Max', value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (condition) activeFilters.push({ key: 'condition', label: 'État', value: condition.charAt(0).toUpperCase() + condition.slice(1) });
+    if (location) activeFilters.push({ key: 'location', label: 'Lieu', value: location });
+
+    if (activeFilters.length === 0) {
+        return null;
+    }
+
+    const removeFilter = (key: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete(key);
+        router.push(`${pathname}?${params.toString()}`);
+    };
+    
+    const clearAllFilters = () => {
+         const params = new URLSearchParams(searchParams.toString());
+         const query = params.get('q'); // Preserve search query
+         const newParams = new URLSearchParams();
+         if (query) newParams.set('q', query);
+         router.push(`${pathname}?${newParams.toString()}`);
+    }
+
+    return (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <span className="text-sm font-medium text-muted-foreground">Filtres actifs:</span>
+            {activeFilters.map(filter => (
+                <Badge key={filter.key} variant="secondary" className="pl-2 pr-1 py-1 text-sm">
+                    {filter.label}: {filter.value}
+                    <button onClick={() => removeFilter(filter.key)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                        <X className="h-3 w-3" />
+                        <span className="sr-only">Retirer le filtre {filter.label}</span>
+                    </button>
+                </Badge>
+            ))}
+             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-primary hover:text-primary underline">
+                Tout effacer
+            </Button>
+        </div>
+    );
+}
 
 // ItemGrid component - no longer takes searchParams prop
 function ItemGrid() {
@@ -189,6 +250,7 @@ function CardSkeleton() {
 
 // BrowsePage no longer receives searchParams prop
 export default function BrowsePage() {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const actualSearchParams = useSearchParams(); // Use hook for pageTitle
 
   const queryParam = actualSearchParams.get('q');
@@ -201,14 +263,30 @@ export default function BrowsePage() {
     : 'Parcourir tous les articles';
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-4xl font-bold font-headline text-primary">{pageTitle}</h1>
-      <div className="flex flex-col md:flex-row gap-8">
-        <FilterControls /> {/* FilterControls already uses useSearchParams */}
-        <Suspense fallback={<ItemGridSkeleton />}>
-          <ItemGrid /> {/* ItemGrid no longer takes searchParams prop */}
-        </Suspense>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+          <h1 className="text-4xl font-bold font-headline text-primary">{pageTitle}</h1>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                  <Button variant="outline">
+                      <Filter className="mr-2 h-4 w-4" />
+                      Filtres
+                  </Button>
+              </SheetTrigger>
+              <SheetContent>
+                  <SheetHeader>
+                      <SheetTitle>Filtres de recherche</SheetTitle>
+                  </SheetHeader>
+                  <FilterControls onApplied={() => setIsSheetOpen(false)} />
+              </SheetContent>
+          </Sheet>
       </div>
+      
+      <ActiveFilters />
+
+      <Suspense fallback={<ItemGridSkeleton />}>
+        <ItemGrid />
+      </Suspense>
     </div>
   );
 }

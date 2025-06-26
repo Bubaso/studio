@@ -15,7 +15,7 @@ const MAX_PRICE_FCFA = 500000; // Max price for slider in FCFA
 const PRICE_STEP_FCFA = 1000;
 const ALL_ITEMS_VALUE = "_all_"; // Value for "all" options to avoid empty string
 
-export function FilterControls() {
+export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -52,6 +52,7 @@ export function FilterControls() {
     }
     
     router.push(`${pathname}?${params.toString()}`);
+    onApplied?.();
   };
 
   const handleClearFilters = () => {
@@ -61,16 +62,11 @@ export function FilterControls() {
       params.set('q', query); 
     }
     router.push(`${pathname}?${params.toString()}`);
-    setCategory(ALL_ITEMS_VALUE);
-    setCondition(ALL_ITEMS_VALUE);
-    setPriceRange([0, MAX_PRICE_FCFA]);
-    setLocation('');
+    onApplied?.();
   };
 
   return (
-    <aside className="w-full md:w-72 lg:w-80 space-y-6 p-4 border rounded-lg shadow-sm bg-card">
-      <h3 className="text-xl font-headline font-semibold">Filtres</h3>
-      
+    <div className="space-y-6 pt-6">
       <div>
         <Label htmlFor="category">Catégorie</Label>
         <Select value={category} onValueChange={setCategory}>
@@ -127,12 +123,12 @@ export function FilterControls() {
         />
       </div>
 
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2 pt-4">
         <Button onClick={handleApplyFilters}>Appliquer les filtres</Button>
         <Button variant="outline" onClick={handleClearFilters} className="flex items-center justify-center">
             <X className="h-4 w-4 mr-2" /> Effacer les filtres
         </Button>
       </div>
-    </aside>
+    </div>
   );
 }
