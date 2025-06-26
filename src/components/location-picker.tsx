@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
@@ -8,6 +7,7 @@ import { Label } from './ui/label';
 import { Skeleton } from './ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { FormDescription } from './ui/form';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 const containerStyle = {
   width: '100%',
@@ -90,9 +90,15 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
 
   if (loadError) {
     return (
-        <div className="text-destructive-foreground bg-destructive p-4 rounded-md">
-            Erreur de chargement de la carte. Veuillez vérifier votre clé API Google Maps et réessayer.
-        </div>
+        <Alert variant="destructive">
+            <AlertTitle>Erreur de chargement de la carte</AlertTitle>
+            <AlertDescription>
+                <p>Impossible de charger le sélecteur de lieu. Cela est souvent dû à un problème de configuration de l'API Google Maps.</p>
+                <p className="mt-2 text-xs">
+                    <strong>Action requise :</strong> Assurez-vous que les API "Maps JavaScript API" et "Places API" sont activées dans votre projet Google Cloud. L'erreur actuelle suggère que l'API "Places" (legacy) n'est pas activée.
+                </p>
+            </AlertDescription>
+        </Alert>
     );
   }
 
