@@ -81,7 +81,7 @@ function ActiveFilters() {
 // ItemGrid component - no longer takes searchParams prop
 function ItemGrid() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null }>({ items: [], lastItemId: null });
+  const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null; hasMore: boolean }>({ items: [], lastItemId: null, hasMore: false });
   const [isLoading, setIsLoading] = useState(true);
   const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
@@ -133,9 +133,9 @@ function ItemGrid() {
           ? result.items.filter((item) => item.sellerId !== currentUser.uid)
           : result.items;
 
-        setPageData({ items: finalItems, lastItemId: result.lastItemId });
+        setPageData({ items: finalItems, lastItemId: result.lastItemId, hasMore: result.hasMore });
 
-        if (result.lastItemId && !cursors.includes(result.lastItemId)) {
+        if (result.hasMore && result.lastItemId && !cursors.includes(result.lastItemId)) {
           setCursors(prev => {
              const newCursors = [...prev];
              newCursors[pageNumber] = result.lastItemId;
@@ -148,7 +148,7 @@ function ItemGrid() {
 
     fetchPageData().catch(error => {
         console.error("Error fetching items in ItemGrid:", error);
-        setPageData({ items: [], lastItemId: null });
+        setPageData({ items: [], lastItemId: null, hasMore: false });
         setIsLoading(false);
     });
 
@@ -164,14 +164,14 @@ function ItemGrid() {
     conditionParam
   ]);
 
-  const { items, lastItemId } = pageData;
+  const { items, hasMore } = pageData;
 
   if (isLoading && items.length === 0) {
     return <ItemGridSkeleton />;
   }
 
   const handleNextPage = () => {
-    if(lastItemId) {
+    if(hasMore) {
       setPageNumber(prev => prev + 1);
     }
   }
@@ -196,7 +196,7 @@ function ItemGrid() {
               <ItemCard key={item.id} item={item} />
             ))}
           </div>
-          {(pageNumber > 1 || lastItemId) && (
+          {(pageNumber > 1 || hasMore) && (
             <Pagination className="mt-8">
               <PaginationContent>
                 {pageNumber > 1 && (
@@ -205,7 +205,7 @@ function ItemGrid() {
                 <PaginationItem>
                    <Button variant="outline" size="icon" disabled>{pageNumber}</Button>
                 </PaginationItem>
-                {lastItemId && (
+                {hasMore && (
                   <PaginationNext onClick={handleNextPage} />
                 )}
               </PaginationContent>

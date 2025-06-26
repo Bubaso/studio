@@ -79,7 +79,7 @@ export const getItemsFromFirestore = async (filters?: {
   pageSize?: number;
   lastVisibleItemId?: string;
   // excludeSellerId is now handled client-side to avoid invalid queries
-}): Promise<{ items: Item[]; lastItemId: string | null; }> => {
+}): Promise<{ items: Item[]; lastItemId: string | null; hasMore: boolean; }> => {
   try {
     const itemsCollectionRef = collection(db, 'items');
     const queryConstraints: QueryConstraint[] = [];
@@ -119,13 +119,16 @@ export const getItemsFromFirestore = async (filters?: {
     }
     
     const pageSize = filters?.pageSize || 12;
-    queryConstraints.push(limit(pageSize));
+    queryConstraints.push(limit(pageSize + 1)); // Fetch one extra to check for "hasMore"
 
     // Execute the query
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
+
+    const hasMore = querySnapshot.docs.length > pageSize;
+    const pageDocs = querySnapshot.docs.slice(0, pageSize);
     
-    let items = querySnapshot.docs.map(mapDocToItem);
+    let items = pageDocs.map(mapDocToItem);
 
     // This client-side filter is only for sold items that are older than a certain date.
     // This is acceptable as it's a minor filter on a small, paginated dataset.
@@ -138,17 +141,17 @@ export const getItemsFromFirestore = async (filters?: {
     });
 
     // Determine the next cursor
-    const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
+    const lastVisibleDocInSet = pageDocs[pageDocs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
 
     // Note: True text search ('query') and partial location matching must be handled client-side or with a dedicated search service.
     // This function prioritizes efficient, paginated fetching from Firestore.
 
-    return { items, lastItemId };
+    return { items, lastItemId, hasMore };
 
   } catch (error) {
     console.error("Error fetching items from Firestore: ", error);
-    return { items: [], lastItemId: null };
+    return { items: [], lastItemId: null, hasMore: false };
   }
 };
 
@@ -398,5 +401,3 @@ export async function deleteItem(itemId: string): Promise<void> {
   const itemDocRef = doc(db, 'items', itemId);
   await deleteDoc(itemDocRef);
 }
-
-    
