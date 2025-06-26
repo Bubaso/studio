@@ -85,8 +85,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-6xl mx-auto space-y-8">
       <ItemViewLogger itemId={itemId} />
+
+      {/* Title and Favorite Button - Moved to top for all screen sizes */}
+      <div className="flex justify-between items-start">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1_">{item.name}</h1>
+        <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
+      </div>
+
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
@@ -151,24 +158,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </Card>
           )}
 
-          {/* Image thumbnails (always show if they exist) */}
+          {/* Image thumbnails (always show if they exist) - REORDERED */}
           {(item.imageUrls?.length > 0 || item.videoUrl) && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {item.videoUrl && (
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer bg-black flex items-center justify-center hover:bg-zinc-800 transition-colors">
-                           <Video className="h-10 w-10 text-white" />
-                        </div>
-                    </DialogTrigger>
-                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-                        <DialogHeader>
-                            <DialogTitle className="sr-only">Aperçu de la vidéo</DialogTitle>
-                        </DialogHeader>
-                        <video src={item.videoUrl} controls autoPlay className="w-full h-full object-contain rounded-md" />
-                    </DialogContent>
-                 </Dialog>
-              )}
+              {/* Image thumbnails first */}
               {item.imageUrls && item.imageUrls.map((url, index) => (
                 <Dialog key={index}>
                     <DialogTrigger asChild>
@@ -193,16 +186,29 @@ export default async function ItemPage({ params }: ItemPageProps) {
                     </DialogContent>
                 </Dialog>
               ))}
+              {/* Video thumbnail last */}
+              {item.videoUrl && (
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <div className="relative aspect-square rounded-md overflow-hidden border-2 border-primary/50 cursor-pointer bg-black flex items-center justify-center hover:bg-zinc-800 transition-colors">
+                           <Video className="h-10 w-10 text-white" />
+                        </div>
+                    </DialogTrigger>
+                    <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                        <DialogHeader>
+                            <DialogTitle className="sr-only">Aperçu de la vidéo</DialogTitle>
+                        </DialogHeader>
+                        <video src={item.videoUrl} controls autoPlay className="w-full h-full object-contain rounded-md" />
+                    </DialogContent>
+                 </Dialog>
+              )}
             </div>
           )}
         </div>
 
         {/* Right Column: Item Details, Seller Info, Actions */}
         <div className="space-y-6">
-          <div className="flex justify-between items-start">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1_">{item.name}</h1>
-            <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
-          </div>
+          {/* Title removed from here */}
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
@@ -217,8 +223,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   Non confirmé : peut être vendu
               </Badge>
           )}
-
-          <p className="text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+          
+          {/* Price with reduced font size */}
+          <p className="text-2xl lg:text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">
