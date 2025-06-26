@@ -45,10 +45,16 @@ function ActiveFilters() {
         return null;
     }
 
-    const removeFilter = (key: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete(key);
-        router.push(`${pathname}?${params.toString()}`);
+    const removeFilter = (keyToRemove: string) => {
+        const newParams = new URLSearchParams();
+        for (const [key, value] of searchParams.entries()) {
+            if (key !== keyToRemove) {
+                newParams.append(key, value);
+            }
+        }
+        const newSearchString = newParams.toString();
+        const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
+        router.push(newUrl);
     };
     
     const clearAllFilters = () => {
@@ -57,7 +63,9 @@ function ActiveFilters() {
          if (query) {
             newParams.set('q', query);
          }
-         router.push(`${pathname}?${newParams.toString()}`);
+         const newSearchString = newParams.toString();
+         const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
+         router.push(newUrl);
     }
 
     return (
@@ -66,7 +74,7 @@ function ActiveFilters() {
             {activeFilters.map(filter => (
                 <Badge key={filter.key} variant="secondary" className="pl-2 pr-1 py-1 text-sm">
                     {filter.label}: {filter.value}
-                    <button onClick={() => removeFilter(filter.key)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                    <button type="button" onClick={() => removeFilter(filter.key)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
                         <X className="h-3 w-3" />
                         <span className="sr-only">Retirer le filtre {filter.label}</span>
                     </button>
