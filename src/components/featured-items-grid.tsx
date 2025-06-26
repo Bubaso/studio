@@ -25,7 +25,7 @@ function CardSkeleton() {
   );
 }
 
-export function FeaturedItemsGrid({ initialItems, maxItems = 4 }: FeaturedItemsGridProps) {
+export function FeaturedItemsGrid({ initialItems, maxItems = 8 }: FeaturedItemsGridProps) {
   const { firebaseUser: currentUser, authLoading } = useAuth();
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
 
