@@ -1,15 +1,17 @@
 
+import { cookies } from 'next/headers';
+import admin from '@/lib/firebaseAdmin';
+import { getPersonalizedRecommendations } from '@/ai/flows/suggest-recommendations-flow';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getItemsFromFirestore } from '@/services/itemService';
 import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
-import admin from '@/lib/firebaseAdmin';
 import { HeroOnboarding } from '@/components/hero-onboarding';
+import { PersonalizedRecommendations } from '@/components/personalized-recommendations';
 
 
-// Map categories to their AI hints for image generation
 const categoryHints: { [key in ItemCategory]?: string } = {
   'Électronique': 'electronics gadgets',
   'Téléphones et Portables': 'smartphones mobiles',
@@ -31,10 +33,28 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 
 export default async function HomePage() {
   const db = admin?.firestore();
+  
+  let userId: string | null = null;
+  try {
+    const sessionCookie = cookies().get('session')?.value;
+    if (sessionCookie) {
+      const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
+      userId = decodedToken.uid;
+    }
+  } catch (error) {
+    // Session cookie is invalid or expired.
+    userId = null; 
+  }
+
+  let recommendedItems: Item[] = [];
+  if (userId) {
+    recommendedItems = await getPersonalizedRecommendations(userId);
+  }
+
+  const { items: latestItems } = await getItemsFromFirestore({ pageSize: 8 });
 
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
     let itemCount = 0;
-    
     if (db) {
         try {
             const itemsRef = db.collection('items');
@@ -44,9 +64,6 @@ export default async function HomePage() {
             console.error(`Error fetching count for category ${categoryName}:`, error);
         }
     }
-    
-    // The CategoryCarousel component will now fetch its own images.
-    // We only pass the necessary data from the server.
     return {
       name: categoryName,
       count: itemCount,
@@ -56,17 +73,7 @@ export default async function HomePage() {
   });
 
   const categoriesWithData = await Promise.all(carouselCategoriesPromises);
-  
-  // Sort categories by item count, descending
   categoriesWithData.sort((a, b) => b.count - a.count);
-
-  let allFetchedItems: Item[] = [];
-  try {
-    const { items } = await getItemsFromFirestore({ pageSize: 8 });
-    allFetchedItems = items;
-  } catch (error) {
-    console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
-  }
 
 
   return (
@@ -76,22 +83,25 @@ export default async function HomePage() {
 
       <section className="py-4 md:py-8">
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
-        {/* Pass categories without image URLs. The component handles fetching. */}
         <CategoryCarousel categories={categoriesWithData} />
       </section>
 
-      {allFetchedItems.length > 0 && (
-        <section className="py-4 md:py-6">
-          <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-            Dernières trouvailles sur ReFind
-          </h2>
-         <FeaturedItemsGrid initialItems={allFetchedItems} />
-           <div className="text-center mt-6 md:mt-8">
-            <Link href="/browse">
-              <Button variant="secondary" size="lg">Voir tous les articles</Button>
-            </Link>
-          </div>
-        </section>
+      {recommendedItems.length > 0 ? (
+        <PersonalizedRecommendations items={recommendedItems} />
+      ) : (
+        latestItems.length > 0 && (
+          <section className="py-4 md:py-6">
+            <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
+              Dernières trouvailles sur ReFind
+            </h2>
+            <FeaturedItemsGrid initialItems={latestItems} />
+            <div className="text-center mt-6 md:mt-8">
+              <Link href="/browse">
+                <Button variant="secondary" size="lg">Voir tous les articles</Button>
+              </Link>
+            </div>
+          </section>
+        )
       )}
     </div>
   );

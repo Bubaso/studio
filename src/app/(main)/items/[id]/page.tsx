@@ -64,7 +64,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
       priceMin: Math.round(item.price * 0.8),
       priceMax: Math.round(item.price * 1.2),
       pageSize: 10, 
-    }) : Promise.resolve({ items: [], lastItemId: null });
+    }) : Promise.resolve({ items: [], lastItemId: null, hasMore: false });
 
   // Await all promises concurrently
   const [
@@ -88,7 +88,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <ItemViewLogger itemId={itemId} />
+      <ItemViewLogger item={item} />
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}

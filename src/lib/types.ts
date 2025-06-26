@@ -1,4 +1,13 @@
 
+
+export interface ViewHistoryItem {
+  itemId: string;
+  viewedAt: string;
+  category: string;
+  price: number;
+  name: string;
+}
+
 export interface Item {
   id: string;
   name: string;

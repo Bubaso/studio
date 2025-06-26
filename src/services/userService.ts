@@ -1,7 +1,7 @@
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
-import type { UserProfile } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore'; // Added updateDoc
+import type { UserProfile, ViewHistoryItem } from '@/lib/types';
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs } from 'firebase/firestore'; // Added updateDoc
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -170,3 +170,27 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
     console.error(`Error updating lastActiveAt for user ${uid}:`, error);
   }
 };
+
+export async function getUserViewHistory(userId: string, count: number = 10): Promise<ViewHistoryItem[]> {
+  if (!userId) return [];
+  try {
+    const historyCollectionRef = collection(db, 'users', userId, 'viewHistory');
+    const q = query(historyCollectionRef, orderBy('viewedAt', 'desc'), limit(count));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            itemId: data.itemId,
+            name: data.name,
+            category: data.category,
+            price: data.price,
+            description: data.description,
+            viewedAt: convertTimestampToISO(data.viewedAt),
+        } as ViewHistoryItem;
+    });
+  } catch (error) {
+    console.error(`Error fetching view history for user ${userId}:`, error);
+    return [];
+  }
+}

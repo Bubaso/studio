@@ -1,5 +1,5 @@
 
-import { db, storage } from '@/lib/firebase'; 
+import { db, storage, auth } from '@/lib/firebase';
 import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, writeBatch, increment } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
@@ -383,23 +383,43 @@ export async function updateItemInFirestore(
   }
 }
 
-export async function logItemView(itemId: string): Promise<void> {
+export async function logItemView(itemId: string, userId: string, item: Partial<Item>): Promise<void> {
   if (!db) {
     console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
     return;
   }
-  if (!itemId) {
+  if (!itemId || !userId) {
+    console.warn('logItemView requires itemId and userId');
     return;
   }
   try {
-    const viewsCollectionRef = collection(db, 'items', itemId, 'views');
-    await addDoc(viewsCollectionRef, {
+    const batch = writeBatch(db);
+
+    // Log the view for the item itself (for simple view count)
+    const itemViewsRef = doc(collection(db, 'items', itemId, 'views'));
+    batch.set(itemViewsRef, {
       timestamp: serverTimestamp(),
+      userId: userId,
     });
+
+    // Log the view in the user's history for personalization
+    const userHistoryRef = doc(collection(db, 'users', userId, 'viewHistory'));
+    batch.set(userHistoryRef, {
+        itemId: item.id,
+        name: item.name,
+        category: item.category,
+        price: item.price,
+        description: item.description,
+        viewedAt: serverTimestamp(),
+    });
+
+    await batch.commit();
+
   } catch (error) {
-    console.error(`SERVER: Error logging view for item ${itemId}:`, error);
+    console.error(`SERVER: Error logging view for item ${itemId} by user ${userId}:`, error);
   }
 }
+
 
 export async function markItemAsSold(itemId: string): Promise<void> {
   if (!db) {
