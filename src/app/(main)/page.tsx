@@ -53,13 +53,22 @@ export default async function HomePage() {
         // Dosyanın var olup olmadığını kontrol et
         const [exists] = await file.exists();
         if (exists) {
-          // Varsa, herkese açık URL'sini al
-          imageUrl = file.publicUrl();
+          // Generate a long-lived signed URL instead of a public URL.
+          // This is more reliable as it doesn't require the object to be publicly accessible.
+          const oneYearFromNow = new Date();
+          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+          
+          const [signedUrl] = await file.getSignedUrl({
+            action: 'read',
+            expires: oneYearFromNow,
+          });
+          imageUrl = signedUrl;
+
         } else {
             console.warn(`Category image not found in Storage: ${filePath}`);
         }
       } catch (error) {
-        console.error(`Error fetching public URL for ${filePath}:`, error);
+        console.error(`Error fetching signed URL for ${filePath}:`, error);
       }
     }
     
