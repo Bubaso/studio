@@ -52,10 +52,11 @@ function ActiveFilters() {
     };
     
     const clearAllFilters = () => {
-         const params = new URLSearchParams(searchParams.toString());
-         const query = params.get('q'); // Preserve search query
+         const query = searchParams.get('q');
          const newParams = new URLSearchParams();
-         if (query) newParams.set('q', query);
+         if (query) {
+            newParams.set('q', query);
+         }
          router.push(`${pathname}?${newParams.toString()}`);
     }
 
@@ -78,7 +79,7 @@ function ActiveFilters() {
     );
 }
 
-// ItemGrid component - no longer takes searchParams prop
+// ItemGrid component - now driven by searchParams string
 function ItemGrid() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null; hasMore: boolean }>({ items: [], lastItemId: null, hasMore: false });
@@ -87,15 +88,9 @@ function ItemGrid() {
   const [pageNumber, setPageNumber] = useState(1);
   const [cursors, setCursors] = useState<(string|null)[]>([null]);
 
-  const actualSearchParams = useSearchParams();
-
-  // Rebuild the filter params for dependencies and fetching
-  const queryParam = actualSearchParams.get('q');
-  const categoryParam = actualSearchParams.get('category') as ItemCategory | null;
-  const minPriceParam = actualSearchParams.get('minPrice');
-  const maxPriceParam = actualSearchParams.get('maxPrice');
-  const locationParam = actualSearchParams.get('location');
-  const conditionParam = actualSearchParams.get('condition') as ItemCondition | null;
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
+  const queryParam = searchParams.get('q');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -109,7 +104,7 @@ function ItemGrid() {
   useEffect(() => {
     setPageNumber(1);
     setCursors([null]);
-  }, [queryParam, categoryParam, minPriceParam, maxPriceParam, locationParam, conditionParam]);
+  }, [searchParamsString]);
 
   useEffect(() => {
     if (!initialAuthCheckDone) return;
@@ -117,6 +112,13 @@ function ItemGrid() {
     const fetchPageData = async () => {
         setIsLoading(true);
         const cursor = cursors[pageNumber - 1];
+
+        // Get params for the fetch call from the hook
+        const categoryParam = searchParams.get('category') as ItemCategory | null;
+        const minPriceParam = searchParams.get('minPrice');
+        const maxPriceParam = searchParams.get('maxPrice');
+        const locationParam = searchParams.get('location');
+        const conditionParam = searchParams.get('condition') as ItemCondition | null;
 
         const result = await getItemsFromFirestore({
             query: queryParam || undefined,
@@ -156,12 +158,7 @@ function ItemGrid() {
     pageNumber,
     currentUser, 
     initialAuthCheckDone, 
-    queryParam, 
-    categoryParam, 
-    minPriceParam, 
-    maxPriceParam, 
-    locationParam, 
-    conditionParam
+    searchParamsString // The primary dependency for filter changes
   ]);
 
   const { items, hasMore } = pageData;
@@ -227,7 +224,7 @@ function ItemGridSkeleton() {
     <div className="flex-1">
       <Skeleton className="h-6 w-1/4 mb-4" />
       <div className="grid grid-cols-2 gap-6">
-        {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+        {Array.from({ length: 8 }).map((_, index) => ( // Show fewer skeletons for a better feel
           <CardSkeleton key={index} />
         ))}
       </div>
@@ -265,7 +262,7 @@ export default function BrowsePage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                   <Button variant="outline">
