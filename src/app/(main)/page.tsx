@@ -58,8 +58,11 @@ export default async function HomePage() {
     try {
       const [files] = await bucket.getFiles({ prefix: 'category-images/' });
       files.forEach(file => {
-        // Normalize the filename to create a key, e.g., "category-images/Vêtements et Accessoires.png" -> "vêtements et accessoires"
-        const key = file.name
+        // Decode URI component to handle special characters like 'é' and spaces correctly.
+        const decodedName = decodeURIComponent(file.name);
+        
+        // Normalize the filename to create a key, e.g., "category-images/Bébés et Enfants.png" -> "bébés et enfants"
+        const key = decodedName
           .replace('category-images/', '')
           .replace(/\.(png|jpg|jpeg|webp)$/i, '') // Handle multiple extensions
           .toLowerCase();
@@ -69,7 +72,7 @@ export default async function HomePage() {
         }
       });
     } catch (error) {
-      console.error("Error listing category images from Storage:", error);
+      console.error("Error listing category images from Storage. Check service account permissions (e.g., 'Storage Object Viewer').", error);
     }
   }
 
@@ -102,11 +105,11 @@ export default async function HomePage() {
         });
         signedUrl = url;
       } catch (error) {
-        console.error(`Error generating signed URL for ${imageFile.name}:`, error);
+        console.error(`Error generating signed URL for ${imageFile.name}. Check permissions (e.g., 'Service Account Token Creator').`, error);
+        signedUrl = ''; // Fallback to empty on error
       }
     } else {
         // If no image is found in storage, the imageUrl will be an empty string.
-        // The CategoryCarousel component is designed to handle this gracefully.
         signedUrl = '';
     }
     
