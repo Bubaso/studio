@@ -19,7 +19,7 @@ import { Filter, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 50;
 
 // ActiveFilters component displays current filters as removable badges
 function ActiveFilters() {
