@@ -87,7 +87,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-4">
-        <Button onClick={handleSuggestPrice} disabled={isLoading || !itemDescription.trim()}>
+        <Button type="button" onClick={handleSuggestPrice} disabled={isLoading || !itemDescription.trim()}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -112,6 +112,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
                 Optimal : {formatCurrency(priceRange.optimal, priceRange.currency)}
               </p>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleApplyOptimalPrice}
