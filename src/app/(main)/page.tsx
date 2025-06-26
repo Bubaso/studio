@@ -125,7 +125,7 @@ export default async function HomePage() {
           <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
             Dernières trouvailles sur ReFind
           </h2>
-         <FeaturedItemsGrid initialItems={allFetchedItems} maxItems={4} />
+         <FeaturedItemsGrid initialItems={allFetchedItems} maxItems={8} />
            <div className="text-center mt-6 md:mt-8">
             <Link href="/browse">
               <Button variant="secondary" size="lg">Voir tous les articles</Button>
