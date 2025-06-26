@@ -13,13 +13,16 @@ import type { File } from '@google-cloud/storage';
 // Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
 const getStorageBucket = () => {
   if (admin) {
-    // Ensure the bucket name is provided in environment variables
-    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (bucketName) {
-      return admin.storage().bucket(bucketName);
+    try {
+      // The storageBucket is configured during admin.initializeApp.
+      // Calling bucket() without arguments gets the default bucket.
+      return admin.storage().bucket();
+    } catch (e: any) {
+      console.error("Firebase Admin: Failed to get default storage bucket. Was `storageBucket` configured during initialization in firebaseAdmin.ts?", e.message);
+      return null;
     }
-    console.warn("Firebase Admin: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set. Storage operations will be disabled.");
   }
+  console.warn("Firebase Admin: SDK not initialized. Storage operations will be disabled.");
   return null;
 };
 
@@ -101,6 +104,10 @@ export default async function HomePage() {
       } catch (error) {
         console.error(`Error generating signed URL for ${imageFile.name}:`, error);
       }
+    } else {
+        // If no image is found in storage, the imageUrl will be an empty string.
+        // The CategoryCarousel component is designed to handle this gracefully.
+        signedUrl = '';
     }
     
     return {
@@ -118,11 +125,13 @@ export default async function HomePage() {
   categoriesWithData.sort((a, b) => b.count - a.count);
 
   let allFetchedItems: Item[] = [];
-  try {
-    const { items } = await getItemsFromFirestore({ pageSize: 8 });
-    allFetchedItems = items;
-  } catch (error) {
-    console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
+  if (db) { // Check if db is initialized before using it
+    try {
+      const { items } = await getItemsFromFirestore({ pageSize: 8 });
+      allFetchedItems = items;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
+    }
   }
 
   return (
