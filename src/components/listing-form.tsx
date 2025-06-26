@@ -378,9 +378,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   }
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
+    <div className="max-w-4xl mx-auto">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="md:col-span-2 space-y-8 p-6 border rounded-lg shadow-sm bg-card">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6 border rounded-lg shadow-sm bg-card">
           
           <FormField
             control={form.control}
@@ -484,6 +484,11 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 )}
               />
             
+            <PriceSuggestion
+                itemDescription={itemDescriptionForAISuggestions}
+                onPriceSuggested={handlePriceSuggested}
+            />
+
             <LocationPicker 
               initialPosition={
                 initialItemData?.latitude && initialItemData.longitude
@@ -624,12 +629,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
           </Button>
         </form>
       </Form>
-      <div className="md:col-span-1 hidden md:block">
-        <PriceSuggestion
-          itemDescription={itemDescriptionForAISuggestions}
-          onPriceSuggested={handlePriceSuggested}
-        />
-      </div>
     </div>
   );
 }
