@@ -207,8 +207,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
-          
-          <FavoriteButtonClient itemId={itemId} size="default" />
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
@@ -242,6 +240,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
+          <FavoriteButtonClient itemId={itemId} size="sm" />
+
           <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
           <Card>
