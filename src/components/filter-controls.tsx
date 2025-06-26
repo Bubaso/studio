@@ -91,13 +91,33 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
 
           router.replace(`${pathname}?${params.toString()}`);
         },
-        (error) => {
+        (error: GeolocationPositionError) => {
           setIsGettingLocation(false);
           setIsLocationFilterActive(false);
+          
+          let description = "Une erreur inconnue est survenue.";
+          switch (error.code) {
+              case error.PERMISSION_DENIED:
+                  description = "Vous avez refusé l'accès à la localisation. Veuillez l'autoriser dans les paramètres de votre navigateur ou de votre appareil.";
+                  break;
+              case error.POSITION_UNAVAILABLE:
+                  description = "Informations de localisation non disponibles. Vérifiez votre connexion réseau ou votre signal GPS.";
+                  break;
+              case error.TIMEOUT:
+                  description = "La demande de localisation a expiré. Veuillez réessayer.";
+                  break;
+              default:
+                  description = "Impossible d'accéder à votre position. Veuillez vérifier les autorisations de votre navigateur.";
+          }
+
+          if (error.message && (error.message.toLowerCase().includes("secure origin") || error.message.toLowerCase().includes("secure context"))) {
+              description = "La géolocalisation nécessite une connexion sécurisée (HTTPS). Il est possible que cet environnement de développement ne soit pas considéré comme sécurisé par votre navigateur sur mobile.";
+          }
+
           toast({
             variant: "destructive",
             title: "Erreur de localisation",
-            description: "Impossible d'accéder à votre position. Veuillez vérifier les autorisations de votre navigateur.",
+            description: description,
           });
         }
       );
