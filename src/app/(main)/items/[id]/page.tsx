@@ -90,9 +90,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
-        <div className="space-y-4 relative">
-          <div className="absolute top-4 right-4 z-10">
-            <FavoriteButtonClient itemId={itemId} size="lg" className="bg-background/70 hover:bg-background/90" />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <FavoriteButtonClient itemId={itemId} size="lg" />
           </div>
           {item.videoUrl ? (
             <Card className="shadow-lg rounded-lg overflow-hidden">

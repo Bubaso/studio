@@ -5,12 +5,7 @@ import { Toaster } from "@/components/ui/toaster"; // Ensure Toaster is here too
 export const metadata = {
   title: 'ReFind', // Restored original title
   description: 'Achetez et vendez des articles uniques d\'occasion.', // Restored original description
-  icons: {
-    icon: [],
-    shortcut: [],
-    apple: [],
-    other: [],
-  },
+  icons: null,
 };
 
 export default function RootLayout({
