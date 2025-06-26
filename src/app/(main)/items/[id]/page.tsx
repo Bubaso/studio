@@ -92,9 +92,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
         <div className="space-y-4">
-          <div className="md:hidden"> {/* Mobile only favorite button */}
-             <FavoriteButtonClient itemId={itemId} size="sm" />
-          </div>
           <ItemMediaGallery item={item} />
         </div>
 
@@ -105,9 +102,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
 
-          <div className="hidden md:block"> {/* Desktop only favorite button */}
-            <FavoriteButtonClient itemId={itemId} size="sm" />
-          </div>
+          <FavoriteButtonClient itemId={itemId} size="sm" />
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
