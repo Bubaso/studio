@@ -47,7 +47,8 @@ Follow these rules:
 4.  **Do Not Add False Information:** Only use information provided in the original description. Do not invent features or details.
 5.  **Maintain Tone:** Keep the tone friendly and trustworthy. Avoid overly aggressive sales language.
 6.  **Language:** Respond in French.
-7.  **Reasoning:** Briefly explain the key changes you made (e.g., "Correction de la grammaire et mise en avant de l'état 'comme neuf'.").
+7.  **Line Breaks:** Ensure each sentence in the rewritten description is on a new line. Use a newline character (\\n) after each sentence.
+8.  **Reasoning:** Briefly explain the key changes you made (e.g., "Correction de la grammaire et mise en avant de l'état 'comme neuf'.").
 
 Original Description from seller:
 {{{itemDescription}}}
