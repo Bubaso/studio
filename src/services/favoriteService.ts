@@ -89,23 +89,34 @@ export async function getUserFavoriteItems(userId: string): Promise<Item[]> {
   if (!userId) return [];
   try {
     const favoritesCollectionRef = collection(db, 'userFavorites');
+    
+    // The query is simplified by removing `orderBy`. This avoids the need for a specific
+    // composite index on (userId, createdAt) which might be missing and causing a
+    // misleading permissions error.
     const q = query(
       favoritesCollectionRef,
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
     const querySnapshot = await getDocs(q);
     
-    const favoriteItems: Item[] = [];
-    for (const docSnap of querySnapshot.docs) {
+    // Use Promise.all for more efficient fetching of item details.
+    const favoriteItemsPromises = querySnapshot.docs.map(docSnap => {
       const favData = docSnap.data() as UserFavorite;
-      const item = await getItemByIdFromFirestore(favData.itemId);
-      if (item) {
-        favoriteItems.push(item);
-      }
-    }
-    return favoriteItems;
+      // This function already handles null/missing items gracefully.
+      return getItemByIdFromFirestore(favData.itemId);
+    });
+
+    // Await all item fetches and filter out any that might have been deleted.
+    const items = (await Promise.all(favoriteItemsPromises)).filter(item => item !== null) as Item[];
+    
+    // Sort here to maintain a consistent order, e.g., by posted date.
+    // This is a good trade-off for avoiding complex index requirements.
+    const sortedItems = items.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
+
+    return sortedItems;
+
   } catch (error) {
+    // Log the full error to help debug if the problem persists.
     console.error('Error fetching user favorite items:', error);
     return [];
   }
