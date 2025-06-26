@@ -49,7 +49,8 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
         >
             {hasVideo ? (
                 <video
-                    src={item.videoUrl}
+                    // By appending #t=0.1, we encourage browsers to show the first frame as a poster/thumbnail
+                    src={`${item.videoUrl}#t=0.1`}
                     controls={false}
                     autoPlay={false}
                     muted
@@ -94,12 +95,23 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
               <div
                 key={index}
                 onClick={() => openDialog(index)}
-                className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity cursor-pointer"
+                className="relative aspect-square rounded-md overflow-hidden border hover:opacity-80 transition-opacity cursor-pointer bg-black"
               >
                 {isVideoThumbnail ? (
-                  <div className="w-full h-full bg-black flex items-center justify-center border-2 border-primary/50">
-                    <Video className="h-10 w-10 text-white" />
-                  </div>
+                  <>
+                    <video
+                        key={mediaUrl}
+                        // Use the #t=0.1 trick to show the first frame as a thumbnail
+                        src={`${mediaUrl}#t=0.1`}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
+                        <Video className="h-8 w-8 text-white drop-shadow-lg" />
+                    </div>
+                  </>
                 ) : (
                   <Image
                     src={mediaUrl}
