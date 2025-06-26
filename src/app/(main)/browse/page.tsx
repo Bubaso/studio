@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -15,8 +14,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X, MapPin } from 'lucide-react';
+import { Filter, X, MapPin, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { getDistance } from 'geolib';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ItemsMapView } from '@/components/items-map-view';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -302,29 +304,46 @@ export default function BrowsePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-              <SheetTrigger asChild>
-                  <Button variant="outline">
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filtres
-                  </Button>
-              </SheetTrigger>
-              <SheetContent>
-                  <SheetHeader>
-                      <SheetTitle>Filtres de recherche</SheetTitle>
-                  </SheetHeader>
-                  <FilterControls onApplied={() => setIsSheetOpen(false)} />
-              </SheetContent>
-          </Sheet>
-      </div>
-      
-      <ActiveFilters />
+       <Tabs defaultValue="grid" className="w-full">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
+                <div className="flex items-center gap-2">
+                    <TabsList>
+                        <TabsTrigger value="grid"><LayoutGrid className="mr-2 h-4 w-4"/>Grille</TabsTrigger>
+                        <TabsTrigger value="map"><MapIcon className="mr-2 h-4 w-4"/>Carte</TabsTrigger>
+                    </TabsList>
+                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filtres
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Filtres de recherche</SheetTitle>
+                            </SheetHeader>
+                            <FilterControls onApplied={() => setIsSheetOpen(false)} />
+                        </SheetContent>
+                    </Sheet>
+                </div>
+            </div>
+            
+            <div className="mt-4">
+              <ActiveFilters />
+            </div>
 
-      <Suspense fallback={<ItemGridSkeleton />}>
-        <ItemGrid />
-      </Suspense>
+            <TabsContent value="grid">
+              <Suspense fallback={<ItemGridSkeleton />}>
+                <ItemGrid />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="map">
+              <Suspense fallback={<Skeleton className="h-[70vh] w-full" />}>
+                <ItemsMapView />
+              </Suspense>
+            </TabsContent>
+      </Tabs>
     </div>
   );
 }
