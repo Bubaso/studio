@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ItemCategories, ItemConditions, ItemCondition } from '@/lib/types';
 import { Slider } from '@/components/ui/slider';
-import { X } from 'lucide-react';
+import { X, MapPin, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 const MAX_PRICE_FCFA = 500000; // Max price for slider in FCFA
 const PRICE_STEP_FCFA = 1000;
@@ -19,6 +21,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   const [category, setCategory] = useState(searchParams.get('category') || ALL_ITEMS_VALUE);
   const [condition, setCondition] = useState(searchParams.get('condition') || ALL_ITEMS_VALUE);
@@ -27,6 +30,9 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
     parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
   ]);
   const [location, setLocation] = useState(searchParams.get('location') || '');
+  
+  const [isLocationFilterActive, setIsLocationFilterActive] = useState(!!searchParams.get('lat'));
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   useEffect(() => {
     setCategory(searchParams.get('category') || ALL_ITEMS_VALUE);
@@ -36,6 +42,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
       parseInt(searchParams.get('maxPrice') || MAX_PRICE_FCFA.toString(), 10)
     ]);
     setLocation(searchParams.get('location') || '');
+    setIsLocationFilterActive(!!searchParams.get('lat'));
   }, [searchParams]);
 
   const handleApplyFilters = () => {
@@ -46,6 +53,13 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
     params.set('maxPrice', priceRange[1].toString());
     if (location) params.set('location', location); else params.delete('location');
     
+    // Preserve location filter if active
+    if (isLocationFilterActive && searchParams.get('lat')) {
+        params.set('lat', searchParams.get('lat')!);
+        params.set('lng', searchParams.get('lng')!);
+        params.set('radius', searchParams.get('radius') || '25');
+    }
+    
     const query = searchParams.get('q');
     if (query) {
       params.set('q', query);
@@ -53,6 +67,39 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
     
     router.replace(`${pathname}?${params.toString()}`);
     onApplied?.();
+  };
+  
+  const handleLocationFilterChange = (checked: boolean) => {
+    if (checked) {
+      setIsGettingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setIsGettingLocation(false);
+          setIsLocationFilterActive(true);
+          const params = new URLSearchParams(searchParams);
+          params.set('lat', position.coords.latitude.toString());
+          params.set('lng', position.coords.longitude.toString());
+          params.set('radius', '25'); // Default 25km radius
+          router.replace(`${pathname}?${params.toString()}`);
+        },
+        (error) => {
+          setIsGettingLocation(false);
+          setIsLocationFilterActive(false);
+          toast({
+            variant: "destructive",
+            title: "Erreur de localisation",
+            description: "Impossible d'accéder à votre position. Veuillez vérifier les autorisations de votre navigateur.",
+          });
+        }
+      );
+    } else {
+      setIsLocationFilterActive(false);
+      const params = new URLSearchParams(searchParams);
+      params.delete('lat');
+      params.delete('lng');
+      params.delete('radius');
+      router.replace(`${pathname}?${params.toString()}`);
+    }
   };
 
   const handleClearFilters = () => {
@@ -67,6 +114,27 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
 
   return (
     <div className="space-y-6 pt-6">
+       <div className="space-y-2 rounded-lg border p-4">
+        <div className="flex items-center justify-between">
+            <Label htmlFor="location-filter" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Filtrer par proximité
+            </Label>
+            <Switch
+                id="location-filter"
+                checked={isLocationFilterActive}
+                onCheckedChange={handleLocationFilterChange}
+                disabled={isGettingLocation}
+            />
+        </div>
+        {isGettingLocation && (
+            <div className="flex items-center text-xs text-muted-foreground pt-2">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Obtention de votre position...
+            </div>
+        )}
+      </div>
+
       <div>
         <Label htmlFor="category">Catégorie</Label>
         <Select value={category} onValueChange={setCategory}>
@@ -114,7 +182,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
       </div>
 
       <div>
-        <Label htmlFor="location">Lieu</Label>
+        <Label htmlFor="location">Lieu (Texte)</Label>
         <Input 
           id="location" 
           placeholder="ex: Dakar, SN" 

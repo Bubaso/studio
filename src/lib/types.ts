@@ -6,6 +6,8 @@ export interface Item {
   price: number;
   category: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   imageUrls: string[];
   videoUrl?: string; // Add videoUrl field
   sellerId: string;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video } from "lucide-react";
@@ -30,6 +31,7 @@ import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { TitleSuggestion } from "./title-suggestion";
 import { DescriptionSuggestion } from "./description-suggestion";
+import { LocationPicker } from "./location-picker";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -57,6 +59,8 @@ const listingFormSchema = z.object({
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
   location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   imageFiles: z
     .array(fileSchema)
     .max(MAX_FILES, `Vous ne pouvez télécharger que ${MAX_FILES} images au maximum.`)
@@ -100,6 +104,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       category: initialItemData?.category as ItemCategory | undefined,
       condition: initialItemData?.condition as ItemCondition | undefined,
       location: initialItemData?.location || "",
+      latitude: initialItemData?.latitude,
+      longitude: initialItemData?.longitude,
       imageFiles: [],
       videoFile: undefined,
     },
@@ -116,6 +122,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             category: initialItemData.category as ItemCategory,
             condition: initialItemData.condition as ItemCondition,
             location: initialItemData.location || "",
+            latitude: initialItemData.latitude,
+            longitude: initialItemData.longitude,
             imageFiles: [],
             videoFile: undefined,
         });
@@ -166,6 +174,12 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const handleDescriptionSuggested = (description: string) => {
     form.setValue("description", description, { shouldValidate: true });
   };
+  
+  const handleLocationSelected = useCallback(({ lat, lng, address }: { lat: number; lng: number; address: string; }) => {
+    form.setValue('latitude', lat);
+    form.setValue('longitude', lng);
+    form.setValue('location', address);
+  }, [form]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const filesFromInput = Array.from(event.target.files || []);
@@ -299,6 +313,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         category: values.category,
         condition: values.condition,
         location: values.location || '',
+        latitude: values.latitude,
+        longitude: values.longitude,
         imageUrls: finalImageUrls, 
         videoUrl: finalVideoUrl,
         dataAiHint: dataAiHintForImage,
@@ -402,31 +418,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             onTitleSuggested={handleTitleSuggested}
           />
 
-          {/* --- DESKTOP LAYOUT --- */}
-          <div className="hidden sm:block space-y-8">
-            <div className="grid grid-cols-2 gap-8">
-              {/* Price Field (Desktop) */}
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field: { onChange, onBlur, value, name, ref } }) => (
-                  <FormItem>
-                    <FormLabel>Prix (FCFA)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number" step="1" placeholder="ex: 25000" name={name} ref={ref} onBlur={onBlur}
-                        value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
-                        onChange={e => {
-                          const stringValue = e.target.value;
-                          if (stringValue === "") { onChange(undefined); } else { const num = parseFloat(stringValue); onChange(isNaN(num) ? undefined : num); }
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Category Field (Desktop) */}
+            <div className="grid sm:grid-cols-2 gap-8">
               <FormField
                 control={form.control} name="category"
                 render={({ field }) => (
@@ -444,10 +436,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-                {/* Condition Field (Desktop) */}
-                <FormField control={form.control} name="condition" render={({ field }) => (
+              <FormField control={form.control} name="condition" render={({ field }) => (
                   <FormItem>
                     <FormLabel>État</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
@@ -461,69 +450,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     <FormMessage />
                   </FormItem>
                 )} />
-                {/* Location Field (Desktop) */}
-                <FormField control={form.control} name="location" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Lieu (Optionnel)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="ex: Dakar, Sénégal" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
             </div>
-          </div>
-          
-          {/* --- MOBILE LAYOUT --- */}
-          <div className="sm:hidden space-y-8">
-              {/* Category Field (Mobile) */}
-              <FormField
-                control={form.control} name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Catégorie</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {ItemCategories.map((category) => ( <SelectItem key={category} value={category}>{category}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            {/* Condition Field (Mobile) */}
-            <FormField control={form.control} name="condition" render={({ field }) => (
-              <FormItem>
-                <FormLabel>État</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {ItemConditions.map((conditionValue) => (<SelectItem key={conditionValue} value={conditionValue} className="capitalize">{conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            {/* Location Field (Mobile) */}
-            <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Lieu (Optionnel)</FormLabel>
-                <FormControl>
-                  <Input placeholder="ex: Dakar, Sénégal" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
 
-          {/* --- MOBILE PRICE BLOCK --- */}
-          <div className="sm:hidden space-y-8">
-              <FormField
+            <FormField
                 control={form.control}
                 name="price"
                 render={({ field: { onChange, onBlur, value, name, ref } }) => (
@@ -543,10 +472,15 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   </FormItem>
                 )}
               />
-              <div className="mt-8">
-                  <PriceSuggestion onPriceSuggested={handlePriceSuggested} itemDescription={itemDescriptionForAISuggestions} />
-              </div>
-          </div>
+            
+            <LocationPicker 
+              initialPosition={
+                initialItemData?.latitude && initialItemData.longitude
+                  ? { lat: initialItemData.latitude, lng: initialItemData.longitude }
+                  : null
+              }
+              onLocationSelect={handleLocationSelected}
+            />
 
           <FormField
             control={form.control}

@@ -54,6 +54,8 @@ const mapDocToItem = (document: any): Item => {
     price: data.price || 0,
     category: itemCategory,
     location: data.location || '',
+    latitude: data.latitude,
+    longitude: data.longitude,
     imageUrls: imageUrls,
     videoUrl: data.videoUrl || undefined,
     sellerId: data.sellerId || 'unknown',
@@ -91,16 +93,17 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.condition) {
       queryConstraints.push(where('condition', '==', filters.condition));
     }
-    if (filters?.priceMin !== undefined) {
-      queryConstraints.push(where('price', '>=', filters.priceMin));
-    }
-    if (filters?.priceMax !== undefined) {
-      queryConstraints.push(where('price', '<=', filters.priceMax));
-    }
     
-    // --- Sorting ---
-    // Always sort by date. The composite index created by the user will handle this.
-    queryConstraints.push(orderBy('postedDate', 'desc'));
+    // --- Sorting & Price Filtering ---
+    // If filtering by price, order by price. Otherwise, order by date.
+    // This avoids needing a composite index for every combination.
+    if (filters?.priceMin !== undefined && filters?.priceMax !== undefined) {
+        queryConstraints.push(where('price', '>=', filters.priceMin));
+        queryConstraints.push(where('price', '<=', filters.priceMax));
+        queryConstraints.push(orderBy('price', 'asc')); // Sort by price when filtering by price
+    } else {
+        queryConstraints.push(orderBy('postedDate', 'desc')); // Default sort
+    }
 
     // --- Pagination ---
     if (filters?.lastVisibleItemId) {
@@ -137,9 +140,6 @@ export const getItemsFromFirestore = async (filters?: {
     // Determine the next cursor
     const lastVisibleDocInSet = pageDocs[pageDocs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
-
-    // Note: True text search ('query') and partial location matching must be handled client-side or with a dedicated search service.
-    // This function prioritizes efficient, paginated fetching from Firestore.
 
     return { items, lastItemId, hasMore };
 
@@ -286,6 +286,9 @@ export async function createItemInFirestore(
     if (dataToSend.videoUrl === undefined) {
       delete dataToSend.videoUrl;
     }
+    if (dataToSend.latitude === undefined) delete dataToSend.latitude;
+    if (dataToSend.longitude === undefined) delete dataToSend.longitude;
+
 
     const docRef = await addDoc(collection(db, "items"), {
       ...dataToSend,
@@ -316,6 +319,13 @@ export async function updateItemInFirestore(
   // If the videoUrl key is present with an undefined value, it means we want to remove the field.
   if ('videoUrl' in dataToUpdate && dataToUpdate.videoUrl === undefined) {
       dataToUpdate.videoUrl = deleteField();
+  }
+
+  if ('latitude' in dataToUpdate && dataToUpdate.latitude === undefined) {
+    dataToUpdate.latitude = deleteField();
+  }
+  if ('longitude' in dataToUpdate && dataToUpdate.longitude === undefined) {
+    dataToUpdate.longitude = deleteField();
   }
   
   dataToUpdate.lastUpdated = serverTimestamp();

@@ -15,7 +15,8 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X } from 'lucide-react';
+import { Filter, X, MapPin } from 'lucide-react';
+import { getDistance } from 'geolib';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,10 @@ function ActiveFilters() {
     const maxPrice = searchParams.get('maxPrice');
     const condition = searchParams.get('condition');
     const location = searchParams.get('location');
+    const lat = searchParams.get('lat');
+    const radius = searchParams.get('radius');
 
+    if (lat) activeFilters.push({ key: 'lat', label: 'Proximité', value: `~${radius || 25}km` });
     if (category) activeFilters.push({ key: 'category', label: 'Catégorie', value: category });
     if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: 'Prix Min', value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
     if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: 'Prix Max', value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
@@ -46,9 +50,14 @@ function ActiveFilters() {
     }
 
     const removeFilter = (keyToRemove: string) => {
-        // Create a new, mutable URLSearchParams object from the current read-only one.
         const newParams = new URLSearchParams(searchParams);
-        newParams.delete(keyToRemove);
+        if (keyToRemove === 'lat') {
+            newParams.delete('lat');
+            newParams.delete('lng');
+            newParams.delete('radius');
+        } else {
+            newParams.delete(keyToRemove);
+        }
         
         const newSearchString = newParams.toString();
         const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
@@ -125,6 +134,9 @@ function ItemGrid() {
         const maxPriceParam = searchParams.get('maxPrice');
         const locationParam = searchParams.get('location');
         const conditionParam = searchParams.get('condition') as ItemCondition | null;
+        const latParam = searchParams.get('lat');
+        const lngParam = searchParams.get('lng');
+        const radiusParam = searchParams.get('radius');
 
         const result = await getItemsFromFirestore({
             query: queryParam || undefined,
@@ -133,17 +145,40 @@ function ItemGrid() {
             priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
             location: locationParam || undefined,
             condition: conditionParam || undefined,
-            pageSize: ITEMS_PER_PAGE,
+            pageSize: latParam ? 200 : ITEMS_PER_PAGE, // Fetch more if location filtering client-side
             lastVisibleItemId: cursor ?? undefined,
         });
+        
+        let processedItems = result.items;
+
+        // Client-side location filtering
+        if (latParam && lngParam) {
+            const userLat = parseFloat(latParam);
+            const userLng = parseFloat(lngParam);
+            const radiusInMeters = (parseInt(radiusParam || '25', 10)) * 1000;
+
+            processedItems = processedItems.filter(item => {
+                if (item.latitude == null || item.longitude == null) return false;
+                try {
+                    const distance = getDistance(
+                        { latitude: userLat, longitude: userLng },
+                        { latitude: item.latitude, longitude: item.longitude }
+                    );
+                    return distance <= radiusInMeters;
+                } catch (e) {
+                    console.error("Error calculating distance", e);
+                    return false;
+                }
+            });
+        }
 
         const finalItems = currentUser
-          ? result.items.filter((item) => item.sellerId !== currentUser.uid)
-          : result.items;
+          ? processedItems.filter((item) => item.sellerId !== currentUser.uid)
+          : processedItems;
 
-        setPageData({ items: finalItems, lastItemId: result.lastItemId, hasMore: result.hasMore });
+        setPageData({ items: finalItems, lastItemId: result.lastItemId, hasMore: result.hasMore && !latParam });
 
-        if (result.hasMore && result.lastItemId && !cursors.includes(result.lastItemId)) {
+        if (result.hasMore && result.lastItemId && !cursors.includes(result.lastItemId) && !latParam) {
           setCursors(prev => {
              const newCursors = [...prev];
              newCursors[pageNumber] = result.lastItemId;
