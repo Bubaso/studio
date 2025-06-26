@@ -101,12 +101,10 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
           setIsLocationFilterActive(false);
           
           let description = "Une erreur inconnue est survenue.";
-          let isPermissionError = false;
 
           switch (error.code) {
               case error.PERMISSION_DENIED:
-                  description = "L'accès à la localisation semble bloqué. C'est peut-être parce que vous l'avez refusé précédemment. Veuillez vérifier les permissions pour ce site dans les paramètres de votre navigateur.";
-                  isPermissionError = true;
+                  description = "L'accès à la localisation a été refusé. Pour l'activer, vous devez aller dans les paramètres de votre navigateur, trouver les autorisations pour ce site et autoriser l'accès à la localisation.";
                   break;
               case error.POSITION_UNAVAILABLE:
                   description = "Informations de localisation non disponibles. Vérifiez votre connexion réseau ou votre signal GPS.";
@@ -120,17 +118,14 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
 
           if (error.message && (error.message.toLowerCase().includes("secure origin") || error.message.toLowerCase().includes("secure context"))) {
               description = "La géolocalisation nécessite une connexion sécurisée (HTTPS). Il est possible que cet environnement de développement ne soit pas considéré comme sécurisé par votre navigateur sur mobile.";
-              isPermissionError = true;
           }
           
-          if(isPermissionError) {
-              setLocationError(description);
-          }
+          setLocationError(description);
 
           toast({
             variant: "destructive",
             title: "Erreur de localisation",
-            description: description,
+            description: "Impossible d'activer le filtre de proximité. Voir les détails ci-dessous.",
           });
         }
       );
@@ -175,7 +170,7 @@ export function FilterControls({ onApplied }: { onApplied?: () => void }) {
                 Obtention de votre position...
             </div>
         )}
-        {isLocationFilterActive && (
+        {isLocationFilterActive && !locationError && (
           <div className="pt-2">
             <Label htmlFor="radius-slider">Rayon de recherche : {radius} km</Label>
             <Slider
