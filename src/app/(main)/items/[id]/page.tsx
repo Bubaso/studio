@@ -200,7 +200,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
         {/* Right Column: Item Details, Seller Info, Actions */}
         <div className="space-y-6">
           <div className="flex justify-between items-start">
-            <h1 className="text-4xl font-bold font-headline text-primary flex-1_">{item.name}</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-headline text-primary break-words flex-1_">{item.name}</h1>
             <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
           </div>
 
