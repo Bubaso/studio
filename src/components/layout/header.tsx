@@ -1,16 +1,17 @@
 
 "use client";
 import Link from 'next/link';
-import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle } from 'lucide-react';
+import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase'; 
 import { signOut } from 'firebase/auth'; 
-import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import type { MessageThread } from '@/lib/types';
+import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase/firestore';
+import type { MessageThread, UserProfile } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface NavLink {
   href: string;
@@ -38,6 +39,7 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -50,8 +52,10 @@ export function Header() {
 
   useEffect(() => {
     let unsubscribeThreads: Unsubscribe = () => {};
+    let unsubscribeProfile: Unsubscribe = () => {};
 
     if (currentUser) {
+      // Listen for message activity
       const threadsQuery = query(
         collection(db, 'messageThreads'),
         where('participantIds', 'array-contains', currentUser.uid)
@@ -68,10 +72,26 @@ export function Header() {
         console.error("Error fetching message threads for notification: ", error);
         setHasNewMessageActivity(false);
       });
+
+      // Listen for user profile changes (credits, etc.)
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+              setUserProfile(docSnap.data() as UserProfile);
+          } else {
+              setUserProfile(null);
+          }
+      });
+
     } else {
       setHasNewMessageActivity(false);
+      setUserProfile(null);
     }
-    return () => unsubscribeThreads();
+
+    return () => {
+        unsubscribeThreads();
+        unsubscribeProfile();
+    };
   }, [currentUser, pathname]);
 
 
@@ -173,6 +193,23 @@ export function Header() {
           </Button>
           {currentUser ? (
             <>
+              {userProfile && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/credits">
+                        <Button variant="outline" size="sm" className="hidden sm:flex">
+                          <Gem className="mr-2 h-4 w-4 text-primary" />
+                          {userProfile.credits}
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Vous avez {userProfile.credits} crédits. Cliquez pour en acheter plus.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <Link href="/profile">
                 <Button variant="ghost" size="icon" aria-label="Profil">
                   <UserIcon className="h-5 w-5" />

@@ -32,6 +32,8 @@ export interface UserProfile {
   joinedDate: string;
   location?: string;
   lastActiveAt?: string;
+  credits: number; // User's credit balance
+  freeListingsRemaining: number; // Number of free listings left
 }
 
 export interface Review {
@@ -95,3 +97,14 @@ export type ItemCategory = typeof ItemCategories[number];
 
 export const ItemConditions = ['neuf', 'comme neuf', 'bon', 'passable', 'pauvre'] as const;
 export type ItemCondition = typeof ItemConditions[number];
+
+export interface PaymentIntent {
+    id: string; // Document ID, same as ref_command
+    userId: string;
+    creditAmount: number;
+    price: number;
+    status: 'pending' | 'success' | 'failed';
+    createdAt: string; // ISO date string
+    updatedAt: string; // ISO date string
+    paytechToken?: string;
+}
