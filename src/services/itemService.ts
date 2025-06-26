@@ -101,12 +101,13 @@ export const getItemsFromFirestore = async (filters?: {
     }
     
     // --- Sorting ---
-    // Firestore requires the first orderBy to be on the same field as an inequality filter.
-    // Since we now handle seller exclusion on the client, we can reliably sort by price then date.
+    // If filtering by price, we must order by price first. Otherwise, order by date.
+    // This avoids needing a composite index for (price, postedDate).
     if (hasPriceFilter) {
-        queryConstraints.push(orderBy('price'));
+      queryConstraints.push(orderBy('price'));
+    } else {
+      queryConstraints.push(orderBy('postedDate', 'desc'));
     }
-    queryConstraints.push(orderBy('postedDate', 'desc'));
 
     // --- Pagination ---
     if (filters?.lastVisibleItemId) {
@@ -118,7 +119,7 @@ export const getItemsFromFirestore = async (filters?: {
       }
     }
     
-    const pageSize = filters?.pageSize || 12;
+    const pageSize = filters?.pageSize || 50;
     queryConstraints.push(limit(pageSize + 1)); // Fetch one extra to check for "hasMore"
 
     // Execute the query
