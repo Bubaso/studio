@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getItemsFromFirestore } from '@/services/itemService';
@@ -10,7 +11,12 @@ import { HeroOnboarding } from '@/components/hero-onboarding';
 // Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
 const getStorageBucket = () => {
   if (admin) {
-    return admin.storage().bucket(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
+    // Ensure the bucket name is provided in environment variables
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+    if (bucketName) {
+      return admin.storage().bucket(bucketName);
+    }
+    console.warn("Firebase Admin: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set. Storage operations will be disabled.");
   }
   return null;
 };
@@ -43,7 +49,22 @@ export default async function HomePage() {
   // Kategori URL'lerini ve ilan sayılarını asenkron olarak al
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
     let itemCount = 0;
+    let signedUrl = ''; // Default to empty string for the image URL
 
+    // Her zaman ilan sayısını al
+    if (db) {
+        try {
+            const itemsRef = db.collection('items');
+            const q = itemsRef.where('category', '==', categoryName);
+            const snapshot = await q.get();
+            itemCount = snapshot.size;
+        } catch (error) {
+            console.error(`Error fetching count for category ${categoryName}:`, error);
+            itemCount = 0; 
+        }
+    }
+
+    // Storage'dan görsel URL'sini almayı dene
     if (bucket) {
       const imageName = `${categoryName}.png`;
       const filePath = `category-images/${imageName}`;
@@ -51,54 +72,34 @@ export default async function HomePage() {
 
       try {
         const [exists] = await file.exists();
-        if (!exists) {
-          // If the image doesn't exist, don't show this category in the carousel.
-          console.warn(`Category image not found in Storage, skipping category: ${filePath}`);
-          return null;
+        if (exists) {
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            
+            [signedUrl] = await file.getSignedUrl({
+              action: 'read',
+              expires: oneYearFromNow,
+            });
+        } else {
+             console.warn(`Category image not found in Storage for: ${filePath}. Category will be shown without an image.`);
         }
-
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-        
-        const [signedUrl] = await file.getSignedUrl({
-          action: 'read',
-          expires: oneYearFromNow,
-        });
-
-        // Fetch item count only if the image exists
-        if (db) {
-            try {
-                const itemsRef = db.collection('items');
-                const q = itemsRef.where('category', '==', categoryName);
-                const snapshot = await q.get();
-                itemCount = snapshot.size;
-            } catch (error) {
-                console.error(`Error fetching count for category ${categoryName}:`, error);
-                itemCount = 0; 
-            }
-        }
-    
-        return {
-          name: categoryName,
-          count: itemCount,
-          dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
-          imageUrl: signedUrl,
-          link: `/browse?category=${encodeURIComponent(categoryName)}`
-        };
-
       } catch (error) {
         console.error(`Error checking or fetching signed URL for ${filePath}:`, error);
-        return null; // Also skip on error
+        // Hata durumunda signedUrl boş kalır
       }
     }
     
-    return null; // Skip if bucket is not available
+    // Kategoriyi her zaman döndür, görseli olmasa bile
+    return {
+      name: categoryName,
+      count: itemCount,
+      dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
+      imageUrl: signedUrl, // Bulunamazsa boş olacak
+      link: `/browse?category=${encodeURIComponent(categoryName)}`
+    };
   });
 
-  const categoriesWithDataOrNull = await Promise.all(carouselCategoriesPromises);
-  const categoriesWithData = categoriesWithDataOrNull.filter(
-      (category): category is NonNullable<typeof category> => category !== null
-  );
+  const categoriesWithData = await Promise.all(carouselCategoriesPromises);
   
   // Kategorileri ilan sayısına göre büyükten küçüğe doğru sırala
   categoriesWithData.sort((a, b) => b.count - a.count);
@@ -106,6 +107,7 @@ export default async function HomePage() {
   let allFetchedItems: Item[] = [];
 
   try {
+    // This call uses the client SDK service, which is fine for a server component
     const { items } = await getItemsFromFirestore({
       pageSize: 8,
     });
