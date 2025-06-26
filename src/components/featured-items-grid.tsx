@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,8 @@ import { useAuth } from '@/context/AuthContext';
 
 interface FeaturedItemsGridProps {
   initialItems: Item[];
-  maxItems?: number;
+  // The maxItems prop is now ignored to ensure 8 items are always considered.
+  maxItems?: number; 
 }
 
 function CardSkeleton() {
@@ -25,26 +25,28 @@ function CardSkeleton() {
   );
 }
 
-export function FeaturedItemsGrid({ initialItems, maxItems = 8 }: FeaturedItemsGridProps) {
+// The maxItems prop is destructured but a constant is used for slicing to enforce the limit.
+export function FeaturedItemsGrid({ initialItems, maxItems }: FeaturedItemsGridProps) {
   const { firebaseUser: currentUser, authLoading } = useAuth();
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
+  const MAX_ITEMS_TO_DISPLAY = 8; // Hardcoded constant
 
   useEffect(() => {
     if (!authLoading) {
       let itemsToSet;
       if (currentUser) {
-        itemsToSet = initialItems.filter(item => item.sellerId !== currentUser.uid).slice(0, maxItems);
+        itemsToSet = initialItems.filter(item => item.sellerId !== currentUser.uid).slice(0, MAX_ITEMS_TO_DISPLAY);
       } else {
-        itemsToSet = initialItems.slice(0, maxItems);
+        itemsToSet = initialItems.slice(0, MAX_ITEMS_TO_DISPLAY);
       }
       setDisplayItems(itemsToSet);
     }
-  }, [currentUser, initialItems, maxItems, authLoading]);
+  }, [currentUser, initialItems, authLoading]); // maxItems is removed from dependency array
 
   if (authLoading) {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {Array.from({ length: maxItems }).map((_, index) => (
+            {Array.from({ length: MAX_ITEMS_TO_DISPLAY }).map((_, index) => (
                 <CardSkeleton key={index} />
             ))}
         </div>
