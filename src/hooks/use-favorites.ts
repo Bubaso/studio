@@ -12,26 +12,32 @@ export function useFavorites() {
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
   useEffect(() => {
-    // We should only start fetching once the initial auth check is done.
-    if (authLoading) {
-      return;
-    }
-    
-    if (currentUser) {
+    // Define an async function inside the effect
+    const fetchFavorites = async () => {
+      // Ensure we have a logged-in user before fetching
+      if (!currentUser) {
+        setFavoriteItems([]);
+        setIsLoadingFavorites(false);
+        return;
+      }
+
       setIsLoadingFavorites(true);
-      getUserFavoriteItems(currentUser.uid)
-        .then(setFavoriteItems)
-        .catch(err => {
-          console.error("Failed to fetch favorites in useFavorites hook:", err);
-          setFavoriteItems([]); // Set to empty on error
-        })
-        .finally(() => setIsLoadingFavorites(false));
-    } else {
-      // If there's no user, clear items and stop loading.
-      setFavoriteItems([]);
-      setIsLoadingFavorites(false);
+      try {
+        const items = await getUserFavoriteItems(currentUser.uid);
+        setFavoriteItems(items);
+      } catch (err) {
+        console.error("Failed to fetch favorites in useFavorites hook:", err);
+        setFavoriteItems([]); // Reset to empty on error
+      } finally {
+        setIsLoadingFavorites(false);
+      }
+    };
+
+    // Call the async function only when auth is no longer loading
+    if (!authLoading) {
+      fetchFavorites();
     }
-  }, [currentUser, authLoading]);
+  }, [currentUser, authLoading]); // Effect dependencies are correct
 
   return { favoriteItems, isLoading: isLoadingFavorites };
 }
