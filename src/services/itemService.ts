@@ -82,6 +82,10 @@ export const getItemsFromFirestore = async (filters?: {
   lastVisibleItemId?: string;
   // excludeSellerId is now handled client-side to avoid invalid queries
 }): Promise<{ items: Item[]; lastItemId: string | null; hasMore: boolean; }> => {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    return { items: [], lastItemId: null, hasMore: false };
+  }
   try {
     const itemsCollectionRef = collection(db, 'items');
     const queryConstraints: QueryConstraint[] = [];
@@ -151,6 +155,10 @@ export const getItemsFromFirestore = async (filters?: {
 
 
 export const getItemByIdFromFirestore = async (id: string): Promise<Item | null> => {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    return null;
+  }
   if (!id || typeof id !== 'string' || id.length === 0 || id.includes('/')) {
     console.warn(`Attempted to fetch item with invalid ID: ${id}`);
     return null;
@@ -172,6 +180,10 @@ export const getItemByIdFromFirestore = async (id: string): Promise<Item | null>
 };
 
 export const getUserListingsFromFirestore = async (userId: string): Promise<Item[]> => {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    return [];
+  }
   if (!userId) {
     console.warn("Attempted to fetch user listings with no userId.");
     return [];
@@ -192,17 +204,17 @@ export const uploadImageAndGetURL = (
     userId: string,
     onProgress: (progress: number) => void
 ): Promise<string> => {
+    if (!storage) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized. Check your Firebase configuration in .env";
+        console.error(errorMsg);
+        return Promise.reject(new Error(errorMsg));
+    }
     if (!userId) {
         const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for image upload.";
         console.error(errorMsg);
         return Promise.reject(new Error(errorMsg));
     }
-    if (!storage) {
-        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
-        console.error(errorMsg);
-        return Promise.reject(new Error(errorMsg));
-    }
-
+    
     const uniqueFileName = `${Date.now()}_${imageFile.name}`;
     const imagePath = `itemImages/${userId}/${uniqueFileName}`;
     const imageRef = storageRef(storage, imagePath);
@@ -237,13 +249,13 @@ export const uploadVideoAndGetURL = (
     userId: string,
     onProgress: (progress: number) => void
 ): Promise<string> => {
-    if (!userId) {
-        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for video upload.";
+    if (!storage) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized. Check your Firebase configuration in .env";
         console.error(errorMsg);
         return Promise.reject(new Error(errorMsg));
     }
-    if (!storage) {
-        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: Firebase Storage service is not initialized.";
+    if (!userId) {
+        const errorMsg = "ITEM_SERVICE_UPLOAD_ERROR: User ID is required for video upload.";
         console.error(errorMsg);
         return Promise.reject(new Error(errorMsg));
     }
@@ -281,6 +293,10 @@ export const uploadVideoAndGetURL = (
 export async function createItemInFirestore(
   itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    throw new Error("Firestore (db) is not initialized.");
+  }
   try {
     const dataToSend: any = { ...itemData };
     if (dataToSend.videoUrl === undefined) {
@@ -305,6 +321,10 @@ export async function updateItemInFirestore(
   itemId: string,
   itemData: Partial<Omit<Item, 'id' | 'postedDate' | 'sellerId' | 'sellerName' | 'lastUpdated'>>
 ): Promise<void> {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    throw new Error("Firestore (db) is not initialized.");
+  }
   if (!itemId) {
     throw new Error("Item ID is required for updating.");
   }
@@ -339,6 +359,10 @@ export async function updateItemInFirestore(
 }
 
 export async function logItemView(itemId: string): Promise<void> {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    return;
+  }
   if (!itemId) {
     return;
   }
@@ -353,6 +377,10 @@ export async function logItemView(itemId: string): Promise<void> {
 }
 
 export async function markItemAsSold(itemId: string): Promise<void> {
+  if (!db) {
+    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
+    throw new Error("Firestore (db) is not initialized.");
+  }
   const itemRef = doc(db, 'items', itemId);
   await updateDoc(itemRef, {
     isSold: true,
@@ -361,6 +389,10 @@ export async function markItemAsSold(itemId: string): Promise<void> {
 }
 
 export async function deleteItem(itemId: string): Promise<void> {
+  if (!db || !storage) {
+    console.error("Firestore (db) or Storage is not initialized. Check your Firebase configuration in .env");
+    throw new Error("Firestore (db) or Storage is not initialized.");
+  }
   const item = await getItemByIdFromFirestore(itemId);
   if (!item) {
     throw new Error("Item not found, cannot delete.");
