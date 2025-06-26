@@ -41,7 +41,7 @@ export function FeaturedItemsGrid({ initialItems, maxItems }: FeaturedItemsGridP
       }
       setDisplayItems(itemsToSet);
     }
-  }, [currentUser, initialItems, authLoading]); // maxItems is removed from dependency array
+  }, [currentUser, initialItems, authLoading]);
 
   if (authLoading) {
     return (
