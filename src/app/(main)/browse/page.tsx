@@ -46,12 +46,10 @@ function ActiveFilters() {
     }
 
     const removeFilter = (keyToRemove: string) => {
-        const newParams = new URLSearchParams();
-        for (const [key, value] of searchParams.entries()) {
-            if (key !== keyToRemove) {
-                newParams.append(key, value);
-            }
-        }
+        // Create a new, mutable URLSearchParams object from the current read-only one.
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.delete(keyToRemove);
+        
         const newSearchString = newParams.toString();
         const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
         router.push(newUrl);
