@@ -4,7 +4,6 @@ import { getItemsFromFirestore } from '@/services/itemService';
 import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
-import { Search, ShoppingBag, MessageCircleHeart } from 'lucide-react';
 import admin from '@/lib/firebaseAdmin';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 
@@ -43,23 +42,8 @@ export default async function HomePage() {
 
   // Kategori URL'lerini ve ilan sayılarını asenkron olarak al
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
-    let imageUrl = `https://placehold.co/400x300.png?text=${encodeURIComponent(categoryName)}`;
     let itemCount = 0;
 
-    // İlgili kategorideki ilan sayısını Firestore'dan çek
-    if (db) {
-        try {
-            const itemsRef = db.collection('items');
-            const q = itemsRef.where('category', '==', categoryName);
-            const snapshot = await q.get();
-            itemCount = snapshot.size;
-        } catch (error) {
-            console.error(`Error fetching count for category ${categoryName}:`, error);
-            itemCount = 0; // Hata durumunda sayıyı 0 olarak ayarla
-        }
-    }
-    
-    // Kategori görselini Storage'dan al
     if (bucket) {
       const imageName = `${categoryName}.png`;
       const filePath = `category-images/${imageName}`;
@@ -67,34 +51,54 @@ export default async function HomePage() {
 
       try {
         const [exists] = await file.exists();
-        if (exists) {
-          const oneYearFromNow = new Date();
-          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-          
-          const [signedUrl] = await file.getSignedUrl({
-            action: 'read',
-            expires: oneYearFromNow,
-          });
-          imageUrl = signedUrl;
-
-        } else {
-            console.warn(`Category image not found in Storage: ${filePath}`);
+        if (!exists) {
+          // If the image doesn't exist, don't show this category in the carousel.
+          console.warn(`Category image not found in Storage, skipping category: ${filePath}`);
+          return null;
         }
+
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        
+        const [signedUrl] = await file.getSignedUrl({
+          action: 'read',
+          expires: oneYearFromNow,
+        });
+
+        // Fetch item count only if the image exists
+        if (db) {
+            try {
+                const itemsRef = db.collection('items');
+                const q = itemsRef.where('category', '==', categoryName);
+                const snapshot = await q.get();
+                itemCount = snapshot.size;
+            } catch (error) {
+                console.error(`Error fetching count for category ${categoryName}:`, error);
+                itemCount = 0; 
+            }
+        }
+    
+        return {
+          name: categoryName,
+          count: itemCount,
+          dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
+          imageUrl: signedUrl,
+          link: `/browse?category=${encodeURIComponent(categoryName)}`
+        };
+
       } catch (error) {
-        console.error(`Error fetching signed URL for ${filePath}:`, error);
+        console.error(`Error checking or fetching signed URL for ${filePath}:`, error);
+        return null; // Also skip on error
       }
     }
     
-    return {
-      name: categoryName,
-      count: itemCount, // Sıralama için ilan sayısını ekle
-      dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
-      imageUrl: imageUrl,
-      link: `/browse?category=${encodeURIComponent(categoryName)}`
-    };
+    return null; // Skip if bucket is not available
   });
 
-  const categoriesWithData = await Promise.all(carouselCategoriesPromises);
+  const categoriesWithDataOrNull = await Promise.all(carouselCategoriesPromises);
+  const categoriesWithData = categoriesWithDataOrNull.filter(
+      (category): category is NonNullable<typeof category> => category !== null
+  );
   
   // Kategorileri ilan sayısına göre büyükten küçüğe doğru sırala
   categoriesWithData.sort((a, b) => b.count - a.count);
