@@ -89,14 +89,43 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
   }, [onLocationSelect]);
 
   if (loadError) {
+    let title = "Erreur de chargement de la carte";
+    let message = <p>Impossible de charger le sélecteur de lieu. Veuillez vérifier votre connexion internet et la configuration de l'API Google Maps.</p>;
+
+    if (loadError.message.includes("ApiTargetBlockedMapError")) {
+        title = "API Google Maps non autorisée";
+        message = (
+            <>
+                <p>Votre clé API Google Maps n'est pas autorisée à utiliser le service "Places API".</p>
+                <p className="mt-2 text-xs">
+                    <strong>Action requise :</strong>
+                </p>
+                <ol className="list-decimal list-inside text-xs mt-1 space-y-1">
+                    <li>Allez à votre <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener noreferrer" className="underline text-primary">page d'identifiants Google Cloud</a>.</li>
+                    <li>Sélectionnez la clé API que vous utilisez pour cette application.</li>
+                    <li>Dans la section "Restrictions d'API", assurez-vous que "Places API" est bien sélectionnée dans la liste des API autorisées.</li>
+                    <li>Enregistrez vos modifications.</li>
+                </ol>
+            </>
+        );
+    } else if (loadError.message.includes("LegacyApiNotActivatedMapError")) {
+        title = "API Google Maps (Legacy) non activée";
+        message = (
+             <>
+                <p>Impossible de charger le sélecteur de lieu. L'API "Places" (legacy) n'est pas activée pour votre projet.</p>
+                <p className="mt-2 text-xs">
+                    <strong>Action requise :</strong> Assurez-vous que les API "Maps JavaScript API" et "Places API" sont activées dans votre projet Google Cloud.
+                </p>
+            </>
+        )
+    }
+
+
     return (
         <Alert variant="destructive">
-            <AlertTitle>Erreur de chargement de la carte</AlertTitle>
+            <AlertTitle>{title}</AlertTitle>
             <AlertDescription>
-                <p>Impossible de charger le sélecteur de lieu. Cela est souvent dû à un problème de configuration de l'API Google Maps.</p>
-                <p className="mt-2 text-xs">
-                    <strong>Action requise :</strong> Assurez-vous que les API "Maps JavaScript API" et "Places API" sont activées dans votre projet Google Cloud. L'erreur actuelle suggère que l'API "Places" (legacy) n'est pas activée.
-                </p>
+                {message}
             </AlertDescription>
         </Alert>
     );
