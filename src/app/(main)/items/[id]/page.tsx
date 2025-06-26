@@ -88,15 +88,12 @@ export default async function ItemPage({ params }: ItemPageProps) {
     <div className="max-w-6xl mx-auto space-y-8">
       <ItemViewLogger itemId={itemId} />
 
-      {/* Title and Favorite Button - Moved to top for all screen sizes */}
-      <div className="flex justify-between items-start">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1_">{item.name}</h1>
-        <FavoriteButtonClient itemId={itemId} size="lg" className="ml-4" />
-      </div>
-
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+          <div className="absolute top-4 right-4 z-10">
+            <FavoriteButtonClient itemId={itemId} size="lg" className="bg-background/70 hover:bg-background/90" />
+          </div>
           {item.videoUrl ? (
             <Card className="shadow-lg rounded-lg overflow-hidden">
                 <Dialog>
@@ -208,7 +205,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         {/* Right Column: Item Details, Seller Info, Actions */}
         <div className="space-y-6">
-          {/* Title removed from here */}
+          <div className="flex justify-between items-start gap-4">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
+            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+          </div>
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
@@ -223,9 +223,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   Non confirmé : peut être vendu
               </Badge>
           )}
-          
-          {/* Price with reduced font size */}
-          <p className="text-2xl lg:text-3xl font-bold text-foreground">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">
