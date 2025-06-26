@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,12 +25,11 @@ import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, 
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
-import { suggestItemCategory } from "@/ai/flows/suggest-item-category-flow";
-import { suggestDescription } from "@/ai/flows/suggest-description-flow";
 import Image from "next/image";
 import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 import { TitleSuggestion } from "./title-suggestion";
+import { DescriptionSuggestion } from "./description-suggestion";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -83,15 +81,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const [uploadStatusText, setUploadStatusText] = useState('');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-
-  const [isSuggestingCategory, setIsSuggestingCategory] = useState(false);
-  const [categorySuggestion, setCategorySuggestion] = useState<{ category: ItemCategory; confidence: number } | null>(null);
-  const [isCategorySuggestionApplied, setIsCategorySuggestionApplied] = useState(false);
-
-  const [descriptionSuggestion, setDescriptionSuggestion] = useState<string | null>(null);
-  const [isSuggestingDescription, setIsSuggestingDescription] = useState(false);
-  const [isDescriptionSuggestionApplied, setIsDescriptionSuggestionApplied] = useState(false);
-  const [descriptionRegenerationTrigger, setDescriptionRegenerationTrigger] = useState(0);
 
   const isEditMode = !!initialItemData?.id;
 
@@ -162,57 +151,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
   const itemDescriptionForAISuggestions = form.watch("description");
 
-  useEffect(() => {
-    if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 20 && !isCategorySuggestionApplied && !isEditMode) {
-      const handler = setTimeout(async () => {
-        setIsSuggestingCategory(true);
-        try {
-          const suggestion = await suggestItemCategory({ itemDescription: itemDescriptionForAISuggestions });
-          if (suggestion.suggestedCategory && ItemCategories.includes(suggestion.suggestedCategory as ItemCategory)) {
-            setCategorySuggestion({ category: suggestion.suggestedCategory as ItemCategory, confidence: suggestion.confidence });
-          } else {
-            setCategorySuggestion(null);
-          }
-        } catch (error) {
-          console.error("Error suggesting category:", error);
-          setCategorySuggestion(null);
-        } finally {
-          setIsSuggestingCategory(false);
-        }
-      }, 1000);
-
-      return () => clearTimeout(handler);
-    } else {
-      setCategorySuggestion(null);
-    }
-  }, [itemDescriptionForAISuggestions, isCategorySuggestionApplied, isEditMode]);
-
-  useEffect(() => {
-    if (itemDescriptionForAISuggestions && itemDescriptionForAISuggestions.length > 25 && !isDescriptionSuggestionApplied && !isEditMode) {
-      const handler = setTimeout(async () => {
-        setIsSuggestingDescription(true);
-        try {
-          const suggestionResult = await suggestDescription({ itemDescription: itemDescriptionForAISuggestions });
-          if (suggestionResult.suggestedDescription && suggestionResult.suggestedDescription !== itemDescriptionForAISuggestions) {
-            setDescriptionSuggestion(suggestionResult.suggestedDescription);
-          } else {
-            setDescriptionSuggestion(null);
-          }
-        } catch (error) {
-          console.error("Error suggesting description:", error);
-          setDescriptionSuggestion(null);
-        } finally {
-          setIsSuggestingDescription(false);
-        }
-      }, 1500);
-
-      return () => clearTimeout(handler);
-    } else {
-      setDescriptionSuggestion(null);
-    }
-  }, [itemDescriptionForAISuggestions, isDescriptionSuggestionApplied, isEditMode, descriptionRegenerationTrigger]);
-
-
   const handlePriceSuggested = (price: number) => {
     form.setValue("price", Math.round(price));
   };
@@ -224,17 +162,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       description: `Le titre de l'annonce a été mis à jour.`,
     });
   };
-
-  const applyCategorySuggestion = () => {
-    if (categorySuggestion) {
-      form.setValue("category", categorySuggestion.category, { shouldValidate: true });
-      setCategorySuggestion(null);
-      setIsCategorySuggestionApplied(true);
-      toast({
-        title: "Catégorie Appliquée",
-        description: `La catégorie "${categorySuggestion.category}" a été sélectionnée.`,
-      });
-    }
+  
+  const handleDescriptionSuggested = (description: string) => {
+    form.setValue("description", description, { shouldValidate: true });
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -360,7 +290,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       setUploadStatusText("Sauvegarde de l'annonce...");
       setUploadProgress(null);
       
-      const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20);
+      const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\\s]/gi, '').substring(0,20);
 
       const commonItemData: Partial<Item> = { 
         name: values.name,
@@ -444,55 +374,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   />
                 </FormControl>
                 <FormMessage />
-                {isSuggestingDescription && (
-                  <div className="mt-2 text-xs text-muted-foreground flex items-center">
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche d'une meilleure description...
-                  </div>
-                )}
-                {descriptionSuggestion && !isDescriptionSuggestionApplied && (
-                  <div className="mt-2 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
-                    <div className="flex items-center justify-between font-semibold text-accent mb-2">
-                      Suggestion IA
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap mb-3 p-2 bg-background rounded-md">{descriptionSuggestion}</p>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto px-3 py-1"
-                        disabled={isSuggestingDescription}
-                        onClick={() => {
-                          setDescriptionSuggestion(null);
-                          setDescriptionRegenerationTrigger(c => c + 1);
-                        }}
-                      >
-                         <RefreshCw className="mr-2 h-3 w-3" />
-                         Suggérer une autre
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        className="h-auto px-3 py-1"
-                        onClick={() => {
-                          form.setValue("description", descriptionSuggestion, { shouldValidate: true });
-                          setDescriptionSuggestion(null);
-                          setIsDescriptionSuggestionApplied(true);
-                          toast({
-                            title: "Description Appliquée",
-                            description: "La description suggérée par l'IA a été appliquée.",
-                          });
-                        }}
-                      >
-                        Accepter la Suggestion
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </FormItem>
             )}
+          />
+
+          <DescriptionSuggestion 
+            itemDescription={itemDescriptionForAISuggestions}
+            onDescriptionSuggested={handleDescriptionSuggested}
           />
 
           <FormField
@@ -544,7 +432,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Catégorie</FormLabel>
-                    <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
                       </FormControl>
@@ -552,16 +440,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                         {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
                       </SelectContent>
                     </Select>
-                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"> <Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie... </div> )}
-                    {categorySuggestion && !isCategorySuggestionApplied && (
-                      <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
-                        <div className="flex items-center justify-between">
-                          <div><Sparkles className="h-3 w-3 mr-1 inline-block text-accent" /> Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)</div>
-                          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}> Accepter </Button>
-                        </div>
-                      </div>
-                    )}
-                    {isCategorySuggestionApplied && form.getValues("category") && ( <div className="mt-1 text-xs text-green-600 flex items-center"> <CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée. </div> )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -604,7 +482,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Catégorie</FormLabel>
-                    <Select onValueChange={(value) => {field.onChange(value); setIsCategorySuggestionApplied(true);}} value={field.value} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
                       </FormControl>
@@ -612,16 +490,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                         {ItemCategories.map((category) => ( <SelectItem key={category} value={category}>{category}</SelectItem>))}
                       </SelectContent>
                     </Select>
-                    {isSuggestingCategory && !categorySuggestion && ( <div className="mt-1 text-xs text-muted-foreground flex items-center"><Loader2 className="h-3 w-3 animate-spin mr-1" /> Recherche de catégorie...</div>)}
-                    {categorySuggestion && !isCategorySuggestionApplied && (
-                      <div className="mt-1 text-xs text-muted-foreground p-2 bg-accent/10 border border-accent/20 rounded-md">
-                        <div className="flex items-center justify-between">
-                           <div><Sparkles className="h-3 w-3 mr-1 inline-block text-accent" /> Suggestion IA : <span className="font-semibold">{categorySuggestion.category}</span> ({Math.round(categorySuggestion.confidence * 100)}% sûr)</div>
-                           <Button type="button" variant="link" size="sm" className="h-auto p-0 text-accent hover:underline" onClick={applyCategorySuggestion}>Accepter</Button>
-                        </div>
-                      </div>
-                    )}
-                    {isCategorySuggestionApplied && form.getValues("category") && (<div className="mt-1 text-xs text-green-600 flex items-center"><CheckCircle className="h-3 w-3 mr-1" /> Catégorie appliquée.</div>)}
                     <FormMessage />
                   </FormItem>
                 )}
