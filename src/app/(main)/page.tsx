@@ -7,6 +7,8 @@ import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import admin from '@/lib/firebaseAdmin';
 import { HeroOnboarding } from '@/components/hero-onboarding';
+import type { File } from '@google-cloud/storage';
+
 
 // Admin SDK Storage bucket'ını almak için yardımcı fonksiyon
 const getStorageBucket = () => {
@@ -46,71 +48,78 @@ export default async function HomePage() {
   const bucket = getStorageBucket();
   const db = admin?.firestore();
 
-  // Kategori URL'lerini ve ilan sayılarını asenkron olarak al
+  // 1. Fetch all category image files and create a lookup map.
+  // This is more robust than checking for each file individually.
+  const categoryImageMap = new Map<string, File>();
+  if (bucket) {
+    try {
+      const [files] = await bucket.getFiles({ prefix: 'category-images/' });
+      files.forEach(file => {
+        // Normalize the filename to create a key, e.g., "category-images/Vêtements et Accessoires.png" -> "vêtements et accessoires"
+        const key = file.name
+          .replace('category-images/', '')
+          .replace(/\.(png|jpg|jpeg|webp)$/i, '') // Handle multiple extensions
+          .toLowerCase();
+        
+        if (key) { // Ensure we don't add the folder itself as a key
+           categoryImageMap.set(key, file);
+        }
+      });
+    } catch (error) {
+      console.error("Error listing category images from Storage:", error);
+    }
+  }
+
+  // 2. Map over our app's categories, get their item counts, and find their corresponding image from the map.
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
     let itemCount = 0;
-    let signedUrl = ''; // Default to empty string for the image URL
+    let signedUrl = '';
 
-    // Her zaman ilan sayısını al
+    // Fetch item count from Firestore
     if (db) {
         try {
             const itemsRef = db.collection('items');
-            const q = itemsRef.where('category', '==', categoryName);
-            const snapshot = await q.get();
+            // Use get() for promises, not onSnapshot
+            const snapshot = await itemsRef.where('category', '==', categoryName).get();
             itemCount = snapshot.size;
         } catch (error) {
             console.error(`Error fetching count for category ${categoryName}:`, error);
-            itemCount = 0; 
         }
     }
 
-    // Storage'dan görsel URL'sini almayı dene
-    if (bucket) {
-      const imageName = `${categoryName}.png`;
-      const filePath = `category-images/${imageName}`;
-      const file = bucket.file(filePath);
+    // Find the image file from our map using a normalized key
+    const imageFile = categoryImageMap.get(categoryName.toLowerCase());
 
+    if (imageFile) {
       try {
-        const [exists] = await file.exists();
-        if (exists) {
-            const oneYearFromNow = new Date();
-            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-            
-            [signedUrl] = await file.getSignedUrl({
-              action: 'read',
-              expires: oneYearFromNow,
-            });
-        } else {
-             console.warn(`Category image not found in Storage for: ${filePath}. Category will be shown without an image.`);
-        }
+        // Generate a temporary URL for the image
+        const [url] = await imageFile.getSignedUrl({
+          action: 'read',
+          expires: Date.now() + 1000 * 60 * 60, // 1 hour expiry
+        });
+        signedUrl = url;
       } catch (error) {
-        console.error(`Error checking or fetching signed URL for ${filePath}:`, error);
-        // Hata durumunda signedUrl boş kalır
+        console.error(`Error generating signed URL for ${imageFile.name}:`, error);
       }
     }
     
-    // Kategoriyi her zaman döndür, görseli olmasa bile
     return {
       name: categoryName,
       count: itemCount,
       dataAiHint: categoryHints[categoryName] || categoryName.toLowerCase(),
-      imageUrl: signedUrl, // Bulunamazsa boş olacak
+      imageUrl: signedUrl,
       link: `/browse?category=${encodeURIComponent(categoryName)}`
     };
   });
 
   const categoriesWithData = await Promise.all(carouselCategoriesPromises);
   
-  // Kategorileri ilan sayısına göre büyükten küçüğe doğru sırala
+  // Sort categories by item count, descending
   categoriesWithData.sort((a, b) => b.count - a.count);
 
   let allFetchedItems: Item[] = [];
-
   try {
-    // This call uses the client SDK service, which is fine for a server component
-    const { items } = await getItemsFromFirestore({
-      pageSize: 8,
-    });
+    const { items } = await getItemsFromFirestore({ pageSize: 8 });
     allFetchedItems = items;
   } catch (error) {
     console.error("Erreur lors de la récupération des articles pour la page d'accueil:", error);
@@ -131,7 +140,7 @@ export default async function HomePage() {
           <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
             Dernières trouvailles sur ReFind
           </h2>
-         <FeaturedItemsGrid initialItems={allFetchedItems} maxItems={8} />
+         <FeaturedItemsGrid initialItems={allFetchedItems} />
            <div className="text-center mt-6 md:mt-8">
             <Link href="/browse">
               <Button variant="secondary" size="lg">Voir tous les articles</Button>

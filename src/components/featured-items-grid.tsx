@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,8 +9,6 @@ import { useAuth } from '@/context/AuthContext';
 
 interface FeaturedItemsGridProps {
   initialItems: Item[];
-  // The maxItems prop is now ignored to ensure 8 items are always considered.
-  maxItems?: number; 
 }
 
 function CardSkeleton() {
@@ -25,8 +24,7 @@ function CardSkeleton() {
   );
 }
 
-// The maxItems prop is destructured but a constant is used for slicing to enforce the limit.
-export function FeaturedItemsGrid({ initialItems, maxItems }: FeaturedItemsGridProps) {
+export function FeaturedItemsGrid({ initialItems }: FeaturedItemsGridProps) {
   const { firebaseUser: currentUser, authLoading } = useAuth();
   const [displayItems, setDisplayItems] = useState<Item[]>([]);
   const MAX_ITEMS_TO_DISPLAY = 8; // Hardcoded constant
