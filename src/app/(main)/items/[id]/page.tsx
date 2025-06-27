@@ -1,17 +1,14 @@
-
 import Image from 'next/image';
 import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
-import type { UserProfile, Review, Item, ItemCategory } from '@/lib/types'; 
+import type { UserProfile, Item, ItemCategory } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Star, MessageSquarePlus, Clock, Flag, CheckCircle, Video } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
-import { getReviewsForItem, checkIfUserHasReviewedItem } from '@/services/reviewService'; 
-import { ReviewForm } from '@/components/review-form'; 
 import { SellerActionsClient } from '@/components/seller-actions-client';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
@@ -19,7 +16,6 @@ import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
 import { ItemStatsDisplay } from '@/components/item-stats-display';
 import { ReportItemButton } from '@/components/report-item-button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 
@@ -52,13 +48,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
         </Card>
     );
   }
-
-  const currentUser = auth.currentUser;
   
   // Prepare all other data fetching promises to run in parallel.
   const sellerPromise = getUserDocument(item.sellerId);
-  const reviewsPromise = getReviewsForItem(itemId);
-  const hasUserAlreadyReviewedPromise = currentUser ? checkIfUserHasReviewedItem(currentUser.uid, itemId) : Promise.resolve(false);
   const similarItemsPromise = (item.price !== undefined && item.category) ? getItemsFromFirestore({
       category: item.category as ItemCategory,
       priceMin: Math.round(item.price * 0.8),
@@ -69,13 +61,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
   // Await all promises concurrently
   const [
     seller,
-    reviews,
-    hasUserAlreadyReviewedInitial,
     { items: fetchedSimilarItems }
   ] = await Promise.all([
     sellerPromise,
-    reviewsPromise,
-    hasUserAlreadyReviewedPromise,
     similarItemsPromise
   ]);
 
@@ -158,7 +146,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </div>
           
           {similarItems.length > 0 && (
-            <section className="space-y-4"> 
+            <section className="space-y-4 pt-4 border-t"> 
               <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
               <SimilarListingsCarousel items={similarItems} currentItemId={itemId} />
             </section>
@@ -222,54 +210,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </div>
         </div>
       </div> 
-
-      <section className="space-y-6 pt-8 border-t">
-        <h2 className="text-3xl font-bold font-headline text-primary">Avis sur l'article ({reviews.length})</h2>
-        {reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <Card key={review.id} className="shadow-sm">
-                <CardHeader className="flex flex-row justify-between items-start pb-2">
-                    <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10">
-                            <AvatarImage src={review.reviewerAvatarUrl || undefined} alt={review.reviewerName} data-ai-hint="profil personne" />
-                            <AvatarFallback>{review.reviewerName.substring(0,2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-semibold">{review.reviewerName}</p>
-                            <p className="text-xs text-muted-foreground">
-                                {new Date(review.createdAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex items-center">
-                        {Array(5).fill(0).map((_, i) => (
-                            <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground/30'}`} />
-                        ))}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap">{review.comment}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <MessageSquarePlus className="h-12 w-12 mx-auto mb-3 text-primary/50" />
-              <p>Cet article n'a pas encore reçu d'avis.</p>
-              <p className="text-sm">Soyez le premier à partager votre expérience !</p>
-            </CardContent>
-          </Card>
-        )}
-      </section>
-
-      <section className="space-y-4 pt-8 border-t">
-         <h3 className="text-2xl font-bold font-headline text-primary">Laissez votre avis</h3>
-        <ReviewForm itemId={itemId} sellerId={item.sellerId} hasUserAlreadyReviewed={hasUserAlreadyReviewedInitial} />
-      </section>
-
     </div>
   );
 }
