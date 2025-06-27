@@ -99,12 +99,12 @@ export function HeroOnboarding() {
         }
 
         // User's requested mapping:
-        // 01_... -> slide 0
-        // 02_image -> slide 2 ("Vendez Facilement")
-        // 03_image -> slide 1 ("Découvrez")
-        // 04_image -> slide 3 ("Connectez-vous")
+        // slide 1 (index 0) -> 01_image (mediaItems[0])
+        // slide 2 (index 1) -> 03_image (mediaItems[2])
+        // slide 3 (index 2) -> 02_image (mediaItems[1])
+        // slide 4 (index 3) -> 04_image (mediaItems[3])
         const mediaMap: { [key: number]: PromotionalMedia } = {
-            0: mediaItems[0], // 01_...
+            0: mediaItems[0], // 01_image.png
             1: mediaItems[2], // 03_image.png
             2: mediaItems[1], // 02_image.png
             3: mediaItems[3], // 04_image.png
