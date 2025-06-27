@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -147,6 +146,7 @@ export function HeroOnboarding() {
         if (slides[currentIndex]?.mediaType === 'video' && videoRef.current) {
             if (videoRef.current.paused) {
                 videoRef.current.play();
+                videoRef.current.muted = false;
             } else {
                 videoRef.current.pause();
             }
@@ -195,7 +195,7 @@ export function HeroOnboarding() {
             ))}
             
             {/* Darkening Overlay */}
-            <div className="absolute inset-0 bg-black/40 z-10" />
+            <div className="absolute inset-0 bg-black/40 z-10 pointer-events-none" />
 
             {/* Text Content Layer */}
             <div className="relative z-20 flex flex-col text-center items-center justify-center p-6 text-white">
