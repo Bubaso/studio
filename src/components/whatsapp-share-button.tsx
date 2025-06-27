@@ -25,7 +25,7 @@ export function WhatsAppShareButton({ item, className }: WhatsAppShareButtonProp
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const text = `Salut ! J'ai vu cette annonce sur ReFind :\n\n*${item.name}* - ${item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n\nJette un œil : ${window.location.href}`;
+      const text = `Salut ! J'ai vu cette annonce sur JëndJaay :\n\n*${item.name}* - ${item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}\n\nJette un œil : ${window.location.href}`;
       const encodedText = encodeURIComponent(text);
       setShareUrl(`https://wa.me/?text=${encodedText}`);
     }

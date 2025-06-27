@@ -140,7 +140,7 @@ export default function SignInPage() {
         <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
         </Link>
-        <CardTitle className="text-3xl font-headline">Connectez-vous à ReFind</CardTitle>
+        <CardTitle className="text-3xl font-headline">Connectez-vous à JëndJaay</CardTitle>
         <CardDescription>Accédez à votre compte pour acheter et vendre.</CardDescription>
       </CardHeader>
       <CardContent>

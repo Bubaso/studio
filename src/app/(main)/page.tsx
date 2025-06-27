@@ -95,7 +95,7 @@ export default async function HomePage() {
         latestItems.length > 0 && (
           <section className="py-4 md:py-6">
             <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-              Dernières trouvailles sur ReFind
+              Dernières trouvailles sur JëndJaay
             </h2>
             <FeaturedItemsGrid initialItems={latestItems} />
             <div className="text-center mt-6 md:mt-8">

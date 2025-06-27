@@ -3,7 +3,7 @@ import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
-  title: 'ReFind',
+  title: 'JëndJaay',
   description: 'Achetez et vendez des articles uniques d\'occasion.',
 };
 

@@ -125,7 +125,7 @@ export function Header() {
         <div className="container flex h-16 items-center">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <ShoppingBag className="h-6 w-6 text-primary" />
-            <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
+            <span className="font-bold font-headline text-2xl text-primary">JëndJaay</span>
           </Link>
         </div>
       </header>
@@ -137,7 +137,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <ShoppingBag className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
+          <span className="font-bold font-headline text-2xl text-primary">JëndJaay</span>
         </Link>
         <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
           {initialMainLinks.map((link) => (
@@ -202,10 +202,7 @@ export function Header() {
                         <Button
                           variant="ghost"
                           className={cn(
-                            // Mobile styles: like size="icon"
-                            "relative h-10 w-10 p-0 rounded-md",
-                            // Desktop styles: like size="sm" and variant="outline"
-                            "md:w-auto md:h-9 md:px-3 md:border md:border-input md:bg-background md:hover:bg-accent md:hover:text-accent-foreground"
+                            "relative h-10 w-10 p-0 rounded-md md:w-auto md:h-9 md:px-3 md:hover:bg-accent md:hover:text-accent-foreground"
                           )}
                         >
                           <Gem className="h-5 w-5 text-primary md:mr-2 md:h-4 md:w-4" />
@@ -242,4 +239,3 @@ export function Header() {
     </header>
   );
 }
-

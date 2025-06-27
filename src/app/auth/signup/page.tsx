@@ -66,7 +66,7 @@ export default function SignUpPage() {
       await updateProfile(fbUser, { displayName: name });
       await createUserDocument(fbUser, { name }); 
       
-      toast({ title: "Compte créé !", description: `Bienvenue sur ReFind, ${name} !` });
+      toast({ title: "Compte créé !", description: `Bienvenue sur JëndJaay, ${name} !` });
       router.push(redirectTo); 
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
@@ -151,7 +151,7 @@ export default function SignUpPage() {
         <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
         </Link>
-        <CardTitle className="text-3xl font-headline">Rejoignez ReFind Aujourd'hui</CardTitle>
+        <CardTitle className="text-3xl font-headline">Rejoignez JëndJaay Aujourd'hui</CardTitle>
         <CardDescription>Créez votre compte pour commencer à acheter et vendre des articles uniques.</CardDescription>
       </CardHeader>
       <CardContent>
