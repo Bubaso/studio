@@ -1,15 +1,20 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Gem, LogIn } from 'lucide-react';
+import { Loader2, Gem, LogIn, Info, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
+import { getUserDocument } from '@/services/userService';
+import type { UserProfile } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
 
 interface CreditPackage {
     id: string;
@@ -17,19 +22,36 @@ interface CreditPackage {
     price: number; // in XOF
     name: string;
     description: string;
+    popular?: boolean;
+    saving?: string;
 }
 
 const creditPackages: CreditPackage[] = [
     { id: 'pack_1', credits: 10, price: 1000, name: "Paquet Débutant", description: "Pour commencer et lister quelques articles." },
-    { id: 'pack_2', credits: 25, price: 2250, name: "Paquet Vendeur", description: "Le meilleur rapport qualité-prix pour les vendeurs réguliers." },
-    { id: 'pack_3', credits: 50, price: 4000, name: "Paquet Pro", description: "Pour les professionnels et les boutiques." },
+    { id: 'pack_2', credits: 25, price: 2250, name: "Paquet Vendeur", description: "Le meilleur rapport qualité-prix pour les vendeurs réguliers.", popular: true, saving: "ÉCONOMISEZ 10%" },
+    { id: 'pack_3', credits: 50, price: 4000, name: "Paquet Pro", description: "Pour les professionnels et les boutiques.", saving: "ÉCONOMISEZ 20%" },
 ];
+const BASE_PRICE_PER_AD = 100;
 
 export default function CreditsPage() {
     const { firebaseUser, authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState<string | null>(null);
+    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (firebaseUser) {
+            setIsLoadingProfile(true);
+            getUserDocument(firebaseUser.uid)
+                .then(profile => setUserProfile(profile))
+                .finally(() => setIsLoadingProfile(false));
+        } else {
+            setIsLoadingProfile(false);
+        }
+    }, [firebaseUser, authLoading]);
 
     const handlePurchase = async (pkg: CreditPackage) => {
         if (!firebaseUser) {
@@ -38,7 +60,7 @@ export default function CreditsPage() {
             return;
         }
 
-        setIsLoading(pkg.id);
+        setIsPurchasing(pkg.id);
         try {
             const idToken = await firebaseUser.getIdToken();
             const response = await fetch('/api/paytech/request-payment', {
@@ -64,11 +86,11 @@ export default function CreditsPage() {
             }
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Erreur', description: error.message });
-            setIsLoading(null);
+            setIsPurchasing(null);
         }
     };
     
-    if (authLoading) {
+    if (authLoading || isLoadingProfile) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
@@ -96,40 +118,80 @@ export default function CreditsPage() {
             <header className="text-center">
                 <h1 className="text-3xl font-bold font-headline text-primary">Acheter des Crédits</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Rechargez votre compte pour continuer à poster des annonces.
+                    Rechargez votre compte pour mettre en avant et vendre plus d'articles.
                 </p>
             </header>
             
+            {userProfile && userProfile.freeListingsRemaining > 0 && (
+                <Alert variant="default" className="bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300">
+                    <CheckCircle className="h-4 w-4 !text-green-700 dark:!text-green-300" />
+                    <AlertTitle>Bonne nouvelle !</AlertTitle>
+                    <AlertDescription>
+                        Il vous reste encore {userProfile.freeListingsRemaining} annonce(s) gratuite(s) à utiliser. Vous pouvez acheter des crédits maintenant pour plus tard, ou les utiliser d'abord.
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            <Card className="bg-card/50">
+                <CardHeader>
+                    <CardTitle className="font-headline text-xl">Comment ça marche ?</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-muted-foreground">
+                    <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" /> <strong>1 Crédit = 1 Annonce publiée.</strong></p>
+                    <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-primary" /> Vos <strong>5 premières annonces sont gratuites</strong> pour vous aider à démarrer !</p>
+                </CardContent>
+            </Card>
+            
             <div className="grid md:grid-cols-3 gap-8">
-                {creditPackages.map((pkg) => (
-                    <Card key={pkg.id} className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="font-headline text-2xl">{pkg.name}</CardTitle>
-                            <CardDescription>{pkg.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <div className="text-4xl font-bold text-primary flex items-center">
-                                {pkg.credits} <Gem className="ml-2 h-8 w-8" />
-                            </div>
-                            <div className="text-xl font-semibold mt-2">
-                                {pkg.price.toLocaleString('fr-FR')} XOF
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button
-                                className="w-full"
-                                onClick={() => handlePurchase(pkg)}
-                                disabled={!!isLoading}
-                            >
-                                {isLoading === pkg.id ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    "Acheter ce paquet"
+                {creditPackages.map((pkg) => {
+                    const pricePerAd = pkg.price / pkg.credits;
+                    return (
+                        <Card key={pkg.id} className={cn("flex flex-col", pkg.popular && "border-2 border-primary shadow-lg")}>
+                             {pkg.popular && (
+                                <Badge variant="default" className="absolute -top-3 left-1/2 -translate-x-1/2">Le plus populaire</Badge>
+                             )}
+                            <CardHeader>
+                                <CardTitle className="font-headline text-2xl">{pkg.name}</CardTitle>
+                                <CardDescription>{pkg.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-grow space-y-4">
+                                <div className="text-4xl font-bold text-primary flex items-center">
+                                    {pkg.credits} <Gem className="ml-2 h-8 w-8" />
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <p className="text-2xl font-bold">{pkg.price.toLocaleString('fr-FR')} XOF</p>
+                                    <div className="text-sm text-muted-foreground h-5">
+                                        {pricePerAd < BASE_PRICE_PER_AD ? (
+                                            <span>
+                                                soit <strong>{pricePerAd} XOF</strong> / annonce <span className="line-through ml-1">{BASE_PRICE_PER_AD} XOF</span>
+                                            </span>
+                                        ) : (
+                                            <span>soit {pricePerAd} XOF / annonce</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {pkg.saving && (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">{pkg.saving}</Badge>
                                 )}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
+                            </CardContent>
+                            <CardFooter>
+                                <Button
+                                    className="w-full"
+                                    onClick={() => handlePurchase(pkg)}
+                                    disabled={!!isPurchasing}
+                                >
+                                    {isPurchasing === pkg.id ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        "Acheter ce paquet"
+                                    )}
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    )
+                })}
             </div>
         </div>
     );
