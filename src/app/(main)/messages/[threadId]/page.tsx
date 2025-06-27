@@ -333,8 +333,8 @@ export default function MessageThreadPage() {
                                     className={cn(
                                     "max-w-[70%] lg:max-w-[60%] p-2.5 rounded-lg shadow-sm",
                                     isCurrentUserSender
-                                        ? "bg-primary/20 text-primary rounded-br-none" 
-                                        : "bg-muted text-foreground rounded-bl-none" 
+                                        ? "bg-primary rounded-br-none" 
+                                        : "bg-muted rounded-bl-none" 
                                     )}
                                 >
                                     {msg.imageUrl && (
@@ -352,11 +352,11 @@ export default function MessageThreadPage() {
                                         </DialogContent>
                                     </Dialog>
                                     )}
-                                    {msg.text && <p className="text-sm whitespace-pre-wrap break-words">{msg.text}</p>}
-                                    <div className={cn("text-xs mt-1.5 flex items-center", isCurrentUserSender ? "text-primary/80 justify-end" : "text-muted-foreground/80 justify-start")}>
+                                    {msg.text && <p className={cn("text-sm whitespace-pre-wrap break-words", isCurrentUserSender ? "text-primary-foreground" : "text-foreground")}>{msg.text}</p>}
+                                    <div className={cn("text-xs mt-1.5 flex items-center", isCurrentUserSender ? "text-primary-foreground/80 justify-end" : "text-muted-foreground/80 justify-start")}>
                                     <span>{new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                                     {isCurrentUserSender && (
-                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className="ml-1.5 h-4 w-4 opacity-70" />
+                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className={cn("ml-1.5 h-4 w-4 opacity-70", isCurrentUserSender ? "text-primary-foreground" : "text-foreground")} />
                                     )}
                                     </div>
                                 </div>
