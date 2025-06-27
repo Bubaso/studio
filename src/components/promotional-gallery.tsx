@@ -41,6 +41,8 @@ export function PromotionalGallery() {
       try {
         const listRef = ref(storage, 'promotional-gallery');
         const res = await listAll(listRef);
+        
+        console.log(`Promotional Gallery: Found ${res.items.length} items in Storage. If this is 0, please upload files to the 'promotional-gallery' folder.`);
 
         if (res.items.length === 0) {
             setMediaItems([]);
@@ -100,7 +102,7 @@ export function PromotionalGallery() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || mediaItems.length === 0) {
     return (
         <section className="py-4 md:py-8">
             <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px]">
@@ -113,10 +115,6 @@ export function PromotionalGallery() {
             </div>
         </section>
     );
-  }
-
-  if (mediaItems.length === 0) {
-    return null; // Don't render anything if no media is found
   }
 
   const mainMedia = mediaItems[0];
