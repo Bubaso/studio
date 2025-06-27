@@ -114,18 +114,6 @@ export function PromotionalGallery() {
     }
   };
 
-  const handlePlay = () => {
-    if (videoRef.current) {
-      videoRef.current.controls = true;
-    }
-  };
-
-  const handlePause = () => {
-    if (videoRef.current) {
-      videoRef.current.controls = false;
-    }
-  };
-
 
   if (isLoading || mediaItems.length === 0) {
     return (
@@ -165,11 +153,10 @@ export function PromotionalGallery() {
                         playsInline
                         controls={false}
                         preload="metadata"
+                        loop
+                        muted
                         className="object-cover w-full h-full cursor-pointer"
                         onClick={handleVideoClick}
-                        onPlay={handlePlay}
-                        onPause={handlePause}
-                        onEnded={handlePause}
                     />
                 ) : (
                     <Image
