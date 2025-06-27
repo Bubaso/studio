@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -28,6 +28,10 @@ export function PromotionalGallery() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMainVideoPlaying, setIsMainVideoPlaying] = useState(false);
+
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -101,6 +105,19 @@ export function PromotionalGallery() {
         (prevIndex - 1 + mediaItems.length) % mediaItems.length
     );
   };
+  
+  const handleMainVideoClick = () => {
+    const video = videoRef.current;
+    if (video) {
+        if (video.paused) {
+            video.play();
+            video.muted = false;
+        } else {
+            video.pause();
+        }
+    }
+  };
+
 
   if (isLoading || mediaItems.length === 0) {
     return (
@@ -127,15 +144,17 @@ export function PromotionalGallery() {
         {mainMedia && (
             <div
                 className="col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
-                onClick={() => openDialog(0)}
+                onClick={mainMedia.type === 'video' ? handleMainVideoClick : () => openDialog(0)}
             >
                  {mainMedia.type === 'video' ? (
                     <video
+                        ref={videoRef}
+                        onPlay={() => setIsMainVideoPlaying(true)}
+                        onPause={() => setIsMainVideoPlaying(false)}
                         key={mainMedia.url}
                         src={mainMedia.url}
                         muted
                         loop
-                        autoPlay
                         playsInline
                         preload="metadata"
                         className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
@@ -151,10 +170,10 @@ export function PromotionalGallery() {
                     />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                    {mainMedia.type === 'video' && <PlayCircle className="h-12 w-12 md:h-16 md:w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    {mainMedia.type === 'video' && !isMainVideoPlaying && <PlayCircle className="h-12 w-12 md:h-16 md:w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />}
                 </div>
-                <div className="absolute bottom-0 left-0 p-2 md:p-4">
+                <div className="absolute bottom-0 left-0 p-2 md:p-4 pointer-events-none">
                     <h3 className="text-white font-bold font-headline text-base md:text-xl drop-shadow-md">
                     {mainMedia.title}
                     </h3>
