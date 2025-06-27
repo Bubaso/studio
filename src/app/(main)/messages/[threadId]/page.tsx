@@ -160,7 +160,9 @@ export default function MessageThreadPage() {
       const unsubscribeMessages = getMessagesForItemInThread(threadId, selectedItem.id, (fetchedMessages) => {
         setMessages(fetchedMessages);
       });
-      return () => unsubscribeMessages();
+      return () => {
+        unsubscribeMessages();
+      };
     }
   }, [threadId, selectedItem, currentUser]);
 
@@ -249,7 +251,8 @@ export default function MessageThreadPage() {
 
   const handleSelectItem = (itemId: string) => {
     const item = discussedItems.find(i => i.id === itemId);
-    if (item) {
+    if (item && item.id !== selectedItem?.id) {
+        setMessages([]); // Explicitly clear messages for a clean transition
         setSelectedItem(item);
     }
   };
