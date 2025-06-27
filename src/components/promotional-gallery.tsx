@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -73,18 +72,18 @@ export function PromotionalGallery() {
 
   return (
     <section className="py-4 md:py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-4 h-[300px] md:h-[400px] group">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 h-[250px] md:h-[340px] group">
         
         {/* Main Video Section (Left) */}
         <div
-          className="lg:col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
+          className="md:col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
           onClick={() => openDialog(0)}
         >
           <Image
             src={mainVideo.thumbnailUrl}
             alt={mainVideo.title}
             fill
-            sizes="(max-width: 1023px) 100vw, 66vw"
+            sizes="(max-width: 767px) 100vw, 66vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             data-ai-hint={mainVideo.dataAiHint}
           />
@@ -100,7 +99,7 @@ export function PromotionalGallery() {
         </div>
 
         {/* Side Images Section (Right) */}
-        <div className="hidden lg:flex flex-col gap-2 md:gap-4">
+        <div className="hidden md:flex flex-col gap-2 md:gap-4">
           {sideImages.map((image, index) => (
             <div
               key={index}
