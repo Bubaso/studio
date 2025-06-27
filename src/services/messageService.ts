@@ -203,9 +203,8 @@ export const getMessagesForItemInThread = (
   }
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
-    where('itemId', '==', itemId),
-    orderBy('timestamp', 'asc'),
-    limit(100) 
+    where('itemId', '==', itemId)
+    // Note: orderBy is removed to avoid needing a composite index. Sorting is now done on the client.
   );
 
   return onSnapshot(messagesQuery, (querySnapshot) => {
@@ -223,7 +222,11 @@ export const getMessagesForItemInThread = (
         readBy: data.readBy || [],
       } as Message;
     });
-    onUpdate(messages);
+    
+    // Sort on the client and limit the results
+    const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    onUpdate(sortedMessages.slice(-100));
+
   }, (error) => {
     console.error(`Error fetching messages for thread ${threadId} and item ${itemId}: `, error);
     onUpdate([]);

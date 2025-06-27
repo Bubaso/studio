@@ -252,7 +252,6 @@ export default function MessageThreadPage() {
   const handleSelectItem = (itemId: string) => {
     const item = discussedItems.find(i => i.id === itemId);
     if (item && item.id !== selectedItem?.id) {
-        setMessages([]); // Explicitly clear messages for a clean transition
         setSelectedItem(item);
     }
   };
@@ -336,7 +335,7 @@ export default function MessageThreadPage() {
                                     className={cn(
                                     "max-w-[70%] lg:max-w-[60%] p-2.5 rounded-lg shadow-sm",
                                     isCurrentUserSender
-                                        ? "bg-primary rounded-br-none" 
+                                        ? "bg-primary text-primary-foreground rounded-br-none" 
                                         : "bg-muted rounded-bl-none" 
                                     )}
                                 >
@@ -359,7 +358,7 @@ export default function MessageThreadPage() {
                                     <div className={cn("text-xs mt-1.5 flex items-center", isCurrentUserSender ? "text-primary-foreground/80 justify-end" : "text-muted-foreground/80 justify-start")}>
                                     <span>{new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                                     {isCurrentUserSender && (
-                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className={cn("ml-1.5 h-4 w-4 opacity-70", isCurrentUserSender ? "text-primary-foreground" : "text-foreground")} />
+                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className={cn("ml-1.5 h-4 w-4 opacity-70", isCurrentUserSender ? "text-primary-foreground/90" : "text-foreground")} />
                                     )}
                                     </div>
                                 </div>
