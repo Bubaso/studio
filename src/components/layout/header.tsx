@@ -198,7 +198,7 @@ export function Header() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/credits">
-                        <Button variant="outline" size="sm" className="hidden sm:flex">
+                        <Button variant="outline" size="sm">
                           <Gem className="mr-2 h-4 w-4 text-primary" />
                           {userProfile.credits}
                         </Button>
