@@ -10,7 +10,6 @@ import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 import { PersonalizedRecommendations } from '@/components/personalized-recommendations';
-import { PromotionalGallery } from '@/components/promotional-gallery';
 
 
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -86,8 +85,6 @@ export default async function HomePage() {
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
         <CategoryCarousel categories={categoriesWithData} />
       </section>
-
-      <PromotionalGallery />
 
       {recommendedItems.length > 0 ? (
         <PersonalizedRecommendations items={recommendedItems} />

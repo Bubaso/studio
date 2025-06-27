@@ -1,10 +1,15 @@
-"use client";
 
-import { useState, useEffect } from 'react';
-import type React from 'react';
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { storage } from '@/lib/firebase';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
+import { Skeleton } from './ui/skeleton';
 
-const onboardingSlides = [
+// Original static slide data
+const onboardingSlidesData = [
     {
       title: "Votre Marché d'Occasion",
       description: "Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.",
@@ -23,87 +28,204 @@ const onboardingSlides = [
     },
 ];
 
+// Interface for media fetched from Firebase Storage
+interface PromotionalMedia {
+  type: 'video' | 'image';
+  url: string;
+  fileName: string;
+}
+
+// Interface for the final combined slide object
+interface OnboardingSlide {
+    title: string;
+    description: string;
+    mediaUrl?: string;
+    mediaType?: 'video' | 'image';
+}
+
 export function HeroOnboarding() {
+    const [mediaItems, setMediaItems] = useState<PromotionalMedia[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFading, setIsFading] = useState(false);
-    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
 
-    // This handles the automatic slide change
+    // Fetch media from storage on component mount
     useEffect(() => {
-        const interval = setInterval(() => {
-            // Use goToSlide to ensure fade animation
-            const nextIndex = (currentIndex + 1) % onboardingSlides.length;
-            goToSlide(nextIndex);
-        }, 5000); // Change slide every 5 seconds
+      const fetchMedia = async () => {
+        if (!storage) {
+          console.warn("Firebase Storage is not initialized, cannot fetch promotional media for Hero.");
+          setIsLoading(false);
+          return;
+        }
 
-        return () => clearInterval(interval);
-    }, [currentIndex]); // Re-run effect when currentIndex changes to reset the timer
-    
+        setIsLoading(true);
+        try {
+          const listRef = ref(storage, 'promotional-gallery');
+          const res = await listAll(listRef);
+          
+          if (res.items.length === 0) {
+              setMediaItems([]);
+              setIsLoading(false);
+              return;
+          }
+
+          const fetchedMediaPromises = res.items.map(async (itemRef) => {
+            const url = await getDownloadURL(itemRef);
+            const name = itemRef.name.toLowerCase();
+            const type = name.includes('video') ? 'video' : 'image';
+            
+            return { type, url, fileName: itemRef.name };
+          });
+
+          const unsortedMedia = await Promise.all(fetchedMediaPromises);
+          const sortedMedia = unsortedMedia.sort((a, b) => a.fileName.localeCompare(b.fileName));
+          
+          setMediaItems(sortedMedia);
+
+        } catch (error) {
+          console.error("Error fetching hero gallery from Storage:", error);
+          setMediaItems([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchMedia();
+    }, []);
+
+    // Combine static text with dynamic media URLs
+    const slides = React.useMemo((): OnboardingSlide[] => {
+        if (isLoading || mediaItems.length < 4) {
+            return onboardingSlidesData;
+        }
+
+        // User's requested mapping:
+        // 01_video -> slide 0
+        // 02_image -> slide 2 ("Vendez Facilement")
+        // 03_image -> slide 1 ("Découvrez")
+        // 04_image -> slide 3 ("Connectez-vous")
+        const mediaMap: { [key: number]: PromotionalMedia } = {
+            0: mediaItems[0], // 01_video.mp4
+            1: mediaItems[2], // 03_image.png
+            2: mediaItems[1], // 02_image.png
+            3: mediaItems[3], // 04_image.png
+        };
+
+        return onboardingSlidesData.map((slide, index) => {
+            const media = mediaMap[index];
+            return {
+                ...slide,
+                mediaUrl: media?.url,
+                mediaType: media?.type,
+            };
+        });
+    }, [isLoading, mediaItems]);
+
+    // Function to handle slide transition with fade effect
     const goToSlide = (index: number) => {
         if (index === currentIndex) return;
         setIsFading(true);
         setTimeout(() => {
             setCurrentIndex(index);
             setIsFading(false);
-        }, 300); // Duration of fade-out animation
+        }, 300); // Animation duration
     };
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        setTouchStart(e.targetTouches[0].clientX);
-    };
+    // Auto-advance the carousel
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const nextIndex = (currentIndex + 1) % slides.length;
+            goToSlide(nextIndex);
+        }, 5000); // Change slide every 5 seconds
 
-    const handleTouchEnd = (e: React.TouchEvent) => {
-        if (touchStart === null) {
-            return;
+        return () => clearInterval(interval);
+    }, [currentIndex, slides.length]);
+    
+    // Function to toggle video play/pause
+    const handleBackgroundClick = () => {
+        if (slides[currentIndex]?.mediaType === 'video' && videoRef.current) {
+            if (videoRef.current.paused) {
+                videoRef.current.play();
+            } else {
+                videoRef.current.pause();
+            }
         }
-
-        const touchEndX = e.changedTouches[0].clientX;
-        const swipeDistance = touchStart - touchEndX;
-        const minSwipeDistance = 50; // pixels
-
-        if (swipeDistance > minSwipeDistance) {
-            // Swipe left
-            goToSlide((currentIndex + 1) % onboardingSlides.length);
-        } else if (swipeDistance < -minSwipeDistance) {
-            // Swipe right
-            goToSlide((currentIndex - 1 + onboardingSlides.length) % onboardingSlides.length);
-        }
-
-        setTouchStart(null);
     };
-
-    const currentSlide = onboardingSlides[currentIndex];
+    
+    // Render a skeleton loader while fetching media
+    if (isLoading) {
+        return <Skeleton className="w-full rounded-lg min-h-[210px] sm:min-h-[300px]" />;
+    }
 
     return (
         <section 
-            className="relative bg-card border rounded-lg shadow-sm overflow-hidden min-h-[210px] flex flex-col justify-center items-center"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
+            className="relative bg-card border rounded-lg shadow-sm overflow-hidden min-h-[210px] sm:min-h-[300px] flex flex-col justify-center items-center cursor-pointer"
+            onClick={handleBackgroundClick}
         >
-             <div className="absolute inset-0 flex flex-col text-center items-center justify-center p-6">
+            {/* Background Media Layer */}
+            {slides.map((slide, index) => (
+                <div key={index} className={cn(
+                    "absolute inset-0 transition-opacity duration-500 z-0",
+                    currentIndex === index ? "opacity-100" : "opacity-0"
+                )}>
+                    {slide.mediaType === 'video' && slide.mediaUrl ? (
+                        <video
+                            ref={videoRef}
+                            key={slide.mediaUrl}
+                            src={slide.mediaUrl}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        slide.mediaUrl && (
+                            <Image
+                                src={slide.mediaUrl}
+                                alt={slide.title}
+                                fill
+                                className="object-cover"
+                                priority={index < 2}
+                            />
+                        )
+                    )}
+                </div>
+            ))}
+            
+            {/* Darkening Overlay */}
+            <div className="absolute inset-0 bg-black/40 z-10" />
+
+            {/* Text Content Layer */}
+            <div className="relative z-20 flex flex-col text-center items-center justify-center p-6 text-white">
                 <div 
                     className={cn(
                         "transition-opacity duration-300 w-full",
                         isFading ? "opacity-0" : "opacity-100"
                     )}
                 >
-                    <h1 className="font-headline text-2xl sm:text-3xl text-primary font-bold mb-2">
-                        {currentSlide.title}
+                    <h1 className="font-headline text-2xl sm:text-3xl font-bold mb-2 drop-shadow-md">
+                        {slides[currentIndex].title}
                     </h1>
-                    <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                        {currentSlide.description}
+                    <p className="text-lg max-w-md mx-auto drop-shadow-sm">
+                        {slides[currentIndex].description}
                     </p>
                 </div>
              </div>
             
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 p-4">
-                {onboardingSlides.map((_, index) => (
+            {/* Navigation Dots */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 p-4 z-20">
+                {slides.map((_, index) => (
                     <button
                         key={index}
-                        onClick={() => goToSlide(index)}
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent background click when clicking dots
+                            goToSlide(index);
+                        }}
                         className={cn(
                             "h-2.5 w-2.5 rounded-full transition-all duration-300",
-                            currentIndex === index ? "w-8 bg-primary" : "bg-muted-foreground/50 hover:bg-muted-foreground"
+                            currentIndex === index ? "w-8 bg-white" : "bg-white/50 hover:bg-white"
                         )}
                         aria-label={`Go to slide ${index + 1}`}
                     />
