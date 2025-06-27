@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -13,7 +14,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { storage } from '@/lib/firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from './ui/skeleton';
-import { cn } from '@/lib/utils';
 
 
 interface PromotionalMedia {
@@ -28,7 +28,6 @@ export function PromotionalGallery() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -103,17 +102,6 @@ export function PromotionalGallery() {
     );
   };
 
-  const handleVideoClick = () => {
-    const video = videoRef.current;
-    if (video) {
-      if (video.paused || video.ended) {
-        video.play();
-      } else {
-        video.pause();
-      }
-    }
-  };
-
 
   if (isLoading || mediaItems.length === 0) {
     return (
@@ -139,24 +127,19 @@ export function PromotionalGallery() {
         
         {mainMedia && (
             <div
-                className={cn(
-                  "col-span-2 relative rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300",
-                  mainMedia.type === 'image' && 'cursor-pointer'
-                )}
+                className="col-span-2 relative rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
                 onClick={mainMedia.type === 'image' ? () => openDialog(0) : undefined}
             >
                  {mainMedia.type === 'video' ? (
                     <video
-                        ref={videoRef}
                         key={mainMedia.url}
-                        src={`${mainMedia.url}#t=0.1`}
+                        src={`${mainMedia.url}#t=0.1`} // Add fragment to show first frame on load
                         playsInline
-                        controls={false}
+                        controls // Use native controls
                         preload="metadata"
                         loop
                         muted
-                        className="object-cover w-full h-full cursor-pointer"
-                        onClick={handleVideoClick}
+                        className="object-cover w-full h-full"
                     />
                 ) : (
                     <Image
