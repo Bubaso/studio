@@ -47,7 +47,6 @@ export function HeroOnboarding() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFading, setIsFading] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
 
     // Fetch media from storage on component mount
     useEffect(() => {
@@ -100,12 +99,12 @@ export function HeroOnboarding() {
         }
 
         // User's requested mapping:
-        // 01_video -> slide 0
+        // 01_... -> slide 0
         // 02_image -> slide 2 ("Vendez Facilement")
         // 03_image -> slide 1 ("Découvrez")
         // 04_image -> slide 3 ("Connectez-vous")
         const mediaMap: { [key: number]: PromotionalMedia } = {
-            0: mediaItems[0], // 01_video.mp4
+            0: mediaItems[0], // 01_...
             1: mediaItems[2], // 03_image.png
             2: mediaItems[1], // 02_image.png
             3: mediaItems[3], // 04_image.png
@@ -141,18 +140,6 @@ export function HeroOnboarding() {
         return () => clearInterval(interval);
     }, [currentIndex, slides.length]);
     
-    // Function to toggle video play/pause
-    const handleBackgroundClick = () => {
-        if (slides[currentIndex]?.mediaType === 'video' && videoRef.current) {
-            if (videoRef.current.paused) {
-                videoRef.current.play();
-                videoRef.current.muted = false;
-            } else {
-                videoRef.current.pause();
-            }
-        }
-    };
-    
     // Render a skeleton loader while fetching media
     if (isLoading) {
         return <Skeleton className="w-full rounded-lg min-h-[210px] sm:min-h-[300px]" />;
@@ -160,8 +147,7 @@ export function HeroOnboarding() {
 
     return (
         <section 
-            className="relative bg-card border rounded-lg shadow-sm overflow-hidden min-h-[210px] sm:min-h-[300px] flex flex-col justify-center items-center cursor-pointer"
-            onClick={handleBackgroundClick}
+            className="relative bg-card border rounded-lg shadow-sm overflow-hidden min-h-[210px] sm:min-h-[300px] flex flex-col justify-center items-center"
         >
             {/* Background Media Layer */}
             {slides.map((slide, index) => (
@@ -169,27 +155,14 @@ export function HeroOnboarding() {
                     "absolute inset-0 transition-opacity duration-500 z-0",
                     currentIndex === index ? "opacity-100" : "opacity-0"
                 )}>
-                    {slide.mediaType === 'video' && slide.mediaUrl ? (
-                        <video
-                            ref={videoRef}
-                            key={slide.mediaUrl}
+                    {slide.mediaUrl && (
+                        <Image
                             src={slide.mediaUrl}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="w-full h-full object-cover"
+                            alt={slide.title}
+                            fill
+                            className="object-cover"
+                            priority={index < 2}
                         />
-                    ) : (
-                        slide.mediaUrl && (
-                            <Image
-                                src={slide.mediaUrl}
-                                alt={slide.title}
-                                fill
-                                className="object-cover"
-                                priority={index < 2}
-                            />
-                        )
                     )}
                 </div>
             ))}
