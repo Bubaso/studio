@@ -12,6 +12,7 @@ import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase
 import type { MessageThread, UserProfile } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface NavLink {
   href: string;
@@ -198,9 +199,17 @@ export function Header() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/credits">
-                        <Button variant="outline" size="sm">
-                          <Gem className="mr-2 h-4 w-4 text-primary" />
-                          {userProfile.credits}
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            // Mobile styles: like size="icon"
+                            "relative h-10 w-10 p-0 rounded-md",
+                            // Desktop styles: like size="sm" and variant="outline"
+                            "md:w-auto md:h-9 md:px-3 md:border md:border-input md:bg-background md:hover:bg-accent md:hover:text-accent-foreground"
+                          )}
+                        >
+                          <Gem className="h-5 w-5 text-primary md:mr-2 md:h-4 md:w-4" />
+                          <span className="hidden md:inline">{userProfile.credits}</span>
                         </Button>
                       </Link>
                     </TooltipTrigger>
@@ -233,3 +242,4 @@ export function Header() {
     </header>
   );
 }
+
