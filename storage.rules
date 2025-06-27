@@ -1,32 +1,46 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permettre la lecture publique uniquement pour le dossier des images de catégories.
-    match /category-images/{image} {
-      allow read;
+    // ---- Publicly Readable Content ----
+    // These folders contain images for the homepage galleries.
+    // They need to be readable by anyone, including non-authenticated users.
+    // Writing to these folders should be restricted, e.g., to admins via the Firebase Console.
+    match /promotional-gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null; // Example: only logged-in users can write
+    }
+    match /category-images/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    // Les autres chemins restent privés par défaut, sauf si des règles spécifiques sont ajoutées.
-    // Par exemple, les images téléversées par les utilisateurs pour les articles ou les avatars.
+    // Item images/videos and user avatars should also be publicly readable.
     match /itemImages/{userId}/{allPaths=**} {
-        allow read; // Tout le monde peut voir les images des articles
-        allow write: if request.auth != null && request.auth.uid == userId; // Seul l'utilisateur authentifié peut écrire dans son propre dossier
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /itemVideos/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    match /itemVideos/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
+    // ---- Private Content ----
+    // Chat attachments should only be accessible to authenticated users.
+    // For more granular control (e.g., only thread participants), you'd use Cloud Functions with signed URLs.
+    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    match /chatAttachments/{threadId}/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /avatars/{userId}/{allPaths=**} {
-        allow read;
-        allow write: if request.auth != null && request.auth.uid == userId;
+    // Default fallback to deny access to any other path not explicitly matched.
+    // This is an important security measure.
+    match /{allPaths=**} {
+        allow read, write: if false;
     }
   }
 }
