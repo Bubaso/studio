@@ -135,7 +135,9 @@ export default function CreditsPage() {
             <Card className="bg-card/50">
                  <CardContent className="space-y-2 text-muted-foreground p-6">
                     <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" />1 Crédit = 1 Annonce publiée.</p>
-                    <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-primary" />Vos 5 premières annonces sont gratuites pour vous aider à démarrer !</p>
+                    <p>
+                        Vos <strong>5 premières annonces</strong> sont <strong>gratuites</strong> pour vous aider à démarrer !
+                    </p>
                 </CardContent>
             </Card>
 
