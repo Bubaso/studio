@@ -9,8 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Video, PlayCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
 
 // --- Placeholder Data ---
 // In a real application, this data would likely come from a CMS or Firestore.
@@ -72,34 +71,34 @@ export function PromotionalGallery() {
 
   return (
     <section className="py-4 md:py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 h-[250px] md:h-[340px] group">
+      <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px] group">
         
         {/* Main Video Section (Left) */}
         <div
-          className="md:col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
+          className="col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
           onClick={() => openDialog(0)}
         >
           <Image
             src={mainVideo.thumbnailUrl}
             alt={mainVideo.title}
             fill
-            sizes="(max-width: 767px) 100vw, 66vw"
+            sizes="(max-width: 767px) 66vw, 66vw"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             data-ai-hint={mainVideo.dataAiHint}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-             <PlayCircle className="h-16 w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+             <PlayCircle className="h-12 w-12 md:h-16 md:w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
           </div>
-          <div className="absolute bottom-0 left-0 p-4 md:p-6">
-            <h3 className="text-white font-bold font-headline text-lg md:text-2xl drop-shadow-md">
+          <div className="absolute bottom-0 left-0 p-2 md:p-6">
+            <h3 className="text-white font-bold font-headline text-base md:text-2xl drop-shadow-md">
               {mainVideo.title}
             </h3>
           </div>
         </div>
 
         {/* Side Images Section (Right) */}
-        <div className="hidden md:flex flex-col gap-2 md:gap-4">
+        <div className="flex flex-col gap-2 md:gap-4">
           {sideImages.map((image, index) => (
             <div
               key={index}
@@ -115,8 +114,8 @@ export function PromotionalGallery() {
                 data-ai-hint={image.dataAiHint}
               />
                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors"></div>
-               <div className="absolute bottom-0 left-0 p-2">
-                 <h4 className="text-white font-semibold text-sm drop-shadow-sm">
+               <div className="absolute bottom-0 left-0 p-1 md:p-2">
+                 <h4 className="text-white font-semibold text-[10px] md:text-sm drop-shadow-sm">
                     {image.title}
                  </h4>
                </div>
