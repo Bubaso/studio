@@ -1,4 +1,3 @@
-
 "use client";
 import Link from 'next/link';
 import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle, Gem } from 'lucide-react';
@@ -188,7 +187,7 @@ export function Header() {
           />
         </form>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 md:space-x-2">
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Changer de thème">
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
@@ -221,8 +220,8 @@ export function Header() {
                   <UserIcon className="h-5 w-5" />
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="h-4 w-4 mr-1 md:mr-2" />
+              <Button variant="ghost" className="h-10 w-10 p-0 md:h-9 md:w-auto md:px-3" onClick={handleSignOut}>
+                <LogOut className="h-5 w-5 md:h-4 md:w-4 md:mr-2" />
                 <span className="hidden md:inline">Déconnexion</span>
               </Button>
             </>
