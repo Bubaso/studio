@@ -1,14 +1,13 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { storage } from '@/lib/firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from './ui/skeleton';
-import { cn } from '@/lib/utils';
+import { Play } from 'lucide-react';
 
 interface PromotionalMedia {
   type: 'video' | 'image';
@@ -21,6 +20,8 @@ interface PromotionalMedia {
 export function PromotionalGallery() {
   const [mediaItems, setMediaItems] = useState<PromotionalMedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -35,8 +36,6 @@ export function PromotionalGallery() {
         const listRef = ref(storage, 'promotional-gallery');
         const res = await listAll(listRef);
         
-        console.log(`Promotional Gallery: Found ${res.items.length} items. If 0, upload files to 'promotional-gallery' folder in Storage.`);
-
         if (res.items.length === 0) {
             setMediaItems([]);
             setIsLoading(false);
@@ -74,16 +73,25 @@ export function PromotionalGallery() {
 
     fetchMedia();
   }, []);
+  
+  const handlePlayClick = () => {
+    if (videoRef.current) {
+      setIsPlaying(true); // This will hide the overlay
+      videoRef.current.muted = false;
+      videoRef.current.controls = true; // Show native controls for fullscreen etc.
+      videoRef.current.play();
+    }
+  };
+
 
   if (isLoading) {
     return (
       <section className="py-4 md:py-8 space-y-6">
         <Skeleton className="h-[50vh] max-h-[500px] w-full rounded-xl" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <Skeleton className="aspect-square w-full rounded-lg" />
           <Skeleton className="aspect-square w-full rounded-lg" />
-          <Skeleton className="aspect-square w-full rounded-lg hidden md:block" />
-          <Skeleton className="aspect-square w-full rounded-lg hidden md:block" />
+          <Skeleton className="aspect-square w-full rounded-lg" />
         </div>
       </section>
     );
@@ -101,13 +109,14 @@ export function PromotionalGallery() {
   }
 
   const heroMedia = mediaItems[0];
-  const secondaryImages = mediaItems.slice(1);
+  const secondaryImages = mediaItems.slice(1, 4);
 
   return (
     <section className="py-4 md:py-8 space-y-6">
-      <div className="relative h-[50vh] max-h-[500px] w-full rounded-xl overflow-hidden shadow-2xl flex items-center justify-center">
+      <div className="relative h-[50vh] max-h-[500px] w-full rounded-xl overflow-hidden shadow-2xl flex items-center justify-center bg-black">
         {heroMedia.type === 'video' ? (
           <video
+            ref={videoRef}
             key={heroMedia.url}
             src={heroMedia.url}
             autoPlay
@@ -126,22 +135,31 @@ export function PromotionalGallery() {
             priority
           />
         )}
-        <div className="absolute inset-0 bg-black/40 z-10" />
-        <div className="relative z-20 text-center text-white p-8">
-          <h2 className="text-3xl md:text-5xl font-bold font-headline drop-shadow-lg">
-            Donnez une Seconde Vie à Vos Objets
-          </h2>
-          <p className="mt-4 max-w-lg mx-auto text-lg text-white/90 drop-shadow-md">
-            Découvrez des trésors uniques ou vendez ce que vous n'utilisez plus. Simple, rapide et local.
-          </p>
-          <Button asChild size="lg" className="mt-6 font-bold text-lg">
-            <Link href="/browse">Explorer les Articles</Link>
-          </Button>
-        </div>
+        
+        {!isPlaying && (
+            <>
+                <div className="absolute inset-0 bg-black/40 z-10" />
+                <div className="relative z-20 text-center text-white p-8">
+                    <h2 className="text-2xl md:text-4xl font-bold font-headline drop-shadow-lg">
+                        Donnez une Seconde Vie à Vos Objets
+                    </h2>
+                    
+                    {heroMedia.type === 'video' ? (
+                        <Button onClick={handlePlayClick} size="lg" className="mt-6 font-bold text-lg">
+                            <Play className="mr-2 h-5 w-5" /> Explorer les Articles
+                        </Button>
+                    ) : (
+                        <Button asChild size="lg" className="mt-6 font-bold text-lg">
+                           <Link href="/browse">Explorer les Articles</Link>
+                        </Button>
+                    )}
+                </div>
+            </>
+        )}
       </div>
 
       {secondaryImages.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {secondaryImages.map((image, index) => (
             <div
               key={index}
@@ -151,13 +169,10 @@ export function PromotionalGallery() {
                 src={image.url}
                 alt={image.title}
                 fill
-                sizes="(max-width: 768px) 50vw, 25vw"
+                sizes="(max-width: 768px) 33vw, 25vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={image.dataAiHint}
               />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                  <p className="text-white text-xs font-semibold drop-shadow-md truncate">{image.title}</p>
-                </div>
             </div>
           ))}
         </div>
