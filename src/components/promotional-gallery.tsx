@@ -3,31 +3,24 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { storage } from '@/lib/firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { Skeleton } from './ui/skeleton';
-
+import { cn } from '@/lib/utils';
 
 interface PromotionalMedia {
   type: 'video' | 'image';
   url: string;
   title: string;
   dataAiHint: string;
+  fileName: string; // For sorting
 }
 
 export function PromotionalGallery() {
   const [mediaItems, setMediaItems] = useState<PromotionalMedia[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -42,7 +35,7 @@ export function PromotionalGallery() {
         const listRef = ref(storage, 'promotional-gallery');
         const res = await listAll(listRef);
         
-        console.log(`Promotional Gallery: Found ${res.items.length} items in Storage. If this is 0, please upload files to the 'promotional-gallery' folder.`);
+        console.log(`Promotional Gallery: Found ${res.items.length} items. If 0, upload files to 'promotional-gallery' folder in Storage.`);
 
         if (res.items.length === 0) {
             setMediaItems([]);
@@ -60,7 +53,7 @@ export function PromotionalGallery() {
           return {
             type,
             url,
-            title: cleanName.charAt(0).toUpperCase() + cleanName.slice(1) || (type === 'video' ? 'Promotional Video' : 'Promotional Image'),
+            title: cleanName.charAt(0).toUpperCase() + cleanName.slice(1) || (type === 'video' ? 'Vidéo Promotionnelle' : 'Image Promotionnelle'),
             dataAiHint: cleanName || 'promotional',
             fileName: itemRef.name,
           };
@@ -82,147 +75,93 @@ export function PromotionalGallery() {
     fetchMedia();
   }, []);
 
-  const openDialog = (index: number) => {
-    setSelectedIndex(index);
-    setIsDialogOpen(true);
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedIndex(
-      (prevIndex) => (prevIndex + 1) % mediaItems.length
-    );
-  };
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedIndex(
-      (prevIndex) =>
-        (prevIndex - 1 + mediaItems.length) % mediaItems.length
-    );
-  };
-
-
-  if (isLoading || mediaItems.length === 0) {
+  if (isLoading) {
     return (
-        <section className="py-4 md:py-8">
-            <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px]">
-                <Skeleton className="col-span-2 h-full w-full bg-muted/50" />
-                <div className="flex flex-col gap-2 md:gap-4">
-                    <Skeleton className="h-full w-full bg-muted/50" />
-                    <Skeleton className="h-full w-full bg-muted/50" />
-                    <Skeleton className="h-full w-full bg-muted/50" />
-                </div>
-            </div>
-        </section>
+      <section className="py-4 md:py-8 space-y-6">
+        <Skeleton className="h-[50vh] max-h-[500px] w-full rounded-xl" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Skeleton className="aspect-square w-full rounded-lg" />
+          <Skeleton className="aspect-square w-full rounded-lg" />
+          <Skeleton className="aspect-square w-full rounded-lg hidden md:block" />
+          <Skeleton className="aspect-square w-full rounded-lg hidden md:block" />
+        </div>
+      </section>
     );
   }
+  
+  if (mediaItems.length === 0) {
+      return (
+        <section className="py-4 md:py-8">
+            <div className="relative h-[50vh] max-h-[500px] w-full bg-muted/50 rounded-xl flex flex-col items-center justify-center text-center p-4">
+                <h2 className="text-2xl font-bold font-headline text-primary">Contenu promotionnel à venir</h2>
+                <p className="text-muted-foreground mt-2">De nouvelles offres et collections seront bientôt disponibles ici.</p>
+            </div>
+        </section>
+      );
+  }
 
-  const mainMedia = mediaItems[0];
-  const sideImages = mediaItems.slice(1, 4);
+  const heroMedia = mediaItems[0];
+  const secondaryImages = mediaItems.slice(1);
 
   return (
-    <section className="py-4 md:py-8">
-      <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px] group">
-        
-        {mainMedia && (
-            <div
-                className="col-span-2 relative rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-                onClick={mainMedia.type === 'image' ? () => openDialog(0) : undefined}
-            >
-                 {mainMedia.type === 'video' ? (
-                    <video
-                        key={mainMedia.url}
-                        src={`${mainMedia.url}#t=0.1`} // Add fragment to show first frame on load
-                        playsInline
-                        controls // Use native controls
-                        preload="metadata"
-                        loop
-                        muted
-                        className="object-cover w-full h-full"
-                    />
-                ) : (
-                    <Image
-                        src={mainMedia.url}
-                        alt={mainMedia.title}
-                        fill
-                        sizes="(max-width: 767px) 66vw, 66vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        data-ai-hint={mainMedia.dataAiHint}
-                    />
-                )}
-            </div>
+    <section className="py-4 md:py-8 space-y-6">
+      <div className="relative h-[50vh] max-h-[500px] w-full rounded-xl overflow-hidden shadow-2xl flex items-center justify-center">
+        {heroMedia.type === 'video' ? (
+          <video
+            key={heroMedia.url}
+            src={heroMedia.url}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover z-0"
+          />
+        ) : (
+          <Image
+            src={heroMedia.url}
+            alt={heroMedia.title}
+            fill
+            className="object-cover z-0"
+            data-ai-hint={heroMedia.dataAiHint}
+            priority
+          />
         )}
+        <div className="absolute inset-0 bg-black/40 z-10" />
+        <div className="relative z-20 text-center text-white p-8">
+          <h2 className="text-3xl md:text-5xl font-bold font-headline drop-shadow-lg">
+            Donnez une Seconde Vie à Vos Objets
+          </h2>
+          <p className="mt-4 max-w-lg mx-auto text-lg text-white/90 drop-shadow-md">
+            Découvrez des trésors uniques ou vendez ce que vous n'utilisez plus. Simple, rapide et local.
+          </p>
+          <Button asChild size="lg" className="mt-6 font-bold text-lg">
+            <Link href="/browse">Explorer les Articles</Link>
+          </Button>
+        </div>
+      </div>
 
-        <div className="flex flex-col gap-2 md:gap-4">
-          {sideImages.map((image, index) => (
-            image &&
+      {secondaryImages.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {secondaryImages.map((image, index) => (
             <div
               key={index}
-              className="relative rounded-lg overflow-hidden cursor-pointer flex-1 shadow-lg hover:shadow-2xl transition-shadow duration-300"
-              onClick={() => openDialog(index + 1)}
+              className="relative aspect-square rounded-lg overflow-hidden group shadow-lg"
             >
               <Image
                 src={image.url}
                 alt={image.title}
                 fill
-                sizes="33vw"
+                sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                 data-ai-hint={image.dataAiHint}
               />
+               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                  <p className="text-white text-xs font-semibold drop-shadow-md truncate">{image.title}</p>
+                </div>
             </div>
           ))}
         </div>
-      </div>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-0 bg-background/80 backdrop-blur-sm flex items-center justify-center border-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Galerie</DialogTitle>
-          </DialogHeader>
-
-          <div className="relative w-full h-full p-8">
-            {mediaItems[selectedIndex]?.type === 'video' ? (
-              <video
-                src={mediaItems[selectedIndex].url}
-                controls
-                autoPlay
-                className="w-full h-full object-contain rounded-md"
-              />
-            ) : mediaItems[selectedIndex]?.url ? (
-              <Image
-                src={mediaItems[selectedIndex].url}
-                alt={mediaItems[selectedIndex].title}
-                fill
-                className="object-contain rounded-md"
-              />
-            ) : null}
-          </div>
-
-          {mediaItems.length > 1 && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/30 hover:bg-black/60 text-white hover:text-white transition-all"
-                onClick={handlePrev}
-                aria-label="Önceki"
-              >
-                <ChevronLeft className="h-8 w-8 sm:h-10 sm:w-10" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-black/30 hover:bg-black/60 text-white hover:text-white transition-all"
-                onClick={handleNext}
-                aria-label="Sonraki"
-              >
-                <ChevronRight className="h-8 w-8 sm:h-10 sm:w-10" />
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      )}
     </section>
   );
 }
