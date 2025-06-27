@@ -116,7 +116,7 @@ export default function CreditsPage() {
     return (
         <div className="space-y-8">
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Acheter des Crédits</h1>
+                <h1 className="text-3xl font-bold font-headline text-primary">Besoin de Crédits ?</h1>
                 <p className="text-lg text-muted-foreground mt-2">
                     Rechargez votre compte pour mettre en avant et vendre plus d'articles.
                 </p>
@@ -133,10 +133,7 @@ export default function CreditsPage() {
             )}
 
             <Card className="bg-card/50">
-                <CardHeader>
-                    <CardTitle className="font-headline text-xl">Comment ça marche ?</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-muted-foreground">
+                 <CardContent className="space-y-2 text-muted-foreground p-6">
                     <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" /> <strong>1 Crédit = 1 Annonce publiée.</strong></p>
                     <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-primary" /> Vos <strong>5 premières annonces sont gratuites</strong> pour vous aider à démarrer !</p>
                 </CardContent>
@@ -146,9 +143,9 @@ export default function CreditsPage() {
                 {creditPackages.map((pkg) => {
                     const pricePerAd = pkg.price / pkg.credits;
                     return (
-                        <Card key={pkg.id} className={cn("flex flex-col", pkg.popular && "border-2 border-primary shadow-lg")}>
+                        <Card key={pkg.id} className={cn("flex flex-col relative", pkg.popular && "border-2 border-primary shadow-lg")}>
                              {pkg.popular && (
-                                <Badge variant="default" className="absolute -top-3 left-1/2 -translate-x-1/2">Le plus populaire</Badge>
+                                <Badge variant="default" className="absolute top-2 right-2">Le plus populaire</Badge>
                              )}
                             <CardHeader>
                                 <CardTitle className="font-headline text-2xl">{pkg.name}</CardTitle>
@@ -164,10 +161,10 @@ export default function CreditsPage() {
                                     <div className="text-sm text-muted-foreground h-5">
                                         {pricePerAd < BASE_PRICE_PER_AD ? (
                                             <span>
-                                                soit <strong>{pricePerAd} XOF</strong> / annonce <span className="line-through ml-1">{BASE_PRICE_PER_AD} XOF</span>
+                                                soit <strong>{pricePerAd.toLocaleString('fr-FR')} XOF</strong> / annonce <span className="line-through ml-1">{BASE_PRICE_PER_AD.toLocaleString('fr-FR')} XOF</span>
                                             </span>
                                         ) : (
-                                            <span>soit {pricePerAd} XOF / annonce</span>
+                                            <span>soit {pricePerAd.toLocaleString('fr-FR')} XOF / annonce</span>
                                         )}
                                     </div>
                                 </div>
@@ -193,6 +190,10 @@ export default function CreditsPage() {
                     )
                 })}
             </div>
+             <p className="text-center text-sm text-muted-foreground mt-8">
+                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
+            </p>
         </div>
     );
 }
+
