@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
 import type { UserProfile, Item, MessageThread } from '@/lib/types';
-import { Timestamp } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
+import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
 
 
 // Helper to convert Admin SDK Timestamp to ISO string
@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
         itemTitle: itemDetails?.name || '',
         itemImageUrl: itemDetails?.imageUrls?.[0] || '',
         itemSellerId: itemDetails?.sellerId || '',
+        discussedItemIds: itemDetails ? [itemDetails.id] : [],
       };
 
       await threadRef.set(newThreadData);
@@ -160,20 +161,15 @@ export async function POST(request: NextRequest) {
     } else {
       console.log(`API_ROUTE_ACTION: Thread ${threadId} already exists.`);
       const existingData = threadSnap.data() as MessageThread; // Cast for type safety
-      let needsUpdate = false;
-      const updatePayload: Partial<MessageThread> = {};
+      const updatePayload: { [key: string]: any } = {};
 
-      if (itemDetails && (!existingData.itemId || existingData.itemId !== itemDetails.id)) {
-        updatePayload.itemId = itemDetails.id;
-        updatePayload.itemTitle = itemDetails.name;
-        updatePayload.itemImageUrl = itemDetails.imageUrls?.[0];
-        updatePayload.itemSellerId = itemDetails.sellerId;
-        needsUpdate = true;
+      if (itemDetails && (!existingData.discussedItemIds || !existingData.discussedItemIds.includes(itemDetails.id))) {
+        updatePayload.discussedItemIds = FieldValue.arrayUnion(itemDetails.id);
       }
       // Potentially update participant names/avatars if they changed
       // This requires fetching profiles even for existing threads, which can be added if necessary
 
-      if (needsUpdate) {
+      if (Object.keys(updatePayload).length > 0) {
         console.log(`API_ROUTE_ACTION: Updating item context for existing thread ${threadId} with payload:`, updatePayload);
         await threadRef.update(updatePayload);
         console.log(`API_ROUTE_SUCCESS: Updated item context for thread ${threadId}.`);

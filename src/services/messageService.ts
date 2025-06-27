@@ -40,15 +40,6 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
   return new Date().toISOString();
 };
 
-const generateThreadId = (uid1: string, uid2: string): string => {
-  if (!uid1 || !uid2) {
-    const errorMessage = "SERVICE_UID_ERROR: UIDs cannot be empty for generating thread ID";
-    console.error(errorMessage, {uid1, uid2});
-    throw new Error(errorMessage);
-  }
-  return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
-};
-
 export const uploadChatImageAndGetURL = async (file: File, threadId: string, userId: string): Promise<string> => {
   console.log('CLIENT_STORAGE_UPLOAD: Initiating uploadChatImageAndGetURL');
   console.log('CLIENT_STORAGE_UPLOAD: File Name:', file.name, 'File Size:', file.size, 'File Type:', file.type);
@@ -94,154 +85,17 @@ export const uploadChatImageAndGetURL = async (file: File, threadId: string, use
   }
 };
 
-export const createOrGetMessageThread = async (
-  currentUserUid: string,
-  otherUserUid: string,
-  itemId?: string
-): Promise<{ threadId: string | null; error?: string; threadData?: MessageThread | null }> => {
-  console.log("SERVICE: createOrGetMessageThread called");
-  console.log("SERVICE: currentUserUid:", currentUserUid);
-  console.log("SERVICE: otherUserUid:", otherUserUid);
-  console.log("SERVICE: itemId:", itemId);
-
-
-  if (!currentUserUid || !otherUserUid) {
-    const errorMessage = "SERVICE_UID_ERROR: Both currentUserUid and otherUserUid are required.";
-    console.error(errorMessage, { currentUserUid, otherUserUid });
-    return { threadId: null, error: "Les identifiants utilisateurs sont manquants pour créer le fil de discussion." };
-  }
-  if (currentUserUid === otherUserUid) {
-    const errorMessage = "SERVICE_SELF_CHAT_ERROR: Cannot create a message thread with oneself.";
-    console.error(errorMessage, { currentUserUid, otherUserUid });
-    return { threadId: null, error: "Vous ne pouvez pas créer un fil de discussion avec vous-même." };
-  }
-
-  let threadId;
-  try {
-    threadId = generateThreadId(currentUserUid, otherUserUid);
-  } catch (e: any) {
-    console.error("SERVICE: Error generating threadId:", e.message);
-    return { threadId: null, error: e.message };
-  }
-  
-  const threadRef = doc(db, 'messageThreads', threadId);
-  console.log(`SERVICE: Generated threadId: ${threadId}. Thread ref path: ${threadRef.path}`);
-
-  try {
-    console.log(`SERVICE: Attempting to get document: ${threadRef.path}`);
-    const threadSnap = await getDoc(threadRef);
-    console.log(`SERVICE: getDoc for ${threadRef.path} completed. Exists: ${threadSnap.exists()}`);
-
-    let itemDetails: Item | null = null;
-    if (itemId) {
-        console.log(`SERVICE: Fetching item details for itemId: ${itemId}`);
-        itemDetails = await getItemByIdFromFirestore(itemId);
-        console.log(`SERVICE: Item details fetched: ${itemDetails ? JSON.stringify(itemDetails.name) : 'Not Found'}`);
-    }
-
-    if (!threadSnap.exists()) {
-      console.log(`SERVICE: Thread ${threadId} does not exist. Attempting to create...`);
-      const currentUserProfile = await getUserDocument(currentUserUid);
-      if (!currentUserProfile) {
-        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch current user profile (UID: ${currentUserUid}) for creating thread.`;
-        console.error(errorMessage);
-        return { threadId: null, error: "Impossible de récupérer le profil de l'utilisateur actuel." };
-      }
-      console.log(`SERVICE: Fetched current user profile: ${currentUserProfile.name || 'N/A'}`);
-
-      const otherUserProfile = await getUserDocument(otherUserUid);
-      if (!otherUserProfile) {
-        const errorMessage = `SERVICE_PROFILE_ERROR: Failed to fetch other user profile (UID: ${otherUserUid}) for creating thread.`;
-        console.error(errorMessage);
-        return { threadId: null, error: "Impossible de récupérer le profil du vendeur." };
-      }
-      console.log(`SERVICE: Fetched other user profile: ${otherUserProfile.name || 'N/A'}`);
-
-      const participantUidsSorted: [string, string] = currentUserUid < otherUserUid ? [currentUserUid, otherUserUid] : [otherUserUid, currentUserUid];
-      const namesSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.name, otherUserProfile.name] : [otherUserProfile.name, currentUserProfile.name];
-      const avatarsSorted = participantUidsSorted[0] === currentUserUid ? [currentUserProfile.avatarUrl, otherUserProfile.avatarUrl] : [otherUserProfile.avatarUrl, currentUserProfile.avatarUrl];
-
-      const newThreadData: Omit<MessageThread, 'id'> & { createdAt: any, lastMessageAt: any } = {
-        participantIds: participantUidsSorted,
-        participantNames: [namesSorted[0] || 'Utilisateur', namesSorted[1] || 'Utilisateur'],
-        participantAvatars: [avatarsSorted[0] || 'https://placehold.co/100x100.png?text=?', avatarsSorted[1] || 'https://placehold.co/100x100.png?text=?'],
-        lastMessageAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        lastMessageText: itemDetails ? `Question à propos de "${itemDetails.name}"` : "Début de la conversation",
-        lastMessageSenderId: '',
-        participantsWhoHaveSeenLatest: [], // Initialize as empty or with sender if an initial message is sent
-        itemId: itemDetails?.id || '',
-        itemTitle: itemDetails?.name || '',
-        itemImageUrl: itemDetails?.imageUrls?.[0] || '',
-        itemSellerId: itemDetails?.sellerId || '',
-      };
-      console.log(`SERVICE: Preparing to setDoc for new thread ${threadId} with data:`, JSON.stringify(newThreadData, null, 2));
-      await setDoc(threadRef, newThreadData);
-      console.log(`SERVICE: Successfully created new thread ${threadId}.`);
-      const createdThreadDoc = await getDoc(threadRef); 
-      const resolvedData = createdThreadDoc.data();
-      return { 
-        threadId: threadId, 
-        error: undefined, 
-        threadData: resolvedData ? {
-          id: createdThreadDoc.id,
-          ...resolvedData,
-          createdAt: convertTimestampToISO(resolvedData.createdAt as Timestamp),
-          lastMessageAt: convertTimestampToISO(resolvedData.lastMessageAt as Timestamp),
-        } as MessageThread : null
-      };
-    } else {
-      console.log(`SERVICE: Thread ${threadId} already exists.`);
-      const existingData = threadSnap.data() as MessageThread; // Cast existing data for type safety
-      let updated = false;
-      const updatePayload: Partial<MessageThread> = {};
-
-      if (itemDetails && (!existingData.itemId || existingData.itemId !== itemDetails.id)) {
-        updatePayload.itemId = itemDetails.id;
-        updatePayload.itemTitle = itemDetails.name;
-        updatePayload.itemImageUrl = itemDetails.imageUrls?.[0];
-        updatePayload.itemSellerId = itemDetails.sellerId;
-        updated = true;
-      }
-      if(updated) {
-        console.log(`SERVICE: Updating item context for existing thread ${threadId} with payload:`, JSON.stringify(updatePayload, null, 2));
-        await updateDoc(threadRef, updatePayload);
-        console.log(`SERVICE: Updated item context for existing thread ${threadId}.`);
-      }
-      const currentThreadData = updated ? {...existingData, ...updatePayload} : existingData;
-      return { 
-        threadId: threadId, 
-        error: undefined,
-        threadData: {
-          id: threadSnap.id,
-          ...currentThreadData,
-          createdAt: convertTimestampToISO(currentThreadData.createdAt as Timestamp), // Ensure conversion
-          lastMessageAt: convertTimestampToISO(currentThreadData.lastMessageAt as Timestamp), // Ensure conversion
-        }
-      };
-    }
-  } catch (error: any) {
-    let specificError = "Une erreur technique est survenue lors de la création/récupération du fil de discussion.";
-    if (error.code === 'permission-denied' || (error.message && error.message.toLowerCase().includes('permission denied'))) {
-      specificError = "Permissions Firestore insuffisantes. Veuillez vérifier vos règles de sécurité Firestore.";
-      console.error(`SERVICE: Firestore Permission Denied for thread ${threadId}: ${error.message}`, error.stack);
-    } else {
-      console.error(`SERVICE: Error for thread ${threadId}: ${error.message}`, error.stack);
-    }
-    return { threadId: null, error: specificError, threadData: null };
-  }
-};
-
 export const sendMessage = async (
   threadId: string,
   senderId: string,
   senderName: string,
   text: string,
+  itemId: string, // Item context is now mandatory
   imageUrl?: string
 ): Promise<void> => {
   if (!text.trim() && !imageUrl) return; 
-  if (!threadId || !senderId || !senderName) {
-    console.error("ThreadID, SenderID, and SenderName are required to send a message.");
+  if (!threadId || !senderId || !senderName || !itemId) {
+    console.error("ThreadID, SenderID, SenderName, and ItemID are required to send a message.");
     throw new Error("Missing required parameters for sending message.");
   }
 
@@ -253,6 +107,7 @@ export const sendMessage = async (
     senderId,
     senderName: senderName || "Utilisateur Inconnu",
     text: text.trim(),
+    itemId,
     timestamp: serverTimestamp(),
     readBy: [senderId], 
   };
@@ -272,12 +127,21 @@ export const sendMessage = async (
         lastMessagePreview = `📷 ${text.trim()}`;
     }
 
+    // Update the main thread doc to reflect the latest activity and its context
+    const itemDetails = await getItemByIdFromFirestore(itemId);
+    
     batch.update(threadRef, {
       lastMessageText: lastMessagePreview,
       lastMessageSenderId: senderId,
       lastMessageAt: serverTimestamp(),
-      participantsWhoHaveSeenLatest: [senderId], // Reset this to only the sender
+      participantsWhoHaveSeenLatest: [senderId],
+      // Update the item context of the thread to this latest item
+      itemId: itemDetails?.id || '',
+      itemTitle: itemDetails?.name || '',
+      itemImageUrl: itemDetails?.imageUrls?.[0] || '',
+      itemSellerId: itemDetails?.sellerId || '',
     });
+    
     await batch.commit();
   } catch (error) {
     console.error("Error sending message: ", error);
@@ -317,6 +181,7 @@ export const getMessageThreadsForUser = (
         itemTitle: data.itemTitle,
         itemImageUrl: data.itemImageUrl,
         itemSellerId: data.itemSellerId,
+        discussedItemIds: data.discussedItemIds || [],
       } as MessageThread;
     });
     onUpdate(threads);
@@ -326,17 +191,19 @@ export const getMessageThreadsForUser = (
   });
 };
 
-export const getMessagesForThread = (
+export const getMessagesForItemInThread = (
   threadId: string,
+  itemId: string,
   onUpdate: (messages: Message[]) => void
 ): Unsubscribe => {
-  if (!threadId) {
-    console.warn("getMessagesForThread called with no threadId.");
+  if (!threadId || !itemId) {
+    console.warn("getMessagesForItemInThread called with no threadId or itemId.");
     onUpdate([]);
     return () => {};
   }
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
+    where('itemId', '==', itemId),
     orderBy('timestamp', 'asc'),
     limit(100) 
   );
@@ -351,16 +218,18 @@ export const getMessagesForThread = (
         senderName: data.senderName || "Utilisateur Inconnu",
         text: data.text,
         imageUrl: data.imageUrl,
+        itemId: data.itemId,
         timestamp: convertTimestampToISO(data.timestamp as Timestamp),
         readBy: data.readBy || [],
       } as Message;
     });
     onUpdate(messages);
   }, (error) => {
-    console.error(`Error fetching messages for thread ${threadId}: `, error);
+    console.error(`Error fetching messages for thread ${threadId} and item ${itemId}: `, error);
     onUpdate([]);
   });
 };
+
 
 export const markMessageAsRead = async (threadId: string, messageId: string, userId: string): Promise<void> => {
   if (!threadId || !messageId || !userId) {
@@ -384,35 +253,39 @@ export const markMessageAsRead = async (threadId: string, messageId: string, use
   }
 };
 
-export async function getThreadInfoById(threadId: string): Promise<MessageThread | null> {
-  if (!threadId) return null;
-  try {
-    const threadRef = doc(db, 'messageThreads', threadId);
-    const threadSnap = await getDoc(threadRef);
-    if (threadSnap.exists()) {
-      const data = threadSnap.data();
-      return {
-        id: threadSnap.id,
-        participantIds: data.participantIds,
-        participantNames: data.participantNames,
-        participantAvatars: data.participantAvatars,
-        lastMessageText: data.lastMessageText,
-        lastMessageSenderId: data.lastMessageSenderId,
-        lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
-        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
-        participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
-        itemId: data.itemId,
-        itemTitle: data.itemTitle,
-        itemImageUrl: data.itemImageUrl,
-        itemSellerId: data.itemSellerId,
-      } as MessageThread;
+export async function getThreadWithDiscussedItems(threadId: string): Promise<{thread: MessageThread, items: Item[]} | null> {
+    if (!threadId) return null;
+    try {
+        const threadRef = doc(db, 'messageThreads', threadId);
+        const threadSnap = await getDoc(threadRef);
+
+        if (!threadSnap.exists()) {
+            console.log(`No such thread document with ID: ${threadId}`);
+            return null;
+        }
+
+        const data = threadSnap.data();
+        const threadData = {
+            id: threadSnap.id,
+            ...data,
+            lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
+            createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        } as MessageThread;
+
+        let items: Item[] = [];
+        if (threadData.discussedItemIds && threadData.discussedItemIds.length > 0) {
+            const itemPromises = threadData.discussedItemIds.map(id => getItemByIdFromFirestore(id));
+            items = (await Promise.all(itemPromises)).filter((item): item is Item => item !== null);
+        }
+
+        return { thread: threadData, items };
+
+    } catch (error) {
+        console.error(`Error fetching thread with items for ID ${threadId}:`, error);
+        return null;
     }
-    return null;
-  } catch (error) {
-    console.error("Error fetching thread info by ID:", error);
-    return null;
-  }
 }
+
 
 export async function markThreadAsSeenByCurrentUser(threadId: string, userId: string): Promise<void> {
   if (!threadId || !userId) {
@@ -436,4 +309,3 @@ export async function markThreadAsSeenByCurrentUser(threadId: string, userId: st
     console.error(`Error marking thread ${threadId} as seen by ${userId}:`, error);
   }
 }
-    

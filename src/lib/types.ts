@@ -1,5 +1,4 @@
 
-
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
@@ -66,6 +65,7 @@ export interface Message {
   imageUrl?: string; // For image attachments
   timestamp: string; // ISO date string (will be Firestore ServerTimestamp on write, converted on read)
   readBy?: string[]; // Array of user UIDs who have read the message
+  itemId: string; // The ID of the item this message is about. Now mandatory.
 }
 
 export interface MessageThread {
@@ -77,11 +77,12 @@ export interface MessageThread {
   lastMessageSenderId?: string;
   lastMessageAt: string; // ISO date string (Firestore ServerTimestamp on write)
   createdAt: string; // ISO date string (Firestore ServerTimestamp on write)
-  itemId?: string; // Optional: if the conversation is about a specific item
+  itemId?: string; // The item associated with the LATEST message
   itemTitle?: string; // Denormalized item title
   itemImageUrl?: string; // Denormalized item primary image URL
   itemSellerId?: string;
   participantsWhoHaveSeenLatest?: string[]; // UIDs of participants who have seen the latest messages
+  discussedItemIds: string[]; // Array of all item IDs ever discussed in this thread.
 }
 
 export const ItemCategories = [
