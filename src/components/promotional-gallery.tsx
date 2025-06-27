@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -10,41 +10,75 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { storage } from '@/lib/firebase';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
+import { Skeleton } from './ui/skeleton';
+import { cn } from '@/lib/utils';
 
-// --- Placeholder Data ---
-// In a real application, this data would likely come from a CMS or Firestore.
-const PROMOTIONAL_MEDIA = [
-  {
-    type: 'video',
-    url: 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    thumbnailUrl: 'https://placehold.co/1280x720.png',
-    title: 'Comment fonctionne ReFind ?',
-    dataAiHint: 'tutorial explainer',
-  },
-  {
-    type: 'image',
-    url: 'https://placehold.co/1280x720.png',
-    title: 'Vendez vos articles facilement',
-    dataAiHint: 'selling online',
-  },
-  {
-    type: 'image',
-    url: 'https://placehold.co/1280x720.png',
-    title: 'Trouvez des trésors uniques',
-    dataAiHint: 'unique find',
-  },
-  {
-    type: 'image',
-    url: 'https://placehold.co/1280x720.png',
-    title: 'Rejoignez notre communauté',
-    dataAiHint: 'community people',
-  },
-];
-// ------------------------
+
+interface PromotionalMedia {
+  type: 'video' | 'image';
+  url: string;
+  title: string;
+  dataAiHint: string;
+}
 
 export function PromotionalGallery() {
+  const [mediaItems, setMediaItems] = useState<PromotionalMedia[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchMedia = async () => {
+      if (!storage) {
+        console.warn("Firebase Storage is not initialized, cannot fetch promotional media.");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const listRef = ref(storage, 'promotional-gallery');
+        const res = await listAll(listRef);
+
+        if (res.items.length === 0) {
+            setMediaItems([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const fetchedMediaPromises = res.items.map(async (itemRef) => {
+          const url = await getDownloadURL(itemRef);
+          const name = itemRef.name.toLowerCase();
+          const type = name.includes('video') ? 'video' : 'image';
+          
+          const cleanName = name.split('.')[0].replace(/^[0-9]+_/, '').replace(/_/g, ' ');
+          
+          return {
+            type,
+            url,
+            title: cleanName.charAt(0).toUpperCase() + cleanName.slice(1) || (type === 'video' ? 'Promotional Video' : 'Promotional Image'),
+            dataAiHint: cleanName || 'promotional',
+            fileName: itemRef.name,
+          };
+        });
+
+        const unsortedMedia = await Promise.all(fetchedMediaPromises);
+        const sortedMedia = unsortedMedia.sort((a, b) => a.fileName.localeCompare(b.fileName));
+        
+        setMediaItems(sortedMedia);
+
+      } catch (error) {
+        console.error("Error fetching promotional gallery from Storage:", error);
+        setMediaItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMedia();
+  }, []);
 
   const openDialog = (index: number) => {
     setSelectedIndex(index);
@@ -54,7 +88,7 @@ export function PromotionalGallery() {
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedIndex(
-      (prevIndex) => (prevIndex + 1) % PROMOTIONAL_MEDIA.length
+      (prevIndex) => (prevIndex + 1) % mediaItems.length
     );
   };
 
@@ -62,44 +96,77 @@ export function PromotionalGallery() {
     e.stopPropagation();
     setSelectedIndex(
       (prevIndex) =>
-        (prevIndex - 1 + PROMOTIONAL_MEDIA.length) % PROMOTIONAL_MEDIA.length
+        (prevIndex - 1 + mediaItems.length) % mediaItems.length
     );
   };
 
-  const mainVideo = PROMOTIONAL_MEDIA[0];
-  const sideImages = PROMOTIONAL_MEDIA.slice(1, 4);
+  if (isLoading) {
+    return (
+        <section className="py-4 md:py-8">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px]">
+                <Skeleton className="col-span-2 h-full w-full bg-muted/50" />
+                <div className="flex flex-col gap-2 md:gap-4">
+                    <Skeleton className="h-full w-full bg-muted/50" />
+                    <Skeleton className="h-full w-full bg-muted/50" />
+                    <Skeleton className="h-full w-full bg-muted/50" />
+                </div>
+            </div>
+        </section>
+    );
+  }
+
+  if (mediaItems.length === 0) {
+    return null; // Don't render anything if no media is found
+  }
+
+  const mainMedia = mediaItems[0];
+  const sideImages = mediaItems.slice(1, 4);
 
   return (
     <section className="py-4 md:py-8">
       <div className="grid grid-cols-3 gap-2 md:gap-4 h-[200px] sm:h-[250px] md:h-[290px] group">
         
-        {/* Main Video Section (Left) */}
-        <div
-          className="col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
-          onClick={() => openDialog(0)}
-        >
-          <Image
-            src={mainVideo.thumbnailUrl}
-            alt={mainVideo.title}
-            fill
-            sizes="(max-width: 767px) 66vw, 66vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            data-ai-hint={mainVideo.dataAiHint}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-             <PlayCircle className="h-12 w-12 md:h-16 md:w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-          </div>
-          <div className="absolute bottom-0 left-0 p-2 md:p-6">
-            <h3 className="text-white font-bold font-headline text-base md:text-2xl drop-shadow-md">
-              {mainVideo.title}
-            </h3>
-          </div>
-        </div>
+        {mainMedia && (
+            <div
+                className="col-span-2 relative rounded-lg overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                onClick={() => openDialog(0)}
+            >
+                 {mainMedia.type === 'video' ? (
+                    <video
+                        key={mainMedia.url}
+                        src={mainMedia.url}
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                        preload="metadata"
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    />
+                ) : (
+                    <Image
+                        src={mainMedia.url}
+                        alt={mainMedia.title}
+                        fill
+                        sizes="(max-width: 767px) 66vw, 66vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        data-ai-hint={mainMedia.dataAiHint}
+                    />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    {mainMedia.type === 'video' && <PlayCircle className="h-12 w-12 md:h-16 md:w-16 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />}
+                </div>
+                <div className="absolute bottom-0 left-0 p-2 md:p-4">
+                    <h3 className="text-white font-bold font-headline text-base md:text-xl drop-shadow-md">
+                    {mainMedia.title}
+                    </h3>
+                </div>
+            </div>
+        )}
 
-        {/* Side Images Section (Right) */}
         <div className="flex flex-col gap-2 md:gap-4">
           {sideImages.map((image, index) => (
+            image &&
             <div
               key={index}
               className="relative rounded-lg overflow-hidden cursor-pointer flex-1 shadow-lg hover:shadow-2xl transition-shadow duration-300"
@@ -124,7 +191,6 @@ export function PromotionalGallery() {
         </div>
       </div>
 
-      {/* Gallery Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-0 bg-background/80 backdrop-blur-sm flex items-center justify-center border-none">
           <DialogHeader className="sr-only">
@@ -132,24 +198,24 @@ export function PromotionalGallery() {
           </DialogHeader>
 
           <div className="relative w-full h-full p-8">
-            {PROMOTIONAL_MEDIA[selectedIndex]?.type === 'video' ? (
+            {mediaItems[selectedIndex]?.type === 'video' ? (
               <video
-                src={PROMOTIONAL_MEDIA[selectedIndex].url}
+                src={mediaItems[selectedIndex].url}
                 controls
                 autoPlay
                 className="w-full h-full object-contain rounded-md"
               />
-            ) : PROMOTIONAL_MEDIA[selectedIndex]?.url ? (
+            ) : mediaItems[selectedIndex]?.url ? (
               <Image
-                src={PROMOTIONAL_MEDIA[selectedIndex].url}
-                alt={PROMOTIONAL_MEDIA[selectedIndex].title}
+                src={mediaItems[selectedIndex].url}
+                alt={mediaItems[selectedIndex].title}
                 fill
                 className="object-contain rounded-md"
               />
             ) : null}
           </div>
 
-          {PROMOTIONAL_MEDIA.length > 1 && (
+          {mediaItems.length > 1 && (
             <>
               <Button
                 variant="ghost"
