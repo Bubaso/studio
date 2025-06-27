@@ -134,10 +134,14 @@ export default function CreditsPage() {
 
             <Card className="bg-card/50">
                  <CardContent className="space-y-2 text-muted-foreground p-6">
-                    <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" /> <strong>1 Crédit = 1 Annonce publiée.</strong></p>
-                    <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-primary" /> Vos <strong>5 premières annonces sont gratuites</strong> pour vous aider à démarrer !</p>
+                    <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" />1 Crédit = 1 Annonce publiée.</p>
+                    <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-primary" />Vos 5 premières annonces sont gratuites pour vous aider à démarrer !</p>
                 </CardContent>
             </Card>
+
+            <p className="text-center text-sm text-muted-foreground">
+                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
+            </p>
             
             <div className="grid md:grid-cols-3 gap-8">
                 {creditPackages.map((pkg) => {
@@ -190,10 +194,6 @@ export default function CreditsPage() {
                     )
                 })}
             </div>
-             <p className="text-center text-sm text-muted-foreground mt-8">
-                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
-            </p>
         </div>
     );
 }
-
