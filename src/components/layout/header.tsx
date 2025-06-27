@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Moon, Sun, Heart, Circle, Gem } from 'lucide-react';
+import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Heart, Circle, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePathname, useRouter } from 'next/navigation';
@@ -37,17 +37,11 @@ export function Header() {
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [mounted, setMounted] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
-      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
-    }
   }, []);
 
   useEffect(() => {
@@ -109,13 +103,6 @@ export function Header() {
     if (searchTerm.trim()) {
       router.push(`/browse?q=${encodeURIComponent(searchTerm.trim())}`);
     }
-  };
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
   if (!mounted || isLoadingAuth) {
@@ -188,9 +175,6 @@ export function Header() {
         </form>
 
         <div className="flex items-center space-x-1 md:space-x-2">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Changer de thème">
-            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          </Button>
           {currentUser ? (
             <>
               {userProfile && (
@@ -198,10 +182,10 @@ export function Header() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/credits">
-                        <Button
+                         <Button
                           variant="ghost"
                           className={cn(
-                            "relative h-10 w-10 p-0 rounded-md md:w-auto md:h-9 md:px-3 md:hover:bg-accent md:hover:text-accent-foreground"
+                            "relative h-10 w-10 p-0 rounded-md md:w-auto md:h-9 md:px-3"
                           )}
                         >
                           <Gem className="h-5 w-5 text-primary md:mr-2 md:h-4 md:w-4" />
