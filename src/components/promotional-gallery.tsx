@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -28,6 +28,7 @@ export function PromotionalGallery() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -102,6 +103,30 @@ export function PromotionalGallery() {
     );
   };
 
+  const handleVideoClick = () => {
+    const video = videoRef.current;
+    if (video) {
+      if (video.paused || video.ended) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    }
+  };
+
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.controls = true;
+    }
+  };
+
+  const handlePause = () => {
+    if (videoRef.current) {
+      videoRef.current.controls = false;
+    }
+  };
+
+
   if (isLoading || mediaItems.length === 0) {
     return (
         <section className="py-4 md:py-8">
@@ -134,12 +159,17 @@ export function PromotionalGallery() {
             >
                  {mainMedia.type === 'video' ? (
                     <video
+                        ref={videoRef}
                         key={mainMedia.url}
                         src={`${mainMedia.url}#t=0.1`}
                         playsInline
-                        controls
+                        controls={false}
                         preload="metadata"
-                        className="object-cover w-full h-full"
+                        className="object-cover w-full h-full cursor-pointer"
+                        onClick={handleVideoClick}
+                        onPlay={handlePlay}
+                        onPause={handlePause}
+                        onEnded={handlePause}
                     />
                 ) : (
                     <Image
