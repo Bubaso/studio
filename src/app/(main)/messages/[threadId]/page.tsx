@@ -32,7 +32,7 @@ const DiscussedItemsList = ({
     onSelectItem: (itemId: string) => void;
 }) => {
     return (
-        <Card className="hidden md:flex flex-col">
+        <Card className="flex h-full w-full flex-col">
             <div className="p-3 border-b">
                 <h3 className="font-semibold text-lg font-headline">Articles Concernés</h3>
             </div>
@@ -252,6 +252,8 @@ export default function MessageThreadPage() {
   const handleSelectItem = (itemId: string) => {
     const item = discussedItems.find(i => i.id === itemId);
     if (item && item.id !== selectedItem?.id) {
+        // Clear previous messages before fetching new ones to avoid brief flicker
+        setMessages([]);
         setSelectedItem(item);
     }
   };
@@ -284,12 +286,12 @@ export default function MessageThreadPage() {
   return (
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
         {/* Left Panel for Discussed Items (Desktop) */}
-        <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r">
+        <div className="hidden md:flex md:w-1/3 border-r">
             <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} />
         </div>
 
         {/* Right Panel for Chat */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
             <header className="p-3 border-b flex items-center space-x-3 sticky top-0 bg-card z-10">
                 <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="mr-1" aria-label="Retour aux messages">
                 <ArrowLeft className="h-5 w-5" />
