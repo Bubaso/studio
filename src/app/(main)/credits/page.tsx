@@ -141,10 +141,6 @@ export default function CreditsPage() {
                 </CardContent>
             </Card>
 
-            <p className="text-center text-sm text-muted-foreground">
-                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
-            </p>
-            
             <div className="grid md:grid-cols-3 gap-8">
                 {creditPackages.map((pkg) => {
                     const pricePerAd = pkg.price / pkg.credits;
@@ -196,6 +192,10 @@ export default function CreditsPage() {
                     )
                 })}
             </div>
+
+            <p className="text-center text-sm text-muted-foreground">
+                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
+            </p>
         </div>
     );
 }
