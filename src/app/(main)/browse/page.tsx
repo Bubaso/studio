@@ -32,7 +32,7 @@ function ActiveFilters() {
     
     const activeFilters: { key: string; label: string; value: string }[] = [];
 
-    const category = searchParams.get('category');
+    const categories = searchParams.getAll('category');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
     const condition = searchParams.get('condition');
@@ -41,7 +41,7 @@ function ActiveFilters() {
     const radius = searchParams.get('radius');
 
     if (lat) activeFilters.push({ key: 'lat', label: 'Proximité', value: `~${radius || 25}km` });
-    if (category) activeFilters.push({ key: 'category', label: 'Catégorie', value: category });
+    categories.forEach(cat => activeFilters.push({ key: `category_${cat}`, label: 'Catégorie', value: cat }));
     if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: 'Prix Min', value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
     if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: 'Prix Max', value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
     if (condition) activeFilters.push({ key: 'condition', label: 'État', value: condition.charAt(0).toUpperCase() + condition.slice(1) });
@@ -51,19 +51,22 @@ function ActiveFilters() {
         return null;
     }
 
-    const removeFilter = (keyToRemove: string) => {
-        const newParams = new URLSearchParams(searchParams);
+    const removeFilter = (keyToRemove: string, valueToRemove?: string) => {
+        const newParams = new URLSearchParams(searchParams.toString());
         if (keyToRemove === 'lat') {
             newParams.delete('lat');
             newParams.delete('lng');
             newParams.delete('radius');
+        } else if (keyToRemove.startsWith('category_')) {
+            const currentCategories = newParams.getAll('category');
+            const newCategories = currentCategories.filter(cat => cat !== valueToRemove);
+            newParams.delete('category');
+            newCategories.forEach(cat => newParams.append('category', cat));
         } else {
             newParams.delete(keyToRemove);
         }
         
-        const newSearchString = newParams.toString();
-        const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
-        router.replace(newUrl);
+        router.replace(`${pathname}?${newParams.toString()}`);
     };
     
     const clearAllFilters = () => {
@@ -72,9 +75,7 @@ function ActiveFilters() {
          if (query) {
             newParams.set('q', query);
          }
-         const newSearchString = newParams.toString();
-         const newUrl = newSearchString ? `${pathname}?${newSearchString}` : pathname;
-         router.replace(newUrl);
+         router.replace(`${pathname}?${newParams.toString()}`);
     }
 
     return (
@@ -83,7 +84,7 @@ function ActiveFilters() {
             {activeFilters.map(filter => (
                 <Badge key={filter.key} variant="secondary" className="pl-2 pr-1 py-1 text-sm">
                     {filter.label}: {filter.value}
-                    <button type="button" onClick={() => removeFilter(filter.key)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                    <button type="button" onClick={() => removeFilter(filter.key.startsWith('category_') ? 'category' : filter.key, filter.value)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
                         <X className="h-3 w-3" />
                         <span className="sr-only">Retirer le filtre {filter.label}</span>
                     </button>
@@ -131,7 +132,7 @@ function ItemGrid() {
         const cursor = cursors[pageNumber - 1];
 
         // Get params for the fetch call from the hook
-        const categoryParam = searchParams.get('category') as ItemCategory | null;
+        const categoriesParam = searchParams.getAll('category');
         const minPriceParam = searchParams.get('minPrice');
         const maxPriceParam = searchParams.get('maxPrice');
         const locationParam = searchParams.get('location');
@@ -142,7 +143,7 @@ function ItemGrid() {
 
         const result = await getItemsFromFirestore({
             query: queryParam || undefined,
-            category: categoryParam || undefined,
+            categories: categoriesParam.length > 0 ? categoriesParam : undefined,
             priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
             priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
             location: locationParam || undefined,
@@ -294,12 +295,12 @@ export default function BrowsePage() {
   const actualSearchParams = useSearchParams(); // Use hook for pageTitle
 
   const queryParam = actualSearchParams.get('q');
-  const categoryParam = actualSearchParams.get('category') as ItemCategory | null;
+  const categoryParams = actualSearchParams.getAll('category');
 
   const pageTitle = queryParam
     ? `Résultats pour "${queryParam}"`
-    : categoryParam
-    ? `Parcourir ${categoryParam}`
+    : categoryParams.length > 0
+    ? `Parcourir ${categoryParams.join(', ')}`
     : 'Parcourir tous les articles';
 
   return (
@@ -323,7 +324,7 @@ export default function BrowsePage() {
                             <SheetHeader>
                                 <SheetTitle>Filtres de recherche</SheetTitle>
                             </SheetHeader>
-                            <FilterControls onApplied={() => setIsSheetOpen(false)} />
+                            <FilterControls />
                         </SheetContent>
                     </Sheet>
                 </div>

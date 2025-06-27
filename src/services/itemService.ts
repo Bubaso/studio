@@ -63,7 +63,7 @@ const mapDocToItem = (document: any): Item => {
     sellerName: data.sellerName || 'Vendeur inconnu',
     postedDate: convertTimestampToISO(data.postedDate as FirebaseTimestampType),
     condition: data.condition,
-    dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\s]/gi, '').substring(0,20),
+    dataAiHint: data.dataAiHint || `${categoryForHint} ${itemNameForHint}`.toLowerCase().replace(/[^a-z0-9\\s]/gi, '').substring(0,20),
     lastUpdated: data.lastUpdated ? convertTimestampToISO(data.lastUpdated as FirebaseTimestampType) : undefined,
     suspectedSold: data.suspectedSold || false,
     lowActivity: lowActivity,
@@ -73,7 +73,7 @@ const mapDocToItem = (document: any): Item => {
 };
 
 export const getItemsFromFirestore = async (filters?: {
-  category?: ItemCategory;
+  categories?: string[]; // Changed to support multiple categories
   priceMin?: number;
   priceMax?: number;
   location?: string;
@@ -81,7 +81,6 @@ export const getItemsFromFirestore = async (filters?: {
   condition?: ItemCondition;
   pageSize?: number;
   lastVisibleItemId?: string;
-  // excludeSellerId is now handled client-side to avoid invalid queries
 }): Promise<{ items: Item[]; lastItemId: string | null; hasMore: boolean; }> => {
   if (!db) {
     console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
@@ -92,20 +91,18 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    if (filters?.category) {
-      queryConstraints.push(where('category', '==', filters.category));
+    if (filters?.categories && filters.categories.length > 0) {
+      queryConstraints.push(where('category', 'in', filters.categories));
     }
     if (filters?.condition) {
       queryConstraints.push(where('condition', '==', filters.condition));
     }
     
     // --- Sorting & Price Filtering ---
-    // If filtering by price, order by price. Otherwise, order by date.
-    // This avoids needing a composite index for every combination.
     if (filters?.priceMin !== undefined && filters?.priceMax !== undefined) {
         queryConstraints.push(where('price', '>=', filters.priceMin));
         queryConstraints.push(where('price', '<=', filters.priceMax));
-        queryConstraints.push(orderBy('price', 'asc')); // Sort by price when filtering by price
+        queryConstraints.push(orderBy('price', 'asc'));
     } else {
         queryConstraints.push(orderBy('postedDate', 'desc')); // Default sort
     }
@@ -132,17 +129,14 @@ export const getItemsFromFirestore = async (filters?: {
     
     let items = pageDocs.map(mapDocToItem);
 
-    // This client-side filter is only for sold items that are older than a certain date.
-    // This is acceptable as it's a minor filter on a small, paginated dataset.
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
     items = items.filter(item => {
-        if (!item.isSold) return true; // Keep if not sold
-        if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true; // Keep if sold recently
-        return false; // Hide if sold more than 15 days ago
+        if (!item.isSold) return true;
+        if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true;
+        return false;
     });
 
-    // Determine the next cursor
     const lastVisibleDocInSet = pageDocs[pageDocs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
 
@@ -361,7 +355,6 @@ export async function updateItemInFirestore(
     dataToUpdate.price = Number(dataToUpdate.price);
   }
   
-  // If the videoUrl key is present with an undefined value, it means we want to remove the field.
   if ('videoUrl' in dataToUpdate && dataToUpdate.videoUrl === undefined) {
       dataToUpdate.videoUrl = deleteField();
   }
@@ -395,14 +388,12 @@ export async function logItemView(itemId: string, userId: string, item: Partial<
   try {
     const batch = writeBatch(db);
 
-    // Log the view for the item itself (for simple view count)
     const itemViewsRef = doc(collection(db, 'items', itemId, 'views'));
     batch.set(itemViewsRef, {
       timestamp: serverTimestamp(),
       userId: userId,
     });
 
-    // Log the view in the user's history for personalization
     const userHistoryRef = doc(collection(db, 'users', userId, 'viewHistory'));
     batch.set(userHistoryRef, {
         itemId: item.id,
@@ -443,22 +434,19 @@ export async function deleteItem(itemId: string): Promise<void> {
     throw new Error("Item not found, cannot delete.");
   }
 
-  // Delete images from Firebase Storage
   const imageDeletePromises = item.imageUrls.map(url => {
-    // Only attempt to delete images hosted on Firebase Storage
     if (url.includes('firebasestorage.googleapis.com')) {
       try {
         const imageRef = storageRef(storage, url);
         return deleteObject(imageRef);
       } catch (error) {
         console.error(`Failed to create storage reference for URL ${url}. It might be malformed.`, error);
-        return Promise.resolve(); // Don't block other deletions
+        return Promise.resolve();
       }
     }
-    return Promise.resolve(); // Ignore placeholders or other external URLs
+    return Promise.resolve();
   });
 
-  // Delete video from Firebase Storage if it exists
   if (item.videoUrl && item.videoUrl.includes('firebasestorage.googleapis.com')) {
     try {
         const videoRef = storageRef(storage, item.videoUrl);
@@ -478,7 +466,6 @@ export async function deleteItem(itemId: string): Promise<void> {
       });
     });
 
-  // Delete the item document from Firestore
   const itemDocRef = doc(db, 'items', itemId);
   await deleteDoc(itemDocRef);
 }
