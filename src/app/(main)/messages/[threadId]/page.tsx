@@ -21,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ReportItemButton } from '@/components/report-item-button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
+import { CustomAudioPlayer } from '@/components/custom-audio-player';
 
 // Sub-component for the list of discussed items
 const DiscussedItemsList = ({
@@ -476,7 +477,7 @@ export default function MessageThreadPage() {
   return (
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
         {/* Left Panel for Discussed Items (Desktop) */}
-        <div className="hidden md:flex md:w-1/3 border-r">
+        <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r">
             <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} />
         </div>
 
@@ -532,9 +533,10 @@ export default function MessageThreadPage() {
                                     )}
                                 >
                                     {msg.audioUrl && (
-                                      <audio controls src={msg.audioUrl} className="w-full max-w-xs">
-                                        Votre navigateur ne supporte pas l'élément audio.
-                                      </audio>
+                                      <CustomAudioPlayer
+                                        audioUrl={msg.audioUrl}
+                                        variant={isCurrentUserSender ? 'sent' : 'received'}
+                                      />
                                     )}
                                     {msg.imageUrl && (
                                     <Dialog>
@@ -587,7 +589,9 @@ export default function MessageThreadPage() {
                           <Button onClick={handleCancelAudio} variant="ghost" size="icon">
                             <Trash2 className="h-5 w-5 text-destructive" />
                           </Button>
-                          <audio src={audioPreviewUrl} controls className="w-full" />
+                          <div className="flex-1">
+                            {audioPreviewUrl && <CustomAudioPlayer audioUrl={audioPreviewUrl} variant="sent" />}
+                          </div>
                           <Button onClick={handleSendAudio} size="icon" disabled={isSending}>
                             {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                           </Button>
@@ -646,5 +650,3 @@ export default function MessageThreadPage() {
     </div>
   );
 }
-
-    
