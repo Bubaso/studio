@@ -10,11 +10,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Save } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { UserCollection } from '@/lib/types';
 import {
@@ -32,12 +33,25 @@ interface AddToCollectionDialogProps {
   onOpenChange: (wasUpdated: boolean) => void;
 }
 
+// Helper to compare two sets
+const areSetsEqual = (a: Set<string>, b: Set<string>) => {
+    if (a.size !== b.size) return false;
+    for (const value of a) {
+        if (!b.has(value)) return false;
+    }
+    return true;
+}
+
+
 export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToCollectionDialogProps) {
   const { firebaseUser } = useAuth();
   const { toast } = useToast();
   
   const [collections, setCollections] = useState<UserCollection[]>([]);
-  const [selectedCollectionIds, setSelectedCollectionIds] = useState<Set<string>>(new Set());
+  
+  const [initialSelectedIds, setInitialSelectedIds] = useState<Set<string>>(new Set());
+  const [draftSelectedIds, setDraftSelectedIds] = useState<Set<string>>(new Set());
+
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, startUpdateTransition] = useTransition();
 
@@ -48,11 +62,16 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
     if (!firebaseUser || !itemId) return;
     setIsLoading(true);
     try {
-      const userCollections = await getCollectionsForUser(firebaseUser.uid);
+      const [userCollections, collectionsWithItem] = await Promise.all([
+          getCollectionsForUser(firebaseUser.uid),
+          getCollectionsForItem(firebaseUser.uid, itemId)
+      ]);
+      
       setCollections(userCollections);
       
-      const collectionsWithItem = await getCollectionsForItem(firebaseUser.uid, itemId);
-      setSelectedCollectionIds(new Set(collectionsWithItem.map(c => c.id)));
+      const initialIds = new Set(collectionsWithItem.map(c => c.id));
+      setInitialSelectedIds(initialIds);
+      setDraftSelectedIds(initialIds);
 
     } catch (error) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger vos collections.' });
@@ -63,29 +82,22 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
 
   useEffect(() => {
     if (open && firebaseUser) {
-      fetchCollectionsData();
-    } else {
       setShowNewCollectionInput(false);
       setNewCollectionName("");
+      fetchCollectionsData();
     }
   }, [open, firebaseUser]);
 
 
   const handleCollectionToggle = (collectionId: string, checked: boolean) => {
-    startUpdateTransition(async () => {
-        if (!firebaseUser) return;
-        
-        const result = await toggleItemInCollection(firebaseUser.uid, collectionId, itemId, !checked);
-        if(result.success) {
-            setSelectedCollectionIds(prev => {
-                const newSet = new Set(prev);
-                if (checked) newSet.add(collectionId);
-                else newSet.delete(collectionId);
-                return newSet;
-            })
+    setDraftSelectedIds(prev => {
+        const newSet = new Set(prev);
+        if (checked) {
+            newSet.add(collectionId);
         } else {
-            toast({ variant: 'destructive', title: 'Erreur', description: result.error });
+            newSet.delete(collectionId);
         }
+        return newSet;
     });
   };
   
@@ -98,15 +110,44 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
         toast({ title: 'Collection créée', description: `"${newCollectionName}" a été créée et l'article ajouté.` });
         setShowNewCollectionInput(false);
         setNewCollectionName("");
-        fetchCollectionsData(); // Refresh the list
+        await fetchCollectionsData();
       } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.error });
       }
     });
   };
 
+  const handleSaveChanges = () => {
+    if (!firebaseUser) return;
+
+    startUpdateTransition(async () => {
+        const idsToAdd = [...draftSelectedIds].filter(id => !initialSelectedIds.has(id));
+        const idsToRemove = [...initialSelectedIds].filter(id => !draftSelectedIds.has(id));
+        
+        const promises: Promise<any>[] = [];
+
+        idsToAdd.forEach(collectionId => {
+            promises.push(toggleItemInCollection(firebaseUser.uid, collectionId, itemId, false));
+        });
+
+        idsToRemove.forEach(collectionId => {
+            promises.push(toggleItemInCollection(firebaseUser.uid, collectionId, itemId, true));
+        });
+        
+        try {
+            await Promise.all(promises);
+            toast({ title: "Collections mises à jour", description: "Vos favoris ont été sauvegardés." });
+            onOpenChange(true); // Close dialog and trigger refresh
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Erreur', description: error.message || "Impossible de sauvegarder les modifications." });
+        }
+    });
+  };
+
+  const hasChanges = !areSetsEqual(initialSelectedIds, draftSelectedIds);
+
   return (
-    <Dialog open={open} onOpenChange={() => onOpenChange(true)}>
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onOpenChange(false) }}>
       <DialogContent 
         className="sm:max-w-md"
         onClick={(e) => e.stopPropagation()}
@@ -114,7 +155,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
         <DialogHeader>
           <DialogTitle>Sauvegarder dans...</DialogTitle>
           <DialogDescription>
-            Choisissez une ou plusieurs collections où sauvegarder cet article.
+            Cochez les collections où vous souhaitez sauvegarder cet article.
           </DialogDescription>
         </DialogHeader>
         
@@ -129,7 +170,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
                         <div key={collection.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted">
                             <Checkbox 
                                 id={`collection-${collection.id}`}
-                                checked={selectedCollectionIds.has(collection.id)}
+                                checked={draftSelectedIds.has(collection.id)}
                                 onCheckedChange={(checked) => handleCollectionToggle(collection.id, !!checked)}
                                 disabled={isUpdating}
                             />
@@ -172,6 +213,19 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
             )}
         </div>
         
+        <DialogFooter className="mt-4 pt-4 border-t">
+            <DialogClose asChild>
+                <Button variant="ghost">Annuler</Button>
+            </DialogClose>
+            <Button
+                onClick={handleSaveChanges}
+                disabled={!hasChanges || isUpdating}
+            >
+                {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Enregistrer
+            </Button>
+        </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
