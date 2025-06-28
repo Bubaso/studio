@@ -122,6 +122,9 @@ export default function MessageThreadPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -208,6 +211,9 @@ export default function MessageThreadPage() {
       }
       if (audioPreviewUrl) {
         URL.revokeObjectURL(audioPreviewUrl);
+      }
+      if(recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
       }
     };
   }, [audioPreviewUrl]);
@@ -311,6 +317,12 @@ export default function MessageThreadPage() {
         streamRef.current?.getTracks().forEach(track => track.stop());
         streamRef.current = null;
       };
+      
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+      setRecordingTime(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prevTime => prevTime + 1);
+      }, 1000);
 
       recorder.start();
       setIsRecording(true);
@@ -324,6 +336,10 @@ export default function MessageThreadPage() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
     }
   };
 
@@ -344,6 +360,12 @@ export default function MessageThreadPage() {
         setMessages([]);
         setSelectedItem(item);
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
   
   if (isLoading || !currentUser) {
@@ -472,9 +494,9 @@ export default function MessageThreadPage() {
                     <footer className="p-3 border-t bg-card sticky bottom-0 z-10">
                       {isRecording ? (
                         <div className="flex items-center w-full gap-4">
-                          <div className="flex items-center gap-2 text-red-500 animate-pulse font-medium">
-                            <Mic className="h-5 w-5" />
-                            Enregistrement...
+                          <div className="flex items-center gap-2 text-red-500 font-medium">
+                            <Mic className="h-5 w-5 animate-pulse" />
+                            <span>Enregistrement... {formatTime(recordingTime)}</span>
                           </div>
                           <Button onClick={handleStopRecording} variant="destructive" size="icon">
                             <Pause className="h-5 w-5" />
@@ -500,7 +522,7 @@ export default function MessageThreadPage() {
                               </Button>
                           </div>
                           )}
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-end space-x-2">
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
                             <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend} aria-label="Joindre une image">
                                 {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
