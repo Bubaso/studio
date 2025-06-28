@@ -38,7 +38,6 @@ export interface UserProfile {
   avatarUrl: string | null;
   dataAiHint?: string;
   joinedDate: string;
-  location?: string;
   lastActiveAt?: string;
   credits: number; // User's credit balance
   freeListingsRemaining: number; // Number of free listings left
@@ -87,6 +86,7 @@ export interface MessageThread {
   deletedFor?: string[]; // Array of user UIDs for whom the thread is "deleted"
   itemConversationsDeletedFor?: { [key: string]: string[] }; // Map of userId to array of itemIds they deleted
   blockedBy?: string | null; // UID of the user who initiated the block
+  unreadItemsFor?: { [userId: string]: string[] }; // Map of userId to array of unread itemIds
 }
 
 export const ItemCategories = [

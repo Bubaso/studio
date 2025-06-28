@@ -2,11 +2,11 @@
 "use client"; 
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser, blockThread, unblockThread } from '@/services/messageService';
+import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser, blockThread, unblockThread, markItemAsReadInThread } from '@/services/messageService';
 import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -30,11 +30,13 @@ const DiscussedItemsList = ({
     selectedItemId,
     onSelectItem,
     onDeleteItem,
+    unreadItemIds,
 }: {
     items: Item[];
     selectedItemId: string | null;
     onSelectItem: (itemId: string) => void;
     onDeleteItem: (itemId: string) => void;
+    unreadItemIds: string[];
 }) => {
     return (
         <Card className="flex h-full w-full flex-col">
@@ -43,15 +45,18 @@ const DiscussedItemsList = ({
             </div>
             <ScrollArea className="flex-1">
                 <div className="flex flex-col">
-                    {items.map((item) => (
+                    {items.map((item) => {
+                        const hasUnread = unreadItemIds.includes(item.id);
+                        return (
                         <div key={item.id} className="group flex items-center pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
                             <button
                                 onClick={() => onSelectItem(item.id)}
                                 className={cn(
-                                    "flex items-center gap-3 p-3 text-left w-full",
+                                    "relative flex items-center gap-3 p-3 text-left w-full",
                                     selectedItemId === item.id ? "bg-primary/10" : ""
                                 )}
                             >
+                                {hasUnread && <div className="absolute left-1 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />}
                                 <div className="relative h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-muted">
                                     {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
                                 </div>
@@ -87,7 +92,7 @@ const DiscussedItemsList = ({
                                 </AlertDialogContent>
                             </AlertDialog>
                         </div>
-                    ))}
+                    )})}
                 </div>
             </ScrollArea>
         </Card>
@@ -99,16 +104,20 @@ const MobileDiscussedItemsList = ({
     selectedItemId,
     onSelectItem,
     onDeleteItem,
+    unreadItemIds,
 }: {
     items: Item[];
     selectedItemId: string | null;
     onSelectItem: (itemId: string) => void;
     onDeleteItem: (itemId: string) => void;
+    unreadItemIds: string[];
 }) => (
     <div className="md:hidden p-2 border-b">
         <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-3">
-                {items.map(item => (
+                {items.map(item => {
+                    const hasUnread = unreadItemIds.includes(item.id);
+                    return (
                     <div key={item.id} className="relative group/mobileitem">
                         <button
                             onClick={() => onSelectItem(item.id)}
@@ -117,6 +126,7 @@ const MobileDiscussedItemsList = ({
                                 selectedItemId === item.id ? 'border-primary bg-primary/10' : 'bg-card'
                             )}
                         >
+                             {hasUnread && <div className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-card" />}
                             <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted mb-1">
                                 {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
                             </div>
@@ -149,7 +159,7 @@ const MobileDiscussedItemsList = ({
                             </AlertDialogContent>
                         </AlertDialog>
                     </div>
-                ))}
+                )})}
             </div>
             <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -159,6 +169,7 @@ const MobileDiscussedItemsList = ({
 
 export default function MessageThreadPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
   const threadId = params.threadId as string;
@@ -207,9 +218,19 @@ export default function MessageThreadPage() {
             if (data?.thread) {
                 setThreadInfo(data.thread);
                 setDiscussedItems(data.items);
-                // Select the item from the last message context, or the first item discussed
-                const initialItem = data.items.find(i => i.id === data.thread.itemId) || data.items[0];
+                // Select item from query param > last message context > first item
+                const initialItemIdFromQuery = searchParams.get('item');
+                const initialItem = data.items.find(i => i.id === initialItemIdFromQuery) || 
+                                    data.items.find(i => i.id === data.thread.itemId) || 
+                                    data.items[0];
+
                 setSelectedItem(initialItem || null);
+
+                // Mark the selected item as read
+                if (initialItem) {
+                    markItemAsReadInThread(threadId, initialItem.id, currentUser.uid);
+                }
+
             } else {
                 toast({ variant: "destructive", title: "Erreur", description: "Fil de discussion non trouvé ou accès refusé." });
                 router.push('/messages');
@@ -224,7 +245,7 @@ export default function MessageThreadPage() {
     } else if (!currentUser) {
         setIsLoading(false);
     }
-  }, [threadId, currentUser, router, toast]);
+  }, [threadId, currentUser, router, toast, searchParams]);
 
   // Message Subscription Effect
   useEffect(() => {
@@ -420,6 +441,9 @@ export default function MessageThreadPage() {
     if (item && item.id !== selectedItem?.id) {
         setMessages([]);
         setSelectedItem(item);
+        if (currentUser && threadId) {
+            markItemAsReadInThread(threadId, itemId, currentUser.uid);
+        }
     }
   };
 
@@ -500,6 +524,8 @@ export default function MessageThreadPage() {
   const iHaveBlockedThisUser = threadInfo.blockedBy === currentUser.uid;
   const isConversationBlocked = !!threadInfo.blockedBy;
   const canIToggleBlock = !threadInfo.blockedBy || iHaveBlockedThisUser;
+  
+  const unreadItemIds = threadInfo.unreadItemsFor?.[currentUser.uid] || [];
 
   let placeholderText = "Écrivez votre message...";
   if (isConversationBlocked) {
@@ -515,7 +541,7 @@ export default function MessageThreadPage() {
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
         {/* Left Panel for Discussed Items (Desktop) */}
         <div className="hidden md:flex md:w-1/3 lg:w-1/4 border-r">
-            <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} />
+            <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} unreadItemIds={unreadItemIds} />
         </div>
 
         {/* Right Panel for Chat */}
@@ -560,7 +586,7 @@ export default function MessageThreadPage() {
             </header>
 
             {/* Mobile Item Selector */}
-            {discussedItems.length > 0 && <MobileDiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} />}
+            {discussedItems.length > 0 && <MobileDiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} unreadItemIds={unreadItemIds} />}
 
             {selectedItem ? (
                  <div className="flex-1 flex flex-col overflow-hidden">

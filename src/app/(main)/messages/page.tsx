@@ -127,13 +127,15 @@ export default function MessagesPage() {
             const currentUserHasSeenLatest = thread.participantsWhoHaveSeenLatest?.includes(currentUser.uid);
             const hasUnreadMessages = !isLastMessageFromCurrentUser && !currentUserHasSeenLatest;
 
+            const linkHref = `/messages/${thread.id}${thread.itemId ? `?item=${thread.itemId}` : ''}`;
+
             return (
               <Card key={thread.id} className={cn(
                   "hover:shadow-md transition-shadow hover:border-primary/50",
                   hasUnreadMessages ? "border-primary/70 bg-primary/5" : ""
               )}>
                 <CardContent className="p-3 flex items-center space-x-3">
-                  <Link href={`/messages/${thread.id}`} className="flex items-center space-x-3 flex-1 overflow-hidden group">
+                  <Link href={linkHref} className="flex items-center space-x-3 flex-1 overflow-hidden group">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} data-ai-hint={otherParticipant.dataAiHint as string} />
                       <AvatarFallback>{otherParticipant.name.substring(0, 2).toUpperCase()}</AvatarFallback>

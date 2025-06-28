@@ -193,6 +193,8 @@ export const sendMessage = async (
     // a new message brings it back into their inbox.
     if (recipientId) {
         updateData.deletedFor = arrayRemove(recipientId);
+        // Add the item to the recipient's unread items list
+        updateData[`unreadItemsFor.${recipientId}`] = arrayUnion(itemId);
     }
     
     batch.update(threadRef, updateData);
@@ -241,6 +243,7 @@ export const getMessageThreadsForUser = (
           deletedFor: data.deletedFor || [],
           itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
           blockedBy: data.blockedBy || null,
+          unreadItemsFor: data.unreadItemsFor || {},
         } as MessageThread;
       })
       .filter(thread => !thread.deletedFor?.includes(userUid)); // Filter client-side
@@ -344,6 +347,7 @@ export async function getThreadWithDiscussedItems(threadId: string, currentUserI
             deletedFor: data.deletedFor || [],
             itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
             blockedBy: data.blockedBy || null,
+            unreadItemsFor: data.unreadItemsFor || {},
         } as MessageThread;
 
         let items: Item[] = [];
@@ -436,4 +440,16 @@ export async function unblockThread(threadId: string): Promise<void> {
   await updateDoc(threadRef, {
     blockedBy: deleteField(),
   });
+}
+
+export async function markItemAsReadInThread(threadId: string, itemId: string, userId: string): Promise<void> {
+  if (!threadId || !itemId || !userId) return;
+  const threadRef = doc(db, 'messageThreads', threadId);
+  try {
+    await updateDoc(threadRef, {
+      [`unreadItemsFor.${userId}`]: arrayRemove(itemId)
+    });
+  } catch (error) {
+    console.error(`Error marking item ${itemId} as read in thread ${threadId} for user ${userId}:`, error);
+  }
 }
