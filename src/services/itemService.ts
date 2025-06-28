@@ -297,6 +297,21 @@ export async function createItemInFirestore(
     throw new Error("Seller ID is missing from item data.");
   }
 
+  // Check for duplicate items
+  const q = query(
+    collection(db, 'items'),
+    where('sellerId', '==', userId),
+    where('name', '==', itemData.name),
+    where('price', '==', itemData.price),
+    where('description', '==', itemData.description),
+    where('isSold', '==', false) // Only check against unsold items
+  );
+
+  const duplicatesSnapshot = await getDocs(q);
+  if (!duplicatesSnapshot.empty) {
+    throw new Error("Une annonce identique existe déjà.");
+  }
+
   const batch = writeBatch(db);
   const userRef = doc(db, 'users', userId);
 
@@ -327,6 +342,7 @@ export async function createItemInFirestore(
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
+      isSold: false, // Ensure new items are marked as not sold
     });
 
     await batch.commit();

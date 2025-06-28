@@ -293,6 +293,14 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   };
 
   async function onSubmit(values: ListingFormValues) {
+    if (!isEditMode && (!values.imageFiles || values.imageFiles.length === 0)) {
+      form.setError("imageFiles", {
+        type: "manual",
+        message: "Veuillez télécharger au moins une image pour votre annonce.",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     if (!firebaseUser || !userProfile) {
@@ -334,10 +342,6 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         setUploadProgress(100);
       }
       
-      if (finalImageUrls.length === 0 && !isEditMode) { 
-        finalImageUrls.push("https://placehold.co/600x400.png");
-      }
-
       let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
       if (values.videoFile) {
         setUploadStatusText('Téléversement de la vidéo...');
@@ -382,7 +386,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
           ...(commonItemData as Omit<Item, 'id' | 'postedDate' | 'lastUpdated' | 'sellerId' | 'sellerName'>), 
           sellerId: firebaseUser.uid,
           sellerName: firebaseUser.displayName || firebaseUser.email || 'Vendeur Anonyme',
-          imageUrls: finalImageUrls.length > 0 ? finalImageUrls : ["https://placehold.co/600x400.png"], 
+          imageUrls: finalImageUrls, // Use finalImageUrls which is now guaranteed to have at least one image for new items
         };
         const newItemId = await createItemInFirestore(newItemFullData);
         toast({
@@ -672,6 +676,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
                 </FormDescription>
                 {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
+                 <FormMessage />
               </FormItem>
             )}
           />
