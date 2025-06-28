@@ -4,62 +4,93 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users: Can read anyone's profile, but can only write to their own.
-    match /users/{userId} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Items: Publicly readable, but only the owner can write/update.
-    match /items/{itemId} {
-      allow read; // Anyone can read an item's main document.
-      allow create: if request.auth != null && request.resource.data.sellerId == request.auth.uid; // Must be authenticated and be the seller.
-      allow update: if request.auth != null && resource.data.sellerId == request.auth.uid; // Only seller can update.
-      allow delete: if request.auth != null && resource.data.sellerId == request.auth.uid; // Only seller can delete.
+    // Helper function to check if the user is the owner of a document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
 
-      // Subcollection for views. Anyone can log a view, and anyone can list/count them, but no one can read the individual view documents.
-      match /views/{viewId} {
-        allow list: if true; // Allow counting documents for view count.
-        allow get: if false; // Disallow reading specific view documents to protect privacy.
-        allow create; // Anyone can create a view document (log a view).
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles
+      allow read: if true;
+      // User can create their own doc, or update their own doc
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+
+      // View History subcollection
+      match /viewHistory/{historyId} {
+        // A user can only write to their own view history
+        allow write: if isOwner(userId);
+        allow read: if isOwner(userId);
       }
     }
 
-    // Reviews: Anyone can read, but only authenticated users can write a review.
-    // Additional logic in Server Action prevents multiple reviews and self-reviews.
-    match /reviews/{reviewId} {
-      allow read;
-      allow create: if request.auth != null;
-      // No updates or deletes from client for simplicity.
+    // Items collection
+    match /items/{itemId} {
+      // Anyone can read item listings
+      allow read: if true;
+      // Only authenticated users can create items
+      allow create: if isSignedIn();
+      // Only the seller can update or delete their own item
+      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      
+      // Views subcollection
+      match /views/{viewId} {
+        // Any authenticated user can create a view record on any item.
+        allow create: if isSignedIn();
+        // Disallow reading views to protect privacy
+        allow read, update, delete: if false;
+      }
     }
-    
-    // Favorites: Users can only manage their own favorites. Composite key `userId_itemId` is used.
-    match /userFavorites/{favoriteId} {
-        allow read, write, delete: if request.auth != null && request.auth.uid == favoriteId.split('_')[0];
-    }
-    
-    // Message Threads: Only participants can read/write.
+
+    // Message Threads collection
     match /messageThreads/{threadId} {
-        allow read, update, create: if request.auth != null && request.auth.uid in resource.data.participantIds;
-        
-        // Messages Subcollection: Only participants can read/write messages in their thread.
-        match /messages/{messageId} {
-            allow read, create: if request.auth != null && get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid;
-            allow update: if request.auth != null && get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid;
-        }
+      // A user can read/write to a thread only if they are a participant
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+
+      // Messages subcollection within a thread
+      match /messages/{messageId} {
+        // A user can read/write messages in a thread they are a participant in.
+        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid;
+      }
     }
     
-    // Product Reports: Authenticated users can create reports.
+    // User Favorites collection (documentId is userId_itemId)
+    match /userFavorites/{favoriteId} {
+        // A user can only manage their own favorites.
+        // The favoriteId is a composite key, so we check if it starts with the user's UID.
+        allow read, create, delete: if isSignedIn() && favoriteId.split('_')[0] == request.auth.uid;
+        allow update: if false;
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.reviewerId == request.auth.uid && request.resource.data.sellerId != request.auth.uid;
+        allow update, delete: if false;
+    }
+
+    // Product Reports collection
     match /productReports/{itemId} {
-        // No one needs to read the container document
+        // Allow write for any authenticated user
+        allow write: if isSignedIn();
         allow read: if false;
-        
+
         match /reports/{userId} {
-            // A user can only create their own report document.
-            allow create: if request.auth != null && request.auth.uid == userId;
-            // No one can read or update reports from the client to maintain privacy.
+            // A user can only create a report with their own UID
+            allow create: if isOwner(userId);
             allow read, update, delete: if false;
         }
+    }
+    
+    // Payment Intents collection - server-side only
+    match /paymentIntents/{intentId} {
+        allow read, write: if false;
     }
   }
 }
