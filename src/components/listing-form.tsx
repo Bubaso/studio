@@ -59,12 +59,12 @@ const fileSchema = z
   );
 
 const listingFormSchema = z.object({
-  name: z.string().min(3, "Le nom de l'article doit comporter au moins 3 caractères.").max(100),
-  description: z.string().min(20, "La description doit comporter au moins 20 caractères.").max(500, "La description ne peut pas dépasser 500 caractères."),
+  name: z.string().min(10, "Le nom de l'article doit comporter au moins 10 caractères.").max(100),
+  description: z.string().min(50, "La description doit comporter au moins 50 caractères.").max(500, "La description ne peut pas dépasser 500 caractères."),
   price: z.coerce.number().positive("Le prix doit être un nombre positif.").int("Le prix doit être un nombre entier pour FCFA."),
   category: z.enum(ItemCategories, { required_error: "Veuillez sélectionner une catégorie."}),
   condition: z.enum(ItemConditions, { required_error: "Veuillez sélectionner l'état de l'article."}),
-  location: z.string().min(2, "Le lieu doit comporter au moins 2 caractères.").max(100).optional(),
+  location: z.string().min(2, "Le lieu de l'article est requis.").max(100),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   imageFiles: z
@@ -216,7 +216,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const handleLocationSelected = useCallback(({ lat, lng, address }: { lat: number; lng: number; address: string; }) => {
     form.setValue('latitude', lat);
     form.setValue('longitude', lng);
-    form.setValue('location', address);
+    form.setValue('location', address, { shouldValidate: true });
   }, [form]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -561,6 +561,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   : null
               }
               onLocationSelect={handleLocationSelected}
+            />
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
