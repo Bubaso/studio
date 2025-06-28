@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useTransition } from 'react';
@@ -20,7 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { UserCollection } from '@/lib/types';
 import {
   getCollectionsForUser,
-  createCollectionAndAddItem,
+  createEmptyCollection,
   toggleItemInCollection,
   getCollectionsForItem
 } from '@/services/favoriteService';
@@ -105,12 +104,24 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
     if (!firebaseUser || !newCollectionName.trim()) return;
     
     startUpdateTransition(async () => {
-      const result = await createCollectionAndAddItem(firebaseUser.uid, newCollectionName, itemId);
-      if (result.success) {
-        toast({ title: 'Collection créée', description: `"${newCollectionName}" a été créée et l'article ajouté.` });
+      const result = await createEmptyCollection(firebaseUser.uid, newCollectionName);
+      if (result.success && result.collectionId) {
+        toast({ title: 'Collection créée', description: `"${newCollectionName}" a été créée. Enregistrez pour ajouter l'article.` });
+        
+        const newCollection: UserCollection = {
+          id: result.collectionId,
+          userId: firebaseUser.uid,
+          name: newCollectionName.trim(),
+          createdAt: new Date().toISOString(),
+          itemCount: 0,
+          previewImageUrls: [],
+        };
+
+        setCollections(prev => [newCollection, ...prev]);
+        handleCollectionToggle(result.collectionId, true);
         setShowNewCollectionInput(false);
         setNewCollectionName("");
-        await fetchCollectionsData();
+
       } else {
         toast({ variant: 'destructive', title: 'Erreur', description: result.error });
       }

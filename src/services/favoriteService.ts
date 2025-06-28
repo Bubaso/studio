@@ -94,6 +94,25 @@ export async function getCollectionWithItems(collectionId: string): Promise<{ co
     }
 }
 
+export async function createEmptyCollection(userId: string, collectionName: string): Promise<{ success: boolean; error?: string; collectionId?: string }> {
+  if (!userId || !collectionName.trim()) {
+    return { success: false, error: "User ID and collection name are required." };
+  }
+  try {
+    const collectionsRef = collection(db, 'collections');
+    const newCollectionDocRef = await addDoc(collectionsRef, {
+      userId,
+      name: collectionName.trim(),
+      createdAt: serverTimestamp(),
+      itemCount: 0,
+      previewImageUrls: []
+    });
+    return { success: true, collectionId: newCollectionDocRef.id };
+  } catch (error: any) {
+    console.error('Error creating empty collection:', error);
+    return { success: false, error: error.message || "Could not create collection." };
+  }
+}
 
 export async function createCollectionAndAddItem(userId: string, collectionName: string, itemId: string): Promise<{ success: boolean; error?: string }> {
   if (!userId || !collectionName.trim() || !itemId) {

@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useAuth } from '@/context/AuthContext';
-import { getCollectionsForUser, createCollectionAndAddItem } from '@/services/favoriteService';
+import { getCollectionsForUser, createEmptyCollection } from '@/services/favoriteService';
 import type { UserCollection } from '@/lib/types';
 import { Loader2, FolderPlus, LogIn, Info, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -61,21 +60,17 @@ export default function FavoritesPage() {
       };
       setIsCreating(true);
       try {
-          // Creating a collection without an item is not directly supported by our function,
-          // so we'll adapt. Let's create a dedicated `createCollection` function in the service.
-          // For now, let's just use a placeholder call.
-          // This requires a new function: createEmptyCollection(userId, name)
-          await createCollectionAndAddItem(currentUser.uid, newCollectionName, "placeholder_item_for_creation");
-          // The above line is a temporary workaround. A proper implementation would have
-          // a function like `createEmptyCollection` in `favoriteService.ts`.
-          // For this demonstration, we assume it works or will be implemented.
-
-          toast({ title: "Collection créée !", description: `"${newCollectionName}" a été ajoutée.`});
-          setNewCollectionName("");
-          setIsDialogOpen(false);
-          fetchCollections(); // Refresh the list
-      } catch(error) {
-          toast({ variant: "destructive", title: "Erreur", description: "Impossible de créer la collection."});
+          const result = await createEmptyCollection(currentUser.uid, newCollectionName);
+          if (result.success) {
+            toast({ title: "Collection créée !", description: `"${newCollectionName}" a été ajoutée.`});
+            setNewCollectionName("");
+            setIsDialogOpen(false);
+            fetchCollections(); // Refresh the list
+          } else {
+              throw new Error(result.error || "Could not create collection.");
+          }
+      } catch(error: any) {
+          toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de créer la collection."});
       } finally {
           setIsCreating(false);
       }
