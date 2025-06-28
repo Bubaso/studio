@@ -119,7 +119,10 @@ export async function createCollectionAndAddItem(userId: string, collectionName:
     });
 
     const newItemRef = doc(newCollectionRef, 'items', itemId);
-    batch.set(newItemRef, { addedAt: serverTimestamp() });
+    batch.set(newItemRef, { 
+        addedAt: serverTimestamp(),
+        userId: userId // Add userId for security rules
+    });
 
     await batch.commit();
 
@@ -156,7 +159,10 @@ export async function toggleItemInCollection(userId: string, collectionId: strin
                 const itemData = await getItemByIdFromFirestore(itemId);
                 if (!itemData) throw new Error("Item to add does not exist.");
 
-                transaction.set(itemRef, { addedAt: serverTimestamp() });
+                transaction.set(itemRef, { 
+                    addedAt: serverTimestamp(),
+                    userId: userId // Add userId for security rules
+                });
                 const updatePayload: any = { itemCount: increment(1) };
 
                 const currentPreviews = collectionSnap.data().previewImageUrls || [];

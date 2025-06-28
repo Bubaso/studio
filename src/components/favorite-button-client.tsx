@@ -50,7 +50,10 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
     }
   }, [itemId, currentUser, isLoadingAuth]);
 
-  const handleFavoriteClick = () => {
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!currentUser) {
       toast({
         title: "Connexion requise",
