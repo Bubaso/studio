@@ -90,12 +90,13 @@ export async function getUserFavoriteItems(userId: string): Promise<Item[]> {
   try {
     const favoritesCollectionRef = collection(db, 'userFavorites');
     
-    // The query is simplified by removing `orderBy`. This avoids the need for a specific
-    // composite index on (userId, createdAt) which might be missing and causing a
-    // misleading permissions error.
+    // Re-introducing orderBy to ensure correct and predictable query behavior.
+    // This may require a composite index in Firestore, which is standard practice.
+    // Firebase will provide a link in the browser console to create it if needed.
     const q = query(
       favoritesCollectionRef,
-      where('userId', '==', userId)
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
     
@@ -108,12 +109,8 @@ export async function getUserFavoriteItems(userId: string): Promise<Item[]> {
 
     // Await all item fetches and filter out any that might have been deleted.
     const items = (await Promise.all(favoriteItemsPromises)).filter(item => item !== null) as Item[];
-    
-    // Sort here to maintain a consistent order, e.g., by posted date.
-    // This is a good trade-off for avoiding complex index requirements.
-    const sortedItems = items.sort((a, b) => new Date(b.postedDate).getTime() - new Date(a.postedDate).getTime());
 
-    return sortedItems;
+    return items;
 
   } catch (error) {
     // Log the full error to help debug if the problem persists.
