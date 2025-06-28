@@ -19,7 +19,8 @@ import {
   Timestamp,
   Unsubscribe,
   writeBatch,
-  limit
+  limit,
+  deleteField
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getUserDocument } from './userService';
@@ -126,6 +127,19 @@ export const sendMessage = async (
   }
 
   const threadRef = doc(db, 'messageThreads', threadId);
+  
+  // Check for block status before proceeding
+  const threadSnap = await getDoc(threadRef);
+  if (!threadSnap.exists()) {
+    throw new Error("Conversation thread not found.");
+  }
+  const threadData = threadSnap.data() as MessageThread;
+  const receiverId = threadData.participantIds.find(pId => pId !== senderId);
+
+  if (threadData.blockedBy === receiverId) {
+    throw new Error("This user has blocked you. You cannot send messages.");
+  }
+
   const messagesColRef = collection(threadRef, 'messages');
 
   const newMessageData: Omit<Message, 'id' | 'timestamp'> & { timestamp: any } = {
@@ -217,6 +231,7 @@ export const getMessageThreadsForUser = (
           discussedItemIds: data.discussedItemIds || [],
           deletedFor: data.deletedFor || [],
           itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
+          blockedBy: data.blockedBy || null,
         } as MessageThread;
       })
       .filter(thread => !thread.deletedFor?.includes(userUid)); // Filter client-side
@@ -234,7 +249,6 @@ export const getMessagesForItemInThread = (
   onUpdate: (messages: Message[]) => void
 ): Unsubscribe => {
   if (!threadId || !itemId) {
-    console.warn("getMessagesForItemInThread called with no threadId or itemId.");
     onUpdate([]);
     return () => {};
   }
@@ -320,6 +334,7 @@ export async function getThreadWithDiscussedItems(threadId: string, currentUserI
             createdAt: convertTimestampToISO(data.createdAt as Timestamp),
             deletedFor: data.deletedFor || [],
             itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
+            blockedBy: data.blockedBy || null,
         } as MessageThread;
 
         let items: Item[] = [];
@@ -392,4 +407,24 @@ export async function deleteItemConversationForUser(threadId: string, itemId: st
     console.error(`Error deleting item conversation ${itemId} in thread ${threadId} for user ${userId}:`, error);
     throw error;
   }
+}
+
+export async function blockThread(threadId: string, blockerId: string): Promise<void> {
+  if (!threadId || !blockerId) {
+    throw new Error("Thread ID and Blocker ID are required.");
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+  await updateDoc(threadRef, {
+    blockedBy: blockerId,
+  });
+}
+
+export async function unblockThread(threadId: string): Promise<void> {
+  if (!threadId) {
+    throw new Error("Thread ID is required.");
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+  await updateDoc(threadRef, {
+    blockedBy: deleteField(),
+  });
 }

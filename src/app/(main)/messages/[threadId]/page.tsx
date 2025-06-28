@@ -6,18 +6,19 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser } from '@/services/messageService';
+import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser, blockThread, unblockThread } from '@/services/messageService';
 import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ArrowLeft, Loader2, Info, ImageIcon, X, Check, CheckCheck, Package, Mic, Pause, Trash2 } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Info, ImageIcon, X, Check, CheckCheck, Package, Mic, Pause, Trash2, MoreVertical, UserX, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertDialogTitleComponent, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ReportItemButton } from '@/components/report-item-button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -326,9 +327,9 @@ export default function MessageThreadPage() {
       await sendMessage(threadInfo.id, currentUser.uid, currentUser.displayName || currentUser.email || 'Moi', newMessage.trim(), selectedItem.id, uploadedImageUrl);
       setNewMessage('');
       clearImageAttachment();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send message:", error);
-      toast({ variant: "destructive", title: "Erreur d'envoi", description: "Le message n'a pas pu être envoyé."});
+      toast({ variant: "destructive", title: "Erreur d'envoi", description: error.message || "Le message n'a pas pu être envoyé."});
     } finally {
       setIsSending(false);
     }
@@ -441,6 +442,28 @@ export default function MessageThreadPage() {
         console.error("Error deleting item conversation:", error);
     }
   };
+  
+  const handleBlockUser = async () => {
+    if (!currentUser || !threadInfo) return;
+    try {
+        await blockThread(threadInfo.id, currentUser.uid);
+        toast({ title: "Utilisateur bloqué", description: "Vous ne recevrez plus de messages de cet utilisateur." });
+        setThreadInfo(prev => prev ? { ...prev, blockedBy: currentUser.uid } : null);
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erreur", description: "Impossible de bloquer l'utilisateur." });
+    }
+  };
+
+  const handleUnblockUser = async () => {
+      if (!threadInfo) return;
+      try {
+          await unblockThread(threadInfo.id);
+          toast({ title: "Utilisateur débloqué", description: "Vous pouvez à nouveau échanger des messages avec cet utilisateur." });
+          setThreadInfo(prev => prev ? { ...prev, blockedBy: null } : null);
+      } catch (error) {
+          toast({ variant: "destructive", title: "Erreur", description: "Impossible de débloquer l'utilisateur." });
+      }
+  };
 
 
   const formatTime = (seconds: number) => {
@@ -474,6 +497,9 @@ export default function MessageThreadPage() {
   const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
   const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
+  const isConversationBlockedForMe = threadInfo.blockedBy && threadInfo.blockedBy !== currentUser.uid;
+  const iHaveBlockedThisUser = threadInfo.blockedBy === currentUser.uid;
+
   return (
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
         {/* Left Panel for Discussed Items (Desktop) */}
@@ -491,12 +517,35 @@ export default function MessageThreadPage() {
                 <AvatarImage src={otherParticipantAvatar} alt={otherParticipantName} data-ai-hint="profil personne" />
                 <AvatarFallback>{otherParticipantName.substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
                     <h2 className="text-lg font-semibold font-headline">{otherParticipantName}</h2>
+                    {threadInfo.blockedBy && (
+                        <p className="text-xs text-destructive font-medium">
+                            {iHaveBlockedThisUser ? "Vous avez bloqué cet utilisateur." : "Cet utilisateur vous a bloqué."}
+                        </p>
+                    )}
                 </div>
                  {selectedItem && (
-                    <ReportItemButton itemId={selectedItem.id} sellerId={selectedItem.sellerId} asIcon />
-                )}
+                    <div className="flex items-center gap-1">
+                        <ReportItemButton itemId={selectedItem.id} sellerId={selectedItem.sellerId} asIcon />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={iHaveBlockedThisUser ? handleUnblockUser : handleBlockUser} disabled={isConversationBlockedForMe}>
+                                    {iHaveBlockedThisUser ? (
+                                        <><UserCheck className="mr-2 h-4 w-4" /><span>Débloquer</span></>
+                                    ) : (
+                                        <><UserX className="mr-2 h-4 w-4" /><span>Bloquer</span></>
+                                    )}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                 )}
             </header>
 
             {/* Mobile Item Selector */}
@@ -608,11 +657,11 @@ export default function MessageThreadPage() {
                           )}
                           <div className="flex items-end space-x-2">
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
-                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend} aria-label="Joindre une image">
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend || isConversationBlockedForMe} aria-label="Joindre une image">
                                 {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
                             </Button>
                             <Textarea
-                                placeholder="Écrivez votre message..."
+                                placeholder={isConversationBlockedForMe ? "Vous ne pouvez pas répondre à cette conversation." : "Écrivez votre message..."}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyPress={(e) => {
@@ -623,14 +672,14 @@ export default function MessageThreadPage() {
                                 }}
                                 rows={1}
                                 className="flex-1 resize-none min-h-[40px]"
-                                disabled={isSending}
+                                disabled={isSending || isConversationBlockedForMe}
                             />
                              {newMessage.trim() ? (
-                                <Button onClick={handleSendMessage} disabled={isSending} aria-label="Envoyer le message">
+                                <Button onClick={handleSendMessage} disabled={isSending || isConversationBlockedForMe} aria-label="Envoyer le message">
                                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </Button>
                              ) : (
-                                <Button onClick={handleStartRecording} disabled={isSending} aria-label="Envoyer un message vocal">
+                                <Button onClick={handleStartRecording} disabled={isSending || isConversationBlockedForMe} aria-label="Envoyer un message vocal">
                                     <Mic className="h-4 w-4" />
                                 </Button>
                              )}

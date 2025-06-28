@@ -86,6 +86,7 @@ export interface MessageThread {
   discussedItemIds: string[]; // Array of all item IDs ever discussed in this thread.
   deletedFor?: string[]; // Array of user UIDs for whom the thread is "deleted"
   itemConversationsDeletedFor?: { [key: string]: string[] }; // Map of userId to array of itemIds they deleted
+  blockedBy?: string | null; // UID of the user who initiated the block
 }
 
 export const ItemCategories = [
