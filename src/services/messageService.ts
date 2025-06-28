@@ -20,7 +20,8 @@ import {
   Unsubscribe,
   writeBatch,
   limit,
-  deleteField
+  deleteField,
+  arrayRemove,
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getUserDocument } from './userService';
@@ -136,6 +137,7 @@ export const sendMessage = async (
   const threadData = threadSnap.data() as MessageThread;
   
   if (threadData.blockedBy) {
+    // If the conversation is blocked, no one can send a message.
     throw new Error("La conversation est bloquée. Les messages ne peuvent pas être envoyés.");
   }
 
@@ -172,20 +174,28 @@ export const sendMessage = async (
         lastMessagePreview = `📷 ${text.trim()}`;
     }
 
-    // Update the main thread doc to reflect the latest activity and its context
     const itemDetails = await getItemByIdFromFirestore(itemId);
     
-    batch.update(threadRef, {
+    const recipientId = threadData.participantIds.find(id => id !== senderId);
+
+    const updateData: { [key: string]: any } = {
       lastMessageText: lastMessagePreview,
       lastMessageSenderId: senderId,
       lastMessageAt: serverTimestamp(),
       participantsWhoHaveSeenLatest: [senderId],
-      // Update the item context of the thread to this latest item
       itemId: itemDetails?.id || '',
       itemTitle: itemDetails?.name || '',
       itemImageUrl: itemDetails?.imageUrls?.[0] || '',
       itemSellerId: itemDetails?.sellerId || '',
-    });
+    };
+    
+    // "Undelete" the thread for the recipient. If they had deleted it, 
+    // a new message brings it back into their inbox.
+    if (recipientId) {
+        updateData.deletedFor = arrayRemove(recipientId);
+    }
+    
+    batch.update(threadRef, updateData);
     
     await batch.commit();
   } catch (error) {
@@ -254,8 +264,8 @@ export const getMessagesForItemInThread = (
   
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
-    where('itemId', '==', itemId),
-    limit(100)
+    where('itemId', '==', itemId)
+    // Removed orderBy('timestamp') to avoid needing a composite index
   );
 
   return onSnapshot(messagesQuery, (querySnapshot) => {
