@@ -134,10 +134,9 @@ export const sendMessage = async (
     throw new Error("Conversation thread not found.");
   }
   const threadData = threadSnap.data() as MessageThread;
-  const receiverId = threadData.participantIds.find(pId => pId !== senderId);
-
-  if (threadData.blockedBy === receiverId) {
-    throw new Error("This user has blocked you. You cannot send messages.");
+  
+  if (threadData.blockedBy) {
+    throw new Error("La conversation est bloquée. Les messages ne peuvent pas être envoyés.");
   }
 
   const messagesColRef = collection(threadRef, 'messages');

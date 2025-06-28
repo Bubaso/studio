@@ -497,8 +497,19 @@ export default function MessageThreadPage() {
   const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
   const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
-  const isConversationBlockedForMe = threadInfo.blockedBy && threadInfo.blockedBy !== currentUser.uid;
   const iHaveBlockedThisUser = threadInfo.blockedBy === currentUser.uid;
+  const isConversationBlocked = !!threadInfo.blockedBy;
+  const canIToggleBlock = !threadInfo.blockedBy || iHaveBlockedThisUser;
+
+  let placeholderText = "Écrivez votre message...";
+  if (isConversationBlocked) {
+      if (iHaveBlockedThisUser) {
+          placeholderText = "Vous avez bloqué cet utilisateur. Débloquez pour envoyer un message.";
+      } else {
+          placeholderText = "Vous ne pouvez pas répondre à cette conversation.";
+      }
+  }
+
 
   return (
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
@@ -535,7 +546,7 @@ export default function MessageThreadPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={iHaveBlockedThisUser ? handleUnblockUser : handleBlockUser} disabled={isConversationBlockedForMe}>
+                                <DropdownMenuItem onClick={iHaveBlockedThisUser ? handleUnblockUser : handleBlockUser} disabled={!canIToggleBlock}>
                                     {iHaveBlockedThisUser ? (
                                         <><UserCheck className="mr-2 h-4 w-4" /><span>Débloquer</span></>
                                     ) : (
@@ -657,11 +668,11 @@ export default function MessageThreadPage() {
                           )}
                           <div className="flex items-end space-x-2">
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
-                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend || isConversationBlockedForMe} aria-label="Joindre une image">
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend || isConversationBlocked} aria-label="Joindre une image">
                                 {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
                             </Button>
                             <Textarea
-                                placeholder={isConversationBlockedForMe ? "Vous ne pouvez pas répondre à cette conversation." : "Écrivez votre message..."}
+                                placeholder={placeholderText}
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                                 onKeyPress={(e) => {
@@ -672,14 +683,14 @@ export default function MessageThreadPage() {
                                 }}
                                 rows={1}
                                 className="flex-1 resize-none min-h-[40px]"
-                                disabled={isSending || isConversationBlockedForMe}
+                                disabled={isSending || isConversationBlocked}
                             />
                              {newMessage.trim() ? (
-                                <Button onClick={handleSendMessage} disabled={isSending || isConversationBlockedForMe} aria-label="Envoyer le message">
+                                <Button onClick={handleSendMessage} disabled={isSending || isConversationBlocked} aria-label="Envoyer le message">
                                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </Button>
                              ) : (
-                                <Button onClick={handleStartRecording} disabled={isSending || isConversationBlockedForMe} aria-label="Envoyer un message vocal">
+                                <Button onClick={handleStartRecording} disabled={isSending || isConversationBlocked} aria-label="Envoyer un message vocal">
                                     <Mic className="h-4 w-4" />
                                 </Button>
                              )}
