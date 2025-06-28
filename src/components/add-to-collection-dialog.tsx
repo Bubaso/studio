@@ -20,7 +20,8 @@ import type { UserCollection } from '@/lib/types';
 import {
   getCollectionsForUser,
   createCollectionAndAddItem,
-  toggleItemInCollection
+  toggleItemInCollection,
+  getCollectionsForItem
 } from '@/services/favoriteService';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
