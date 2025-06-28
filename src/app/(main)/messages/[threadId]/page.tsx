@@ -6,12 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread } from '@/services/messageService';
+import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL } from '@/services/messageService';
 import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ArrowLeft, Loader2, Info, ImageIcon, X, Check, CheckCheck, Package } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Info, ImageIcon, X, Check, CheckCheck, Package, Mic, Pause, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -115,6 +115,14 @@ export default function MessageThreadPage() {
   const [imageToSend, setImageToSend] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visibleMessagesRef = useRef<Set<string>>(new Set());
@@ -192,6 +200,17 @@ export default function MessageThreadPage() {
     return () => observer.disconnect();
   }, [messages, currentUser, threadId, threadInfo]);
 
+  // Cleanup effect for audio stream and object URLs
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (audioPreviewUrl) {
+        URL.revokeObjectURL(audioPreviewUrl);
+      }
+    };
+  }, [audioPreviewUrl]);
 
   const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -248,11 +267,80 @@ export default function MessageThreadPage() {
       setIsSending(false);
     }
   };
+  
+  const handleSendAudio = async () => {
+    if (!audioBlob || !currentUser || !threadInfo || !selectedItem) return;
+    setIsSending(true);
+    try {
+      const audioUrl = await uploadChatAudioAndGetURL(audioBlob, threadInfo.id, currentUser.uid);
+      await sendMessage(threadInfo.id, currentUser.uid, currentUser.displayName || "Moi", "", selectedItem.id, undefined, audioUrl);
+      
+      setAudioBlob(null);
+      if (audioPreviewUrl) {
+        URL.revokeObjectURL(audioPreviewUrl);
+        setAudioPreviewUrl(null);
+      }
+    } catch (error) {
+      console.error("Failed to send audio message:", error);
+      toast({ variant: "destructive", title: "Erreur d'envoi", description: "Le message vocal n'a pas pu être envoyé." });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(audioBlob);
+        const url = URL.createObjectURL(audioBlob);
+        setAudioPreviewUrl(url);
+        
+        // Stop all tracks to release microphone
+        streamRef.current?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      };
+
+      recorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      toast({ variant: "destructive", title: "Accès au microphone refusé", description: "Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur." });
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleCancelAudio = () => {
+    if (isRecording) {
+      handleStopRecording();
+    }
+    setAudioBlob(null);
+    if (audioPreviewUrl) {
+      URL.revokeObjectURL(audioPreviewUrl);
+      setAudioPreviewUrl(null);
+    }
+  };
 
   const handleSelectItem = (itemId: string) => {
     const item = discussedItems.find(i => i.id === itemId);
     if (item && item.id !== selectedItem?.id) {
-        // Clear previous messages before fetching new ones to avoid brief flicker
         setMessages([]);
         setSelectedItem(item);
     }
@@ -341,6 +429,11 @@ export default function MessageThreadPage() {
                                         : "bg-muted rounded-bl-none" 
                                     )}
                                 >
+                                    {msg.audioUrl && (
+                                      <audio controls src={msg.audioUrl} className="w-full max-w-xs">
+                                        Votre navigateur ne supporte pas l'élément audio.
+                                      </audio>
+                                    )}
                                     {msg.imageUrl && (
                                     <Dialog>
                                         <DialogTrigger asChild>
@@ -377,38 +470,67 @@ export default function MessageThreadPage() {
                     </div>
 
                     <footer className="p-3 border-t bg-card sticky bottom-0 z-10">
-                        {imagePreview && (
-                        <div className="mb-2 p-2 border rounded-md bg-muted/50 relative w-24 h-24">
-                            <Image src={imagePreview} alt="Aperçu" fill className="object-cover rounded-md" />
-                            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment} aria-label="Retirer l'image">
-                            <X className="h-3 w-3" />
+                      {isRecording ? (
+                        <div className="flex items-center w-full gap-4">
+                          <div className="flex items-center gap-2 text-red-500 animate-pulse font-medium">
+                            <Mic className="h-5 w-5" />
+                            Enregistrement...
+                          </div>
+                          <Button onClick={handleStopRecording} variant="destructive" size="icon">
+                            <Pause className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      ) : audioBlob ? (
+                        <div className="flex items-center w-full gap-2">
+                          <Button onClick={handleCancelAudio} variant="ghost" size="icon">
+                            <Trash2 className="h-5 w-5 text-destructive" />
+                          </Button>
+                          <audio src={audioPreviewUrl} controls className="w-full" />
+                          <Button onClick={handleSendAudio} size="icon" disabled={isSending}>
+                            {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          {imagePreview && (
+                          <div className="mb-2 p-2 border rounded-md bg-muted/50 relative w-24 h-24">
+                              <Image src={imagePreview} alt="Aperçu" fill className="object-cover rounded-md" />
+                              <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment} aria-label="Retirer l'image">
+                              <X className="h-3 w-3" />
+                              </Button>
+                          </div>
+                          )}
+                          <div className="flex items-center space-x-2">
+                            <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend} aria-label="Joindre une image">
+                                {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
                             </Button>
-                        </div>
-                        )}
-                        <div className="flex items-center space-x-2">
-                        <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
-                        <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage || isSending || !!imageToSend} aria-label="Joindre une image">
-                            {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-                        </Button>
-                        <Textarea
-                            placeholder="Écrivez votre message..."
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                                }
-                            }}
-                            rows={1}
-                            className="flex-1 resize-none min-h-[40px]"
-                            disabled={isSending || isUploadingImage}
-                        />
-                        <Button onClick={handleSendMessage} disabled={isSending || isUploadingImage || (!newMessage.trim() && !imageToSend)} aria-label="Envoyer le message">
-                            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            <span className="sr-only">Envoyer</span>
-                        </Button>
-                        </div>
+                            <Textarea
+                                placeholder="Écrivez votre message..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                    }
+                                }}
+                                rows={1}
+                                className="flex-1 resize-none min-h-[40px]"
+                                disabled={isSending}
+                            />
+                             {newMessage.trim() ? (
+                                <Button onClick={handleSendMessage} disabled={isSending} aria-label="Envoyer le message">
+                                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                                </Button>
+                             ) : (
+                                <Button onClick={handleStartRecording} disabled={isSending} aria-label="Envoyer un message vocal">
+                                    <Mic className="h-4 w-4" />
+                                </Button>
+                             )}
+                          </div>
+                        </>
+                      )}
                     </footer>
                 </div>
             ) : (

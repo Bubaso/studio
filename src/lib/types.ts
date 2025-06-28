@@ -63,6 +63,7 @@ export interface Message {
   senderName: string; // Denormalized for display
   text: string;
   imageUrl?: string; // For image attachments
+  audioUrl?: string; // For audio attachments
   timestamp: string; // ISO date string (will be Firestore ServerTimestamp on write, converted on read)
   readBy?: string[]; // Array of user UIDs who have read the message
   itemId: string; // The ID of the item this message is about. Now mandatory.

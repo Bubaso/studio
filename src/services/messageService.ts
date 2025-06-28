@@ -85,15 +85,41 @@ export const uploadChatImageAndGetURL = async (file: File, threadId: string, use
   }
 };
 
+export const uploadChatAudioAndGetURL = async (audioBlob: Blob, threadId: string, userId: string): Promise<string> => {
+  if (!audioBlob || !threadId || !userId) {
+    throw new Error("Audio blob, thread ID, and user ID are required for chat audio upload.");
+  }
+
+  const currentFirebaseUser = auth.currentUser;
+  if (!currentFirebaseUser || currentFirebaseUser.uid !== userId) {
+    throw new Error("User not authenticated or mismatched. Cannot upload audio.");
+  }
+  
+  const uniqueFileName = `audio_${Date.now()}.webm`;
+  const audioPath = `chatAttachments/${threadId}/${userId}/${uniqueFileName}`;
+  const audioFileRef = storageRef(storage, audioPath);
+
+  try {
+    const snapshot = await uploadBytes(audioFileRef, audioBlob);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading chat audio:", error);
+    throw error;
+  }
+};
+
+
 export const sendMessage = async (
   threadId: string,
   senderId: string,
   senderName: string,
   text: string,
   itemId: string, // Item context is now mandatory
-  imageUrl?: string
+  imageUrl?: string,
+  audioUrl?: string
 ): Promise<void> => {
-  if (!text.trim() && !imageUrl) return; 
+  if (!text.trim() && !imageUrl && !audioUrl) return; 
   if (!threadId || !senderId || !senderName || !itemId) {
     console.error("ThreadID, SenderID, SenderName, and ItemID are required to send a message.");
     throw new Error("Missing required parameters for sending message.");
@@ -114,6 +140,10 @@ export const sendMessage = async (
   if (imageUrl) {
     newMessageData.imageUrl = imageUrl;
   }
+  if (audioUrl) {
+    newMessageData.audioUrl = audioUrl;
+  }
+
 
   try {
     const batch = writeBatch(db);
@@ -121,8 +151,10 @@ export const sendMessage = async (
     batch.set(newMsgDocRef, newMessageData);
     
     let lastMessagePreview = text.trim();
-    if (imageUrl && !text.trim()) {
-        lastMessagePreview = "📷 Image";
+    if (audioUrl) {
+      lastMessagePreview = "🎤 Sesli Mesaj";
+    } else if (imageUrl && !text.trim()) {
+        lastMessagePreview = "📷 Görüntü";
     } else if (imageUrl && text.trim()) {
         lastMessagePreview = `📷 ${text.trim()}`;
     }
@@ -203,8 +235,9 @@ export const getMessagesForItemInThread = (
   }
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
-    where('itemId', '==', itemId)
-    // Note: orderBy is removed to avoid needing a composite index. Sorting is now done on the client.
+    where('itemId', '==', itemId),
+    orderBy('timestamp', 'asc'),
+    limit(100)
   );
 
   return onSnapshot(messagesQuery, (querySnapshot) => {
@@ -217,15 +250,14 @@ export const getMessagesForItemInThread = (
         senderName: data.senderName || "Utilisateur Inconnu",
         text: data.text,
         imageUrl: data.imageUrl,
+        audioUrl: data.audioUrl,
         itemId: data.itemId,
         timestamp: convertTimestampToISO(data.timestamp as Timestamp),
         readBy: data.readBy || [],
       } as Message;
     });
     
-    // Sort on the client and limit the results
-    const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    onUpdate(sortedMessages.slice(-100));
+    onUpdate(messages);
 
   }, (error) => {
     console.error(`Error fetching messages for thread ${threadId} and item ${itemId}: `, error);
