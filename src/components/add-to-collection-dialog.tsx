@@ -107,7 +107,10 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
 
   return (
     <Dialog open={open} onOpenChange={() => onOpenChange(true)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>Sauvegarder dans...</DialogTitle>
           <DialogDescription>
