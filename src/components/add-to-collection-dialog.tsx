@@ -154,7 +154,15 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
                     </Button>
                 </div>
             ) : (
-                <Button variant="ghost" className="w-full justify-start" onClick={() => setShowNewCollectionInput(true)}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setShowNewCollectionInput(true);
+                  }}
+                >
                     <Plus className="mr-2 h-4 w-4" />
                     Créer une nouvelle collection
                 </Button>
