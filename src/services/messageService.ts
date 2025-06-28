@@ -197,25 +197,30 @@ export const getMessageThreadsForUser = (
   );
 
   return onSnapshot(threadsQuery, (querySnapshot) => {
-    const threads = querySnapshot.docs.map((docSnap) => {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        participantIds: data.participantIds as [string, string],
-        participantNames: data.participantNames as [string, string] || ['Utilisateur', 'Utilisateur'],
-        participantAvatars: data.participantAvatars as [string, string] || ['https://placehold.co/100x100.png?text=?', 'https://placehold.co/100x100.png?text=?'],
-        lastMessageText: data.lastMessageText,
-        lastMessageSenderId: data.lastMessageSenderId,
-        lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
-        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
-        participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
-        itemId: data.itemId,
-        itemTitle: data.itemTitle,
-        itemImageUrl: data.itemImageUrl,
-        itemSellerId: data.itemSellerId,
-        discussedItemIds: data.discussedItemIds || [],
-      } as MessageThread;
-    });
+    const threads = querySnapshot.docs
+      .map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          participantIds: data.participantIds as [string, string],
+          participantNames: data.participantNames as [string, string] || ['Utilisateur', 'Utilisateur'],
+          participantAvatars: data.participantAvatars as [string, string] || ['https://placehold.co/100x100.png?text=?', 'https://placehold.co/100x100.png?text=?'],
+          lastMessageText: data.lastMessageText,
+          lastMessageSenderId: data.lastMessageSenderId,
+          lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
+          createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+          participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
+          itemId: data.itemId,
+          itemTitle: data.itemTitle,
+          itemImageUrl: data.itemImageUrl,
+          itemSellerId: data.itemSellerId,
+          discussedItemIds: data.discussedItemIds || [],
+          deletedFor: data.deletedFor || [],
+          itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
+        } as MessageThread;
+      })
+      .filter(thread => !thread.deletedFor?.includes(userUid)); // Filter client-side
+
     onUpdate(threads);
   }, (error) => {
     console.error("Error fetching message threads: ", error);
@@ -233,7 +238,7 @@ export const getMessagesForItemInThread = (
     onUpdate([]);
     return () => {};
   }
-  // Remove orderBy clause to avoid needing a composite index. Sorting will be done on the client.
+  
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
     where('itemId', '==', itemId),
@@ -291,8 +296,8 @@ export const markMessageAsRead = async (threadId: string, messageId: string, use
   }
 };
 
-export async function getThreadWithDiscussedItems(threadId: string): Promise<{thread: MessageThread, items: Item[]} | null> {
-    if (!threadId) return null;
+export async function getThreadWithDiscussedItems(threadId: string, currentUserId: string): Promise<{thread: MessageThread, items: Item[]} | null> {
+    if (!threadId || !currentUserId) return null;
     try {
         const threadRef = doc(db, 'messageThreads', threadId);
         const threadSnap = await getDoc(threadRef);
@@ -303,16 +308,26 @@ export async function getThreadWithDiscussedItems(threadId: string): Promise<{th
         }
 
         const data = threadSnap.data();
+        if (data.deletedFor?.includes(currentUserId)) {
+          console.log(`Thread ${threadId} is deleted for user ${currentUserId}.`);
+          return null;
+        }
+
         const threadData = {
             id: threadSnap.id,
             ...data,
             lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
             createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+            deletedFor: data.deletedFor || [],
+            itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
         } as MessageThread;
 
         let items: Item[] = [];
-        if (threadData.discussedItemIds && threadData.discussedItemIds.length > 0) {
-            const itemPromises = threadData.discussedItemIds.map(id => getItemByIdFromFirestore(id));
+        const userDeletedItems = threadData.itemConversationsDeletedFor?.[currentUserId] || [];
+        const visibleItemIds = threadData.discussedItemIds.filter(id => !userDeletedItems.includes(id));
+        
+        if (visibleItemIds && visibleItemIds.length > 0) {
+            const itemPromises = visibleItemIds.map(id => getItemByIdFromFirestore(id));
             items = (await Promise.all(itemPromises)).filter((item): item is Item => item !== null);
         }
 
@@ -345,5 +360,36 @@ export async function markThreadAsSeenByCurrentUser(threadId: string, userId: st
     }
   } catch (error) {
     console.error(`Error marking thread ${threadId} as seen by ${userId}:`, error);
+  }
+}
+
+export async function deleteThreadForUser(threadId: string, userId: string): Promise<void> {
+  if (!threadId || !userId) {
+    throw new Error("L'ID du fil et de l'utilisateur sont requis.");
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+  try {
+    await updateDoc(threadRef, {
+      deletedFor: arrayUnion(userId)
+    });
+  } catch (error) {
+    console.error(`Error deleting thread ${threadId} for user ${userId}:`, error);
+    throw error;
+  }
+}
+
+export async function deleteItemConversationForUser(threadId: string, itemId: string, userId: string): Promise<void> {
+  if (!threadId || !itemId || !userId) {
+    throw new Error("L'ID du fil, de l'article et de l'utilisateur sont requis.");
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+  try {
+    // Using dot notation for updating a specific key in a map
+    await updateDoc(threadRef, {
+      [`itemConversationsDeletedFor.${userId}`]: arrayUnion(itemId)
+    });
+  } catch (error) {
+    console.error(`Error deleting item conversation ${itemId} in thread ${threadId} for user ${userId}:`, error);
+    throw error;
   }
 }

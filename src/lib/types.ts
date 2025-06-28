@@ -84,6 +84,8 @@ export interface MessageThread {
   itemSellerId?: string;
   participantsWhoHaveSeenLatest?: string[]; // UIDs of participants who have seen the latest messages
   discussedItemIds: string[]; // Array of all item IDs ever discussed in this thread.
+  deletedFor?: string[]; // Array of user UIDs for whom the thread is "deleted"
+  itemConversationsDeletedFor?: { [key: string]: string[] }; // Map of userId to array of itemIds they deleted
 }
 
 export const ItemCategories = [

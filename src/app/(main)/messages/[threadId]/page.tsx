@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL } from '@/services/messageService';
+import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser } from '@/services/messageService';
 import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertDialogTitleComponent, AlertDialogTrigger as AlertDialogTriggerComponent } from '@/components/ui/dialog';
 import { ReportItemButton } from '@/components/report-item-button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
@@ -25,11 +25,13 @@ import { Card } from '@/components/ui/card';
 const DiscussedItemsList = ({
     items,
     selectedItemId,
-    onSelectItem
+    onSelectItem,
+    onDeleteItem,
 }: {
     items: Item[];
     selectedItemId: string | null;
     onSelectItem: (itemId: string) => void;
+    onDeleteItem: (itemId: string) => void;
 }) => {
     return (
         <Card className="flex h-full w-full flex-col">
@@ -39,22 +41,49 @@ const DiscussedItemsList = ({
             <ScrollArea className="flex-1">
                 <div className="flex flex-col">
                     {items.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => onSelectItem(item.id)}
-                            className={cn(
-                                "flex items-center gap-3 p-3 text-left w-full border-b last:border-b-0 hover:bg-muted/50 transition-colors",
-                                selectedItemId === item.id ? "bg-primary/10" : ""
-                            )}
-                        >
-                            <div className="relative h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-muted">
-                                {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <p className="font-semibold truncate">{item.name}</p>
-                                <p className="text-sm text-muted-foreground truncate">{item.price.toLocaleString('fr-FR')} XOF</p>
-                            </div>
-                        </button>
+                        <div key={item.id} className="group flex items-center pr-2 border-b last:border-b-0 hover:bg-muted/50 transition-colors">
+                            <button
+                                onClick={() => onSelectItem(item.id)}
+                                className={cn(
+                                    "flex items-center gap-3 p-3 text-left w-full",
+                                    selectedItemId === item.id ? "bg-primary/10" : ""
+                                )}
+                            >
+                                <div className="relative h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                                    {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="font-semibold truncate">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground truncate">{item.price.toLocaleString('fr-FR')} XOF</p>
+                                </div>
+                            </button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="ml-auto h-7 w-7 flex-shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitleComponent>Supprimer cette conversation ?</AlertDialogTitleComponent>
+                                        <AlertDialogDescription>
+                                            La conversation concernant l'article "{item.name}" sera supprimée de votre vue. L'autre participant la verra toujours. Cette action est irréversible.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">
+                                            Supprimer
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
                     ))}
                 </div>
             </ScrollArea>
@@ -65,29 +94,58 @@ const DiscussedItemsList = ({
 const MobileDiscussedItemsList = ({
     items,
     selectedItemId,
-    onSelectItem
+    onSelectItem,
+    onDeleteItem,
 }: {
     items: Item[];
     selectedItemId: string | null;
     onSelectItem: (itemId: string) => void;
+    onDeleteItem: (itemId: string) => void;
 }) => (
     <div className="md:hidden p-2 border-b">
         <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-3">
                 {items.map(item => (
-                    <button
-                        key={item.id}
-                        onClick={() => onSelectItem(item.id)}
-                        className={cn(
-                            "inline-flex flex-col items-center p-2 rounded-lg border w-28 h-28 justify-center flex-shrink-0",
-                            selectedItemId === item.id ? 'border-primary bg-primary/10' : 'bg-card'
-                        )}
-                    >
-                        <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted mb-1">
-                            {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
-                        </div>
-                        <p className="text-xs font-medium truncate w-full text-center">{item.name}</p>
-                    </button>
+                    <div key={item.id} className="relative group/mobileitem">
+                        <button
+                            onClick={() => onSelectItem(item.id)}
+                            className={cn(
+                                "inline-flex flex-col items-center p-2 rounded-lg border w-28 h-28 justify-center flex-shrink-0",
+                                selectedItemId === item.id ? 'border-primary bg-primary/10' : 'bg-card'
+                            )}
+                        >
+                            <div className="relative h-12 w-12 rounded-md overflow-hidden bg-muted mb-1">
+                                {item.imageUrls?.[0] && <Image src={item.imageUrls[0]} alt={item.name} fill className="object-cover" />}
+                            </div>
+                            <p className="text-xs font-medium truncate w-full text-center">{item.name}</p>
+                        </button>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute -top-1 -right-1 z-10 h-5 w-5 rounded-full opacity-0 group-hover/mobileitem:opacity-100 transition-opacity"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitleComponent>Supprimer cette conversation ?</AlertDialogTitleComponent>
+                                    <AlertDialogDescription>
+                                        La conversation concernant "{item.name}" sera supprimée de votre vue.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Supprimer
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 ))}
             </div>
             <ScrollBar orientation="horizontal" />
@@ -142,8 +200,8 @@ export default function MessageThreadPage() {
   useEffect(() => {
     if (currentUser && threadId) {
         setIsLoading(true);
-        getThreadWithDiscussedItems(threadId).then(data => {
-            if (data?.thread && data.thread.participantIds.includes(currentUser.uid)) {
+        getThreadWithDiscussedItems(threadId, currentUser.uid).then(data => {
+            if (data?.thread) {
                 setThreadInfo(data.thread);
                 setDiscussedItems(data.items);
                 // Select the item from the last message context, or the first item discussed
@@ -362,6 +420,27 @@ export default function MessageThreadPage() {
     }
   };
 
+  const handleDeleteItemConversation = async (itemIdToDelete: string) => {
+    if (!currentUser || !threadId) return;
+
+    try {
+        await deleteItemConversationForUser(threadId, itemIdToDelete, currentUser.uid);
+
+        setDiscussedItems(prev => prev.filter(item => item.id !== itemIdToDelete));
+        
+        if (selectedItem?.id === itemIdToDelete) {
+            setSelectedItem(null);
+            setMessages([]);
+        }
+
+        toast({ title: "Conversation supprimée", description: "La conversation pour cet article a été retirée." });
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erreur", description: "Impossible de supprimer la conversation de cet article." });
+        console.error("Error deleting item conversation:", error);
+    }
+  };
+
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -397,7 +476,7 @@ export default function MessageThreadPage() {
     <div className="flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] border rounded-lg shadow-sm bg-card overflow-hidden">
         {/* Left Panel for Discussed Items (Desktop) */}
         <div className="hidden md:flex md:w-1/3 border-r">
-            <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} />
+            <DiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} />
         </div>
 
         {/* Right Panel for Chat */}
@@ -419,7 +498,7 @@ export default function MessageThreadPage() {
             </header>
 
             {/* Mobile Item Selector */}
-            {discussedItems.length > 0 && <MobileDiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} />}
+            {discussedItems.length > 0 && <MobileDiscussedItemsList items={discussedItems} selectedItemId={selectedItem?.id || null} onSelectItem={handleSelectItem} onDeleteItem={handleDeleteItemConversation} />}
 
             {selectedItem ? (
                  <div className="flex-1 flex flex-col overflow-hidden">
@@ -475,7 +554,7 @@ export default function MessageThreadPage() {
                                     <div className={cn("text-xs mt-1.5 flex items-center", isCurrentUserSender ? "text-primary-foreground/80 justify-end" : "text-muted-foreground/80 justify-start")}>
                                     <span>{new Date(msg.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                                     {isCurrentUserSender && (
-                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className={cn("ml-1.5 h-4 w-4 opacity-70", isCurrentUserSender ? "text-primary-foreground/90" : "text-foreground")} />
+                                        isSeenByOther ? <CheckCheck className="ml-1.5 h-4 w-4 text-blue-500" /> : <Check className={cn("ml-1.5 h-4 w-4", isCurrentUserSender ? "text-primary-foreground/90" : "text-foreground")} />
                                     )}
                                     </div>
                                 </div>

@@ -5,20 +5,35 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { getMessageThreadsForUser } from '@/services/messageService';
+import { getMessageThreadsForUser, deleteThreadForUser } from '@/services/messageService';
 import type { MessageThread } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquarePlus, Info, Loader2, Circle } from 'lucide-react'; 
+import { MessageSquarePlus, Info, Loader2, Circle, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 export default function MessagesPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoadingThreads, setIsLoadingThreads] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -43,6 +58,20 @@ export default function MessagesPage() {
       setThreads([]); 
     }
   }, [currentUser]);
+
+  const handleDeleteThread = async (threadId: string) => {
+    if (!currentUser) return;
+    setIsDeleting(threadId);
+    try {
+        await deleteThreadForUser(threadId, currentUser.uid);
+        toast({ title: "Conversation supprimée", description: "La conversation a été retirée de votre liste." });
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erreur", description: "Impossible de supprimer la conversation." });
+        console.error("Error deleting thread:", error);
+    } finally {
+        setIsDeleting(null);
+    }
+  };
 
   const getOtherParticipantDetails = (thread: MessageThread) => {
     if (!currentUser) return { name: 'Utilisateur', avatar: 'https://placehold.co/100x100.png?text=?', dataAiHint: "profil personne" };
@@ -99,35 +128,65 @@ export default function MessagesPage() {
             const hasUnreadMessages = !isLastMessageFromCurrentUser && !currentUserHasSeenLatest;
 
             return (
-            <Link key={thread.id} href={`/messages/${thread.id}`} className="block">
-              <Card className={cn(
-                "hover:shadow-md transition-shadow cursor-pointer hover:border-primary/50",
-                hasUnreadMessages ? "border-primary/70 bg-primary/5" : ""
+              <Card key={thread.id} className={cn(
+                  "hover:shadow-md transition-shadow hover:border-primary/50",
+                  hasUnreadMessages ? "border-primary/70 bg-primary/5" : ""
               )}>
-                <CardContent className="p-4 flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} data-ai-hint={otherParticipant.dataAiHint as string} />
-                    <AvatarFallback>{otherParticipant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 overflow-hidden">
-                    <p className={cn("font-semibold text-lg truncate", hasUnreadMessages ? "text-primary" : "")}>{otherParticipant.name}</p>
-                    <p className={cn("text-sm truncate", hasUnreadMessages ? "text-foreground font-medium" : "text-muted-foreground")}>
-                      {isLastMessageFromCurrentUser ? "Vous : " : ""}
-                      {lastMessageText}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end space-y-1">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(thread.lastMessageAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    {hasUnreadMessages && (
-                      <Circle className="h-2.5 w-2.5 fill-primary text-primary" />
-                    )}
+                <CardContent className="p-3 flex items-center space-x-3">
+                  <Link href={`/messages/${thread.id}`} className="flex items-center space-x-3 flex-1 overflow-hidden group">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={otherParticipant.avatar} alt={otherParticipant.name} data-ai-hint={otherParticipant.dataAiHint as string} />
+                      <AvatarFallback>{otherParticipant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 overflow-hidden">
+                      <p className={cn("font-semibold text-lg truncate group-hover:text-primary", hasUnreadMessages ? "text-primary" : "")}>{otherParticipant.name}</p>
+                      <p className={cn("text-sm truncate", hasUnreadMessages ? "text-foreground font-medium" : "text-muted-foreground")}>
+                        {isLastMessageFromCurrentUser ? "Vous : " : ""}
+                        {lastMessageText}
+                      </p>
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end space-y-1 text-right">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(thread.lastMessageAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {hasUnreadMessages && (
+                        <Circle className="h-2.5 w-2.5 fill-primary text-primary" />
+                      )}
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          disabled={isDeleting === thread.id}
+                        >
+                          {isDeleting === thread.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer cette conversation ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. La conversation sera retirée de votre liste, mais l'autre participant la verra toujours.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteThread(thread.id)} className="bg-destructive hover:bg-destructive/90">
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          )})}
+            )
+          })}
         </div>
       )}
       
@@ -143,4 +202,3 @@ export default function MessagesPage() {
     </div>
   );
 }
-
