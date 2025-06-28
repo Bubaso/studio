@@ -1,13 +1,15 @@
+
 "use client";
 
 import { useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Heart, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { addFavorite, removeFavorite, isFavorited } from '@/services/favoriteService';
+import { getCollectionsForItem } from '@/services/favoriteService';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { AddToCollectionDialog } from './add-to-collection-dialog';
 
 interface FavoriteButtonClientProps {
   itemId: string;
@@ -17,22 +19,38 @@ interface FavoriteButtonClientProps {
 
 export function FavoriteButtonClient({ itemId, className, size = 'icon' }: FavoriteButtonClientProps) {
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
-  const [isFavoritedState, setIsFavoritedState] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
   const { toast } = useToast();
   const router = useRouter();
 
+  const checkFavoriteStatus = async () => {
+    if (!currentUser || !itemId) {
+      setIsFavorited(false);
+      setIsChecking(false);
+      return;
+    }
+    setIsChecking(true);
+    try {
+      const collections = await getCollectionsForItem(currentUser.uid, itemId);
+      setIsFavorited(collections.length > 0);
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
+      setIsFavorited(false);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isLoadingAuth && itemId) {
-      if (currentUser) {
-        isFavorited(currentUser.uid, itemId).then(setIsFavoritedState);
-      } else {
-        setIsFavoritedState(false);
-      }
+    if (!isLoadingAuth) {
+      checkFavoriteStatus();
     }
   }, [itemId, currentUser, isLoadingAuth]);
 
-  const handleToggleFavorite = () => {
+  const handleFavoriteClick = () => {
     if (!currentUser) {
       toast({
         title: "Connexion requise",
@@ -41,32 +59,18 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
       });
       return;
     }
-
-    const originalState = isFavoritedState;
-    setIsFavoritedState(!originalState);
-
-    startTransition(async () => {
-      try {
-        const action = originalState ? removeFavorite : addFavorite;
-        const result = await action(currentUser.uid, itemId);
-
-        if (!result.success) {
-          // Throw an error to be caught by the catch block
-          throw new Error(result.error || "La mise à jour de vos favoris a échoué.");
-        }
-      } catch (error: any) {
-        // On failure, revert the state and show an error toast.
-        setIsFavoritedState(originalState);
-        toast({
-          variant: "destructive",
-          title: "Action échouée",
-          description: `Impossible de mettre à jour les favoris. L'affichage a été restauré.`,
-        });
-      }
-    });
+    setIsDialogOpen(true);
   };
 
-  if (isLoadingAuth) {
+  const onDialogClose = (wasUpdated: boolean) => {
+    setIsDialogOpen(false);
+    if (wasUpdated) {
+        // Re-check status after dialog closes
+        checkFavoriteStatus();
+    }
+  }
+
+  if (isLoadingAuth || isChecking) {
     return (
       <Button variant="ghost" size={size} className={cn("text-muted-foreground", className)} disabled>
         <Loader2 className={cn("h-5 w-5 animate-spin", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
@@ -75,24 +79,30 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
   }
 
   return (
-    <Button
-      variant="ghost"
-      size={size}
-      onClick={handleToggleFavorite}
-      disabled={isPending || isLoadingAuth}
-      className={cn(
-        "transition-colors duration-200 ease-in-out",
-        isFavoritedState ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500",
-        className
+    <>
+      <Button
+        variant="ghost"
+        size={size}
+        onClick={handleFavoriteClick}
+        disabled={isLoadingAuth}
+        className={cn(
+          "transition-colors duration-200 ease-in-out",
+          isFavorited ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500",
+          className
+        )}
+        aria-label={isFavorited ? "Modifier les collections" : "Ajouter aux favoris"}
+      >
+        <Heart className={cn(isFavorited ? "fill-current" : "", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
+        {size !== 'icon' && (isFavorited ? 'Sauvegardé' : 'Sauvegarder')}
+      </Button>
+
+      {currentUser && (
+        <AddToCollectionDialog 
+            itemId={itemId}
+            open={isDialogOpen}
+            onOpenChange={onDialogClose}
+        />
       )}
-      aria-label={isFavoritedState ? "Retirer des favoris" : "Ajouter aux favoris"}
-    >
-      {isPending ? (
-        <Loader2 className={cn("animate-spin", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
-      ) : (
-        <Heart className={cn(isFavoritedState ? "fill-current" : "", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
-      )}
-      {size !== 'icon' && (isFavoritedState ? 'Favori' : 'Ajouter aux favoris')}
-    </Button>
+    </>
   );
 }

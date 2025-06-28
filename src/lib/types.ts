@@ -122,3 +122,17 @@ export interface PaymentIntent {
     updatedAt: string; // ISO date string
     paytechToken?: string;
 }
+
+export interface UserCollection {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string; // ISO string
+  itemCount: number;
+  previewImageUrls: string[];
+}
+
+export interface CollectionItem {
+    itemId: string;
+    addedAt: string; // ISO string
+}
