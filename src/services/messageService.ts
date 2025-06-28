@@ -233,10 +233,10 @@ export const getMessagesForItemInThread = (
     onUpdate([]);
     return () => {};
   }
+  // Remove orderBy clause to avoid needing a composite index. Sorting will be done on the client.
   const messagesQuery = query(
     collection(db, 'messageThreads', threadId, 'messages'),
     where('itemId', '==', itemId),
-    orderBy('timestamp', 'asc'),
     limit(100)
   );
 
@@ -257,7 +257,10 @@ export const getMessagesForItemInThread = (
       } as Message;
     });
     
-    onUpdate(messages);
+    // Sort messages by timestamp on the client side
+    const sortedMessages = messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    onUpdate(sortedMessages);
 
   }, (error) => {
     console.error(`Error fetching messages for thread ${threadId} and item ${itemId}: `, error);
