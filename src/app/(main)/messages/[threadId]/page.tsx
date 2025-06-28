@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { auth, db } from '@/lib/firebase'; 
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getThreadWithDiscussedItems, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser, blockThread, unblockThread, markItemAsReadInThread } from '@/services/messageService';
+import { sendMessage, markMessageAsRead, uploadChatImageAndGetURL, markThreadAsSeenByCurrentUser, getMessagesForItemInThread, uploadChatAudioAndGetURL, deleteItemConversationForUser, blockThread, unblockThread, markItemAsReadInThread, listenToThreadDocument } from '@/services/messageService';
 import type { Message, MessageThread, Item } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { ReportItemButton } from '@/components/report-item-button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { CustomAudioPlayer } from '@/components/custom-audio-player';
+import { getItemByIdFromFirestore } from '@/services/itemService';
 
 // Sub-component for the list of discussed items
 const DiscussedItemsList = ({
@@ -200,7 +201,7 @@ export default function MessageThreadPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const visibleMessagesRef = useRef<Set<string>>(new Set());
+  const initialItemSelectionDone = useRef(false);
 
   // Auth Effect
   useEffect(() => {
@@ -210,42 +211,71 @@ export default function MessageThreadPage() {
     return () => unsubscribeAuth();
   }, []);
   
-  // Thread and Items Loading Effect
+  // Real-time listener for the thread document
   useEffect(() => {
-    if (currentUser && threadId) {
-        setIsLoading(true);
-        getThreadWithDiscussedItems(threadId, currentUser.uid).then(data => {
-            if (data?.thread) {
-                setThreadInfo(data.thread);
-                setDiscussedItems(data.items);
-                // Select item from query param > last message context > first item
-                const initialItemIdFromQuery = searchParams.get('item');
-                const initialItem = data.items.find(i => i.id === initialItemIdFromQuery) || 
-                                    data.items.find(i => i.id === data.thread.itemId) || 
-                                    data.items[0];
-
-                setSelectedItem(initialItem || null);
-
-                // Mark the selected item as read
-                if (initialItem) {
-                    markItemAsReadInThread(threadId, initialItem.id, currentUser.uid);
-                }
-
-            } else {
-                toast({ variant: "destructive", title: "Erreur", description: "Fil de discussion non trouvé ou accès refusé." });
-                router.push('/messages');
-            }
-        }).catch(err => {
-            console.error("Error fetching thread with items:", err);
-            toast({ variant: "destructive", title: "Erreur", description: "Impossible de charger le fil de discussion." });
-            router.push('/messages');
-        }).finally(() => {
-            setIsLoading(false);
-        });
-    } else if (!currentUser) {
-        setIsLoading(false);
+    if (!currentUser || !threadId) {
+        if (!currentUser) setIsLoading(false);
+        return;
     }
-  }, [threadId, currentUser, router, toast, searchParams]);
+
+    setIsLoading(true);
+    const unsubscribe = listenToThreadDocument(threadId, (thread) => {
+        if (thread) {
+            if (thread.deletedFor?.includes(currentUser.uid)) {
+                toast({ variant: "destructive", title: "Non trouvé", description: "Ce fil de discussion est introuvable." });
+                router.push('/messages');
+                return;
+            }
+            setThreadInfo(thread);
+        } else {
+            toast({ variant: "destructive", title: "Non trouvé", description: "Ce fil de discussion est introuvable." });
+            router.push('/messages');
+        }
+    });
+
+    return () => unsubscribe();
+  }, [threadId, currentUser?.uid]);
+
+  // Fetch/update discussed items when threadInfo changes
+  useEffect(() => {
+    if (!threadInfo || !currentUser) return;
+    
+    const fetchItems = async () => {
+        const userDeletedItems = threadInfo.itemConversationsDeletedFor?.[currentUser.uid] || [];
+        const visibleItemIds = (threadInfo.discussedItemIds || []).filter(id => !userDeletedItems.includes(id));
+        
+        const currentItemIds = discussedItems.map(i => i.id).sort().join(',');
+        const newItemIds = visibleItemIds.sort().join(',');
+        
+        if (newItemIds !== currentItemIds) {
+            if (visibleItemIds.length > 0) {
+                const items = (await Promise.all(visibleItemIds.map(id => getItemByIdFromFirestore(id))))
+                                .filter((item): item is Item => item !== null);
+                setDiscussedItems(items);
+            } else {
+                setDiscussedItems([]);
+            }
+        }
+        setIsLoading(false);
+    };
+
+    fetchItems();
+  }, [threadInfo, currentUser?.uid]);
+
+  // Select initial item once items and thread are loaded
+  useEffect(() => {
+    if (threadInfo && discussedItems.length > 0 && !initialItemSelectionDone.current && currentUser) {
+      const initialItemIdFromQuery = searchParams.get('item');
+      const initialItem = discussedItems.find(i => i.id === initialItemIdFromQuery) ||
+                          discussedItems.find(i => i.id === threadInfo.itemId) ||
+                          discussedItems[0];
+      if (initialItem) {
+        setSelectedItem(initialItem);
+        markItemAsReadInThread(threadId, initialItem.id, currentUser.uid);
+        initialItemSelectionDone.current = true;
+      }
+    }
+  }, [threadInfo, discussedItems, currentUser, searchParams, threadId]);
 
   // Message Subscription Effect
   useEffect(() => {
@@ -469,24 +499,22 @@ export default function MessageThreadPage() {
   
   const handleBlockUser = async () => {
     if (!currentUser || !threadInfo) return;
-    try {
-        await blockThread(threadInfo.id, currentUser.uid);
-        toast({ title: "Utilisateur bloqué", description: "Vous ne recevrez plus de messages de cet utilisateur." });
-        setThreadInfo(prev => prev ? { ...prev, blockedBy: currentUser.uid } : null);
-    } catch (error) {
-        toast({ variant: "destructive", title: "Erreur", description: "Impossible de bloquer l'utilisateur." });
+    const conversationIsBlocked = !!threadInfo.blockedBy;
+    if (conversationIsBlocked && threadInfo.blockedBy !== currentUser.uid) {
+        toast({ variant: "destructive", title: "Action non autorisée", description: "Seul l'utilisateur qui a bloqué peut débloquer." });
+        return;
     }
-  };
-
-  const handleUnblockUser = async () => {
-      if (!threadInfo) return;
-      try {
-          await unblockThread(threadInfo.id);
-          toast({ title: "Utilisateur débloqué", description: "Vous pouvez à nouveau échanger des messages avec cet utilisateur." });
-          setThreadInfo(prev => prev ? { ...prev, blockedBy: null } : null);
-      } catch (error) {
-          toast({ variant: "destructive", title: "Erreur", description: "Impossible de débloquer l'utilisateur." });
-      }
+    try {
+        if (conversationIsBlocked) {
+            await unblockThread(threadInfo.id);
+            toast({ title: "Utilisateur débloqué", description: "Vous pouvez à nouveau échanger des messages." });
+        } else {
+            await blockThread(threadInfo.id, currentUser.uid);
+            toast({ title: "Utilisateur bloqué", description: "La conversation est maintenant bloquée." });
+        }
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erreur", description: "L'opération de blocage/déblocage a échoué." });
+    }
   };
 
 
@@ -521,18 +549,17 @@ export default function MessageThreadPage() {
   const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
   const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
-  const iHaveBlockedThisUser = threadInfo.blockedBy === currentUser.uid;
   const isConversationBlocked = !!threadInfo.blockedBy;
-  const canIToggleBlock = !threadInfo.blockedBy || iHaveBlockedThisUser;
+  const amITheBlocker = isConversationBlocked && threadInfo.blockedBy === currentUser.uid;
   
   const unreadItemIds = threadInfo.unreadItemsFor?.[currentUser.uid] || [];
 
   let placeholderText = "Écrivez votre message...";
   if (isConversationBlocked) {
-      if (iHaveBlockedThisUser) {
+      if (amITheBlocker) {
           placeholderText = "Vous avez bloqué cet utilisateur. Débloquez pour envoyer un message.";
       } else {
-          placeholderText = "Vous ne pouvez pas répondre à cette conversation.";
+          placeholderText = "Cet utilisateur vous a bloqué. Vous ne pouvez pas répondre.";
       }
   }
 
@@ -556,9 +583,9 @@ export default function MessageThreadPage() {
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
                     <h2 className="text-lg font-semibold font-headline">{otherParticipantName}</h2>
-                    {threadInfo.blockedBy && (
+                    {isConversationBlocked && (
                         <p className="text-xs text-destructive font-medium">
-                            {iHaveBlockedThisUser ? "Vous avez bloqué cet utilisateur." : "Cet utilisateur vous a bloqué."}
+                            {amITheBlocker ? "Vous avez bloqué cet utilisateur." : "Cet utilisateur vous a bloqué."}
                         </p>
                     )}
                 </div>
@@ -572,8 +599,8 @@ export default function MessageThreadPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={iHaveBlockedThisUser ? handleUnblockUser : handleBlockUser} disabled={!canIToggleBlock}>
-                                    {iHaveBlockedThisUser ? (
+                                <DropdownMenuItem onClick={handleBlockUser}>
+                                    {isConversationBlocked ? (
                                         <><UserCheck className="mr-2 h-4 w-4" /><span>Débloquer</span></>
                                     ) : (
                                         <><UserX className="mr-2 h-4 w-4" /><span>Bloquer</span></>

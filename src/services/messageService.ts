@@ -322,6 +322,49 @@ export const markMessageAsRead = async (threadId: string, messageId: string, use
   }
 };
 
+export const listenToThreadDocument = (
+  threadId: string,
+  onUpdate: (thread: MessageThread | null) => void
+): Unsubscribe => {
+  if (!threadId) {
+    onUpdate(null);
+    return () => {};
+  }
+  const threadRef = doc(db, 'messageThreads', threadId);
+
+  return onSnapshot(threadRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const threadData = {
+        id: docSnap.id,
+        participantIds: data.participantIds,
+        participantNames: data.participantNames,
+        participantAvatars: data.participantAvatars,
+        lastMessageText: data.lastMessageText,
+        lastMessageSenderId: data.lastMessageSenderId,
+        lastMessageAt: convertTimestampToISO(data.lastMessageAt as Timestamp),
+        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        participantsWhoHaveSeenLatest: data.participantsWhoHaveSeenLatest || [],
+        itemId: data.itemId,
+        itemTitle: data.itemTitle,
+        itemImageUrl: data.itemImageUrl,
+        itemSellerId: data.itemSellerId,
+        discussedItemIds: data.discussedItemIds || [],
+        deletedFor: data.deletedFor || [],
+        itemConversationsDeletedFor: data.itemConversationsDeletedFor || {},
+        blockedBy: data.blockedBy || null,
+        unreadItemsFor: data.unreadItemsFor || {},
+      } as MessageThread;
+      onUpdate(threadData);
+    } else {
+      onUpdate(null);
+    }
+  }, (error) => {
+    console.error(`Error listening to thread document ${threadId}:`, error);
+    onUpdate(null);
+  });
+};
+
 export async function getThreadWithDiscussedItems(threadId: string, currentUserId: string): Promise<{thread: MessageThread, items: Item[]} | null> {
     if (!threadId || !currentUserId) return null;
     try {
