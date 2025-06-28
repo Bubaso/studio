@@ -49,7 +49,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
         >
             {hasVideo ? (
                 <video
-                    src={item.videoUrl}
+                    src={`${item.videoUrl}#t=0.1`}
                     controls={false}
                     autoPlay={false}
                     muted
@@ -100,7 +100,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
                   <>
                     <video
                         key={mediaUrl}
-                        src={mediaUrl}
+                        src={`${mediaUrl}#t=0.1`}
                         muted
                         playsInline
                         preload="metadata"
