@@ -37,6 +37,7 @@ import { CategorySuggestion } from "./category-suggestion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/context/AuthContext";
 import { LISTING_COST_IN_CREDITS } from "@/lib/config";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -74,7 +75,20 @@ const listingFormSchema = z.object({
     .refine((file) => file.size <= MAX_VIDEO_SIZE_MB * 1024 * 1024, `La taille maximale de la vidéo est de ${MAX_VIDEO_SIZE_MB}MB.`)
     .refine((file) => ACCEPTED_VIDEO_TYPES.includes(file.type), "Formats vidéo acceptés : .mp4, .webm, .mov.")
     .optional(),
+  showPhoneNumber: z.enum(['yes', 'no'], {
+    required_error: "Veuillez choisir si vous souhaitez afficher votre numéro.",
+  }),
+  phoneNumber: z.string().optional(),
+}).refine(data => {
+    if (data.showPhoneNumber === 'yes') {
+        return !!data.phoneNumber && data.phoneNumber.trim().length > 5;
+    }
+    return true;
+}, {
+    message: "Un numéro de téléphone valide est requis.",
+    path: ['phoneNumber'],
 });
+
 
 type ListingFormValues = z.infer<typeof listingFormSchema>;
 
@@ -116,6 +130,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       longitude: initialItemData?.longitude,
       imageFiles: [],
       videoFile: undefined,
+      showPhoneNumber: initialItemData?.phoneNumber ? 'yes' : 'no',
+      phoneNumber: initialItemData?.phoneNumber || "",
     },
   });
   
@@ -146,6 +162,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             longitude: initialItemData.longitude,
             imageFiles: [],
             videoFile: undefined,
+            showPhoneNumber: initialItemData.phoneNumber ? 'yes' : 'no',
+            phoneNumber: initialItemData.phoneNumber || ""
         });
         setImagePreviews(initialItemData.imageUrls || []);
         setRemoveExistingVideo(false);
@@ -349,6 +367,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         imageUrls: finalImageUrls, 
         videoUrl: finalVideoUrl,
         dataAiHint: dataAiHintForImage,
+        phoneNumber: values.showPhoneNumber === 'yes' ? values.phoneNumber : undefined,
       };
 
       if (isEditMode && initialItemData?.id) {
@@ -539,6 +558,63 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               }
               onLocationSelect={handleLocationSelected}
             />
+
+            <FormField
+              control={form.control}
+              name="showPhoneNumber"
+              render={({ field }) => (
+              <FormItem className="space-y-3 rounded-lg border p-4 bg-muted/30">
+                  <FormLabel className="text-base">Afficher votre numéro de téléphone sur l'annonce ?</FormLabel>
+                  <FormDescription>
+                  Les acheteurs pourront vous appeler directement. Sinon, ils vous contacteront via la messagerie du site.
+                  </FormDescription>
+                  <FormControl>
+                  <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex gap-4 pt-2"
+                  >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                              <RadioGroupItem value="yes" id="phone-yes" />
+                          </FormControl>
+                          <FormLabel htmlFor="phone-yes" className="font-normal cursor-pointer">
+                              Oui
+                          </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                              <RadioGroupItem value="no" id="phone-no" />
+                          </FormControl>
+                          <FormLabel htmlFor="phone-no" className="font-normal cursor-pointer">
+                              Non
+                          </FormLabel>
+                      </FormItem>
+                  </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+              )}
+            />
+
+            {form.watch('showPhoneNumber') === 'yes' && (
+                <div className="pl-4 border-l-2 border-primary animate-in fade-in-20">
+                <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Numéro de téléphone à afficher</FormLabel>
+                        <FormControl>
+                        <Input type="tel" placeholder="ex: 77 123 45 67" {...field} value={field.value || ''}/>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+            )}
+
 
           <FormField
             control={form.control}

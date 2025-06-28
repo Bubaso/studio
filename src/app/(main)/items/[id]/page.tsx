@@ -5,7 +5,7 @@ import type { UserProfile, Item, ItemCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -142,6 +142,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             {item && item.sellerId && !item.isSold && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
+            )}
+            {item.phoneNumber && !item.isSold && (
+                <Button asChild variant="default" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base bg-green-600 hover:bg-green-700">
+                    <a href={`tel:${item.phoneNumber}`}>
+                        <Phone className="mr-2 h-5 w-5" /> Appeler le vendeur
+                    </a>
+                </Button>
             )}
           </div>
           

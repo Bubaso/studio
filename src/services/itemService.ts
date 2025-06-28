@@ -69,6 +69,7 @@ const mapDocToItem = (document: any): Item => {
     lowActivity: lowActivity,
     isSold: data.isSold || false,
     soldAt: data.soldAt ? convertTimestampToISO(data.soldAt as FirebaseTimestampType) : undefined,
+    phoneNumber: data.phoneNumber || undefined,
   };
 };
 
@@ -320,6 +321,7 @@ export async function createItemInFirestore(
     if (dataToSend.videoUrl === undefined) delete dataToSend.videoUrl;
     if (dataToSend.latitude === undefined) delete dataToSend.latitude;
     if (dataToSend.longitude === undefined) delete dataToSend.longitude;
+    if (dataToSend.phoneNumber === undefined) delete dataToSend.phoneNumber;
 
     const newItemRef = doc(collection(db, "items"));
     batch.set(newItemRef, {
@@ -358,7 +360,9 @@ export async function updateItemInFirestore(
   if ('videoUrl' in dataToUpdate && dataToUpdate.videoUrl === undefined) {
       dataToUpdate.videoUrl = deleteField();
   }
-
+  if ('phoneNumber' in dataToUpdate && dataToUpdate.phoneNumber === undefined) {
+    dataToUpdate.phoneNumber = deleteField();
+  }
   if ('latitude' in dataToUpdate && dataToUpdate.latitude === undefined) {
     dataToUpdate.latitude = deleteField();
   }

@@ -29,6 +29,7 @@ export interface Item {
   isSold?: boolean;
   soldAt?: string;
   lowActivity?: boolean;
+  phoneNumber?: string;
 }
 
 export interface UserProfile {
