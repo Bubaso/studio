@@ -54,12 +54,8 @@ function UserProfileContent({ user, listings, reviews }: { user: UserProfile; li
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
               <p>Vous n'avez pas encore mis d'articles en vente.</p>
-              <ul className="list-disc list-inside text-left my-2">
-                 <li>Assurez-vous que les articles que vous avez créés dans Firestore ont un champ `sellerId` qui correspond à votre UID ({user.uid}).</li>
-                 <li>Le champ `postedDate` doit être un Timestamp valide.</li>
-              </ul>
-              <Link href="/sell" className="text-primary hover:underline">
-                Publiez votre premier article !
+              <Link href="/sell" className="mt-4 inline-block">
+                <Button variant="secondary">Publiez votre premier article !</Button>
               </Link>
             </CardContent>
           </Card>
