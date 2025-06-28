@@ -30,21 +30,26 @@ const categoryHints: { [key in ItemCategory]?: string } = {
   'Autre': 'various items',
 };
 
+async function getUserIdFromCookie(): Promise<string | null> {
+    try {
+        const cookieStore = cookies();
+        const sessionCookie = cookieStore.get('session')?.value;
+        if (sessionCookie) {
+            const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
+            return decodedToken.uid;
+        }
+        return null;
+    } catch (error) {
+        // Session cookie is invalid or expired.
+        return null;
+    }
+}
+
 
 export default async function HomePage() {
   const db = admin?.firestore();
   
-  let userId: string | null = null;
-  try {
-    const sessionCookie = cookies().get('session')?.value;
-    if (sessionCookie) {
-      const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
-      userId = decodedToken.uid;
-    }
-  } catch (error) {
-    // Session cookie is invalid or expired.
-    userId = null; 
-  }
+  const userId = await getUserIdFromCookie();
 
   let recommendedItems: Item[] = [];
   if (userId) {

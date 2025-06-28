@@ -1,96 +1,56 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of a document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Users collection
-    match /users/{userId} {
-      // Anyone can read user profiles
-      allow read: if true;
-      // User can create their own doc, or update their own doc
-      allow create, update: if isOwner(userId);
-      allow delete: if false;
-
-      // View History subcollection
-      match /viewHistory/{historyId} {
-        // A user can only write to their own view history
-        allow write: if isOwner(userId);
-        allow read: if isOwner(userId);
-      }
-    }
-
-    // Items collection
+    // Public read access for items. Write access only for the seller.
     match /items/{itemId} {
-      // Anyone can read item listings
       allow read: if true;
-      // Only authenticated users can create items
-      allow create: if isSignedIn();
-      // Only the seller can update or delete their own item
-      allow update, delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
-      
-      // Views subcollection
+      allow write: if request.auth.uid == resource.data.sellerId;
+
+      // Allow authenticated users to log views on items.
       match /views/{viewId} {
-        // Any authenticated user can create a view record on any item.
-        allow create: if isSignedIn();
-        // Disallow reading views to protect privacy
-        allow read, update, delete: if false;
-      }
-    }
-
-    // Message Threads collection
-    match /messageThreads/{threadId} {
-      // A user can read/write to a thread only if they are a participant
-      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-
-      // Messages subcollection within a thread
-      match /messages/{messageId} {
-        // A user can read/write messages in a thread they are a participant in.
-        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid || get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid;
+        allow create: if request.auth != null;
       }
     }
     
-    // User Favorites collection (documentId is userId_itemId)
+    // Users can only read/write their own user document.
+    match /users/{userId} {
+        allow read, write: if request.auth.uid == userId;
+    }
+    
+    // Users can manage their own favorites.
     match /userFavorites/{favoriteId} {
-        // A user can only manage their own favorites.
-        // The favoriteId is a composite key, so we check if it starts with the user's UID.
-        allow read, create, delete: if isSignedIn() && favoriteId.split('_')[0] == request.auth.uid;
-        allow update: if false;
+        // A user can get their own favorite doc.
+        allow get: if request.auth.uid == resource.data.userId;
+        // A user can list favorites, but the query MUST be constrained to their UID on the client.
+        allow list: if request.auth != null;
+        // A user can only create a favorite for themselves.
+        allow create: if request.auth.uid == request.resource.data.userId;
+        // A user can only delete their own favorite.
+        allow delete: if request.auth.uid == resource.data.userId;
     }
 
-    // Reviews collection
-    match /reviews/{reviewId} {
-        allow read: if true;
-        allow create: if isSignedIn() && request.resource.data.reviewerId == request.auth.uid && request.resource.data.sellerId != request.auth.uid;
-        allow update, delete: if false;
-    }
-
-    // Product Reports collection
-    match /productReports/{itemId} {
-        // Allow write for any authenticated user
-        allow write: if isSignedIn();
-        allow read: if false;
-
-        match /reports/{userId} {
-            // A user can only create a report with their own UID
-            allow create: if isOwner(userId);
-            allow read, update, delete: if false;
+    // Rules for message threads.
+    match /messageThreads/{threadId} {
+        // Users can only read/write threads they are a part of.
+        allow read, write: if request.auth.uid in resource.data.participantIds;
+        
+        // Rules for messages within a thread.
+        match /messages/{messageId} {
+            // Users can only read/write messages in threads they are a part of.
+            allow read, write: if request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
         }
     }
-    
-    // Payment Intents collection - server-side only
-    match /paymentIntents/{intentId} {
-        allow read, write: if false;
+
+    // Rules for product reports.
+    match /productReports/{itemId}/reports/{userId} {
+        allow read, create: if request.auth.uid == userId;
+    }
+
+    // Rules for reviews.
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth.uid == request.resource.data.reviewerId;
     }
   }
 }
