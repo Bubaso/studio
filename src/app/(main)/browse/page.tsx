@@ -71,9 +71,13 @@ function ActiveFilters() {
     
     const clearAllFilters = () => {
          const query = searchParams.get('q');
+         const view = searchParams.get('view'); // Preserve view on clear
          const newParams = new URLSearchParams();
          if (query) {
             newParams.set('q', query);
+         }
+         if (view) {
+            newParams.set('view', view);
          }
          router.replace(`${pathname}?${newParams.toString()}`);
     }
@@ -292,20 +296,29 @@ function CardSkeleton() {
 // BrowsePage no longer receives searchParams prop
 export default function BrowsePage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const actualSearchParams = useSearchParams(); // Use hook for pageTitle
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const queryParam = actualSearchParams.get('q');
-  const categoryParams = actualSearchParams.getAll('category');
+  const activeView = searchParams.get('view') || 'grid';
+  const queryParam = searchParams.get('q');
+  const categoryParams = searchParams.getAll('category');
 
   const pageTitle = queryParam
     ? `Résultats pour "${queryParam}"`
     : categoryParams.length > 0
     ? `Parcourir ${categoryParams.join(', ')}`
     : 'Parcourir tous les articles';
+    
+  const handleViewChange = (view: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('view', view);
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
 
   return (
     <div className="space-y-6">
-       <Tabs defaultValue="grid" className="w-full">
+       <Tabs value={activeView} onValueChange={handleViewChange} className="w-full">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
                 <div className="flex items-center gap-2">
