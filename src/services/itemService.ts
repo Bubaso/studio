@@ -24,7 +24,7 @@ const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | st
 
 const mapDocToItem = (document: any): Item => {
   const data = document.data();
-  let imageUrls: string[] = ['https://placehold.co/600x400.png'];
+  let imageUrls: string[] = [];
 
   if (Array.isArray(data.imageUrls) && data.imageUrls.length > 0) {
     imageUrls = data.imageUrls;
@@ -70,6 +70,7 @@ const mapDocToItem = (document: any): Item => {
     isSold: data.isSold || false,
     soldAt: data.soldAt ? convertTimestampToISO(data.soldAt as FirebaseTimestampType) : undefined,
     phoneNumber: data.phoneNumber || undefined,
+    deliveryOptions: data.deliveryOptions || [],
   };
 };
 
@@ -337,6 +338,7 @@ export async function createItemInFirestore(
     if (dataToSend.latitude === undefined) delete dataToSend.latitude;
     if (dataToSend.longitude === undefined) delete dataToSend.longitude;
     if (dataToSend.phoneNumber === undefined) delete dataToSend.phoneNumber;
+    if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
 
     const newItemRef = doc(collection(db, "items"));
     batch.set(newItemRef, {
@@ -384,6 +386,9 @@ export async function updateItemInFirestore(
   }
   if ('longitude' in dataToUpdate && dataToUpdate.longitude === undefined) {
     dataToUpdate.longitude = deleteField();
+  }
+  if ('deliveryOptions' in dataToUpdate && dataToUpdate.deliveryOptions === undefined) {
+    dataToUpdate.deliveryOptions = deleteField();
   }
   
   dataToUpdate.lastUpdated = serverTimestamp();

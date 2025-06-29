@@ -17,12 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition, UserProfile } from "@/lib/types";
+import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition, UserProfile, DeliveryOptions, type DeliveryOption } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Motorbike, Car, Truck, CarTaxiFront } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -38,6 +38,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useAuth } from "@/context/AuthContext";
 import { LISTING_COST_IN_CREDITS } from "@/lib/config";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Checkbox } from "./ui/checkbox";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -79,6 +80,7 @@ const listingFormSchema = z.object({
     required_error: "Veuillez choisir si vous souhaitez afficher votre numéro.",
   }),
   phoneNumber: z.string().optional(),
+  deliveryOptions: z.array(z.enum(DeliveryOptions)).optional(),
 }).refine(data => {
     if (data.showPhoneNumber === 'yes') {
         return !!data.phoneNumber && data.phoneNumber.trim().length > 5;
@@ -95,6 +97,15 @@ type ListingFormValues = z.infer<typeof listingFormSchema>;
 interface ListingFormProps {
   initialItemData?: Item | null;
 }
+
+const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
+  'Moto': Motorbike,
+  'Voiture': Car,
+  'Pickup': Truck,
+  'Taxi Baggage': CarTaxiFront,
+  'Camion': Truck,
+};
+
 
 export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const router = useRouter();
@@ -132,6 +143,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       videoFile: undefined,
       showPhoneNumber: initialItemData?.phoneNumber ? 'yes' : 'no',
       phoneNumber: initialItemData?.phoneNumber || "",
+      deliveryOptions: initialItemData?.deliveryOptions || [],
     },
   });
   
@@ -163,7 +175,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             imageFiles: [],
             videoFile: undefined,
             showPhoneNumber: initialItemData.phoneNumber ? 'yes' : 'no',
-            phoneNumber: initialItemData.phoneNumber || ""
+            phoneNumber: initialItemData.phoneNumber || "",
+            deliveryOptions: initialItemData.deliveryOptions || [],
         });
         setImagePreviews(initialItemData.imageUrls || []);
         setRemoveExistingVideo(false);
@@ -372,6 +385,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         videoUrl: finalVideoUrl,
         dataAiHint: dataAiHintForImage,
         phoneNumber: values.showPhoneNumber === 'yes' ? values.phoneNumber : undefined,
+        deliveryOptions: values.deliveryOptions,
       };
 
       if (isEditMode && initialItemData?.id) {
@@ -630,6 +644,61 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 />
                 </div>
             )}
+            
+            <FormField
+              control={form.control}
+              name="deliveryOptions"
+              render={() => (
+                <FormItem>
+                  <div className="mb-4">
+                    <FormLabel className="text-base">Options de livraison</FormLabel>
+                    <FormDescription>
+                      Sélectionnez les moyens par lesquels cet article peut être transporté.
+                    </FormDescription>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {DeliveryOptions.map((option) => {
+                      const Icon = deliveryOptionIcons[option];
+                      return (
+                        <FormField
+                          key={option}
+                          control={form.control}
+                          name="deliveryOptions"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={option}
+                                className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 has-[:checked]:border-primary transition-colors"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(option)}
+                                    onCheckedChange={(checked) => {
+                                      return checked
+                                        ? field.onChange([...(field.value || []), option])
+                                        : field.onChange(
+                                            field.value?.filter(
+                                              (value) => value !== option
+                                            )
+                                          )
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal flex items-center gap-2 cursor-pointer w-full">
+                                  <Icon className="h-5 w-5 text-muted-foreground" />
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            )
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
 
           <FormField
@@ -678,17 +747,16 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                         ))}
                     </div>
                 )}
-                {imagePreviews.length === 0 && (
-                     <div className="mt-2 h-20 w-full bg-muted rounded-md flex items-center justify-center border border-dashed">
-                        <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                {imagePreviews.length === 0 && !isEditMode && (
+                     <div className="mt-2 h-20 w-full bg-muted rounded-md flex items-center justify-center border border-dashed border-destructive">
+                        <UploadCloud className="h-8 w-8 text-destructive" />
                       </div>
                 )}
                 <FormDescription>
                   Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
                   {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
                 </FormDescription>
-                {fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-                 <FormMessage />
+                <FormMessage>{fieldState.error?.message || (form.formState.errors.imageFiles as any)?.message}</FormMessage>
               </FormItem>
             )}
           />

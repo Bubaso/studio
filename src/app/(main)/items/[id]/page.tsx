@@ -2,11 +2,11 @@
 import Image from 'next/image';
 import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
-import type { UserProfile, Item, ItemCategory } from '@/lib/types'; 
+import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Motorbike, Car, CarTaxiFront } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -23,6 +23,14 @@ import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 interface ItemPageProps {
   params: { id: string };
 }
+
+const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
+  'Moto': Motorbike,
+  'Voiture': Car,
+  'Pickup': Truck,
+  'Taxi Baggage': CarTaxiFront,
+  'Camion': Truck,
+};
 
 export default async function ItemPage({ params }: ItemPageProps) {
   const { id: itemId } = params; 
@@ -123,6 +131,20 @@ export default async function ItemPage({ params }: ItemPageProps) {
               </Badge>
             )}
           </div>
+          
+          {item.deliveryOptions && item.deliveryOptions.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+                {item.deliveryOptions.map((option) => {
+                    const Icon = deliveryOptionIcons[option];
+                    return (
+                        <Badge key={option} variant="outline" className="text-sm py-1 px-3">
+                            <Icon className="h-4 w-4 mr-2" />
+                            {option}
+                        </Badge>
+                    )
+                })}
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <FavoriteButtonClient itemId={itemId} sellerId={item.sellerId} size="default" />

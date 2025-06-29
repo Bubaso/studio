@@ -7,6 +7,9 @@ export interface ViewHistoryItem {
   name: string;
 }
 
+export const DeliveryOptions = ['Moto', 'Voiture', 'Pickup', 'Taxi Baggage', 'Camion'] as const;
+export type DeliveryOption = typeof DeliveryOptions[number];
+
 export interface Item {
   id: string;
   name: string;
@@ -30,6 +33,7 @@ export interface Item {
   soldAt?: string;
   lowActivity?: boolean;
   phoneNumber?: string;
+  deliveryOptions?: DeliveryOption[];
 }
 
 export interface UserProfile {
