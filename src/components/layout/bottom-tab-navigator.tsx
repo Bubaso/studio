@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -26,7 +25,7 @@ export function BottomTabNavigator() {
         <div className="relative -mt-8 mb-1 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-150 ease-out hover:bg-primary/90 active:scale-95 hover:shadow-xl">
           <ShoppingCart className="h-7 w-7" />
         </div>
-        <span className="text-xs">Jënd</span>
+        <span className="text-sm">Jënd</span>
       </Link>
 
       {/* Vendre Button (Sell) */}
@@ -41,7 +40,7 @@ export function BottomTabNavigator() {
         <div className="relative -mt-8 mb-1 flex h-[60px] w-[60px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-150 ease-out hover:bg-primary/90 active:scale-95 hover:shadow-xl">
           <PlusCircle className="h-7 w-7" />
         </div>
-        <span className="text-xs">Jaay</span>
+        <span className="text-sm">Jaay</span>
       </Link>
     </nav>
   );
