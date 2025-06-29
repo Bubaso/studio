@@ -13,11 +13,12 @@ import { AddToCollectionDialog } from './add-to-collection-dialog';
 
 interface FavoriteButtonClientProps {
   itemId: string;
+  sellerId: string;
   className?: string;
   size?: 'sm' | 'default' | 'lg' | 'icon';
 }
 
-export function FavoriteButtonClient({ itemId, className, size = 'icon' }: FavoriteButtonClientProps) {
+export function FavoriteButtonClient({ itemId, sellerId, className, size = 'icon' }: FavoriteButtonClientProps) {
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -79,6 +80,11 @@ export function FavoriteButtonClient({ itemId, className, size = 'icon' }: Favor
         <Loader2 className={cn("h-5 w-5 animate-spin", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
       </Button>
     );
+  }
+
+  // Hide the button if the current user is the seller of the item.
+  if (currentUser && currentUser.uid === sellerId) {
+    return null;
   }
 
   return (

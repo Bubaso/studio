@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
@@ -124,7 +125,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <FavoriteButtonClient itemId={itemId} size="default" />
+            <FavoriteButtonClient itemId={itemId} sellerId={item.sellerId} size="default" />
             <WhatsAppShareButton item={item} />
           </div>
           
