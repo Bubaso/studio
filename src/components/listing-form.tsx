@@ -22,7 +22,7 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Motorbike, Car, Truck, CarTaxiFront } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -99,10 +99,10 @@ interface ListingFormProps {
 }
 
 const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
-  'Moto': Motorbike,
+  'Moto': Bike,
   'Voiture': Car,
   'Pickup': Truck,
-  'Taxi Baggage': CarTaxiFront,
+  'Taxi Baggage': CarFront,
   'Camion': Truck,
 };
 

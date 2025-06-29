@@ -6,7 +6,7 @@ import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/type
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Motorbike, Car, CarTaxiFront } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -25,10 +25,10 @@ interface ItemPageProps {
 }
 
 const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
-  'Moto': Motorbike,
+  'Moto': Bike,
   'Voiture': Car,
   'Pickup': Truck,
-  'Taxi Baggage': CarTaxiFront,
+  'Taxi Baggage': CarFront,
   'Camion': Truck,
 };
 
