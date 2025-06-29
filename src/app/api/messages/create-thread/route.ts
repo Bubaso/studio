@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
 import type { UserProfile, Item, MessageThread } from '@/lib/types';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
+import { checkRateLimit } from '@/lib/rateLimiter';
+import { env } from '@/lib/env';
 
 
 // Helper to convert Admin SDK Timestamp to ISO string
@@ -78,6 +80,10 @@ export async function POST(request: NextRequest) {
   const currentUserId = decodedToken.uid;
 
   try {
+    // --- Rate Limiting Check ---
+    await checkRateLimit(currentUserId, 'createMessageThread');
+    // --- End Rate Limiting Check ---
+
     const body = await request.json();
     const { otherUserId, itemId } = body;
     console.log(`API_ROUTE_DATA: currentUserId=${currentUserId} (from token), otherUserId=${otherUserId}, itemId=${itemId}`);
@@ -195,6 +201,9 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
+    if (error.message.startsWith('Rate limit exceeded')) {
+        return NextResponse.json({ error: "Vous envoyez des requêtes trop rapidement. Veuillez patienter un instant." }, { status: 429 });
+    }
     console.error('API_ROUTE_UNEXPECTED_ERROR: An error occurred in POST /api/messages/create-thread:', error);
     // Log more details from the error object
     console.error(`API_ROUTE_UNEXPECTED_ERROR_DETAILS: Name: ${error.name}, Message: ${error.message}, Code: ${error.code}, Stack: ${error.stack}`);

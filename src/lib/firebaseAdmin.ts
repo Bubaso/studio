@@ -1,12 +1,11 @@
 // src/lib/firebaseAdmin.ts
 import * as admin from 'firebase-admin';
-import { env } from './env';
 
 let adminDb: admin.firestore.Firestore | null = null;
 let adminAuth: admin.auth.Auth | null = null;
 let initializedAdmin: typeof admin | null = null;
 
-const serviceAccountPath = env.GOOGLE_APPLICATION_CREDENTIALS;
+const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 const isConfigValid = serviceAccountPath && !serviceAccountPath.includes('REPLACE_WITH_');
 
@@ -16,7 +15,7 @@ if (!isConfigValid) {
   try {
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccountPath),
-      storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
     adminDb = admin.firestore(app);
     adminAuth = admin.auth(app);

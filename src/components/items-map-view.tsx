@@ -11,7 +11,6 @@ import { MapItemPreviewCard } from './map-item-preview-card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { MapIcon, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { env } from '@/lib/env';
 
 
 const containerStyle = {
@@ -30,7 +29,7 @@ const libraries: ("places")[] = ["places"];
 
 export function ItemsMapView() {
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 

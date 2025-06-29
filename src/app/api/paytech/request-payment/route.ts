@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 import { randomBytes } from 'crypto';
+import { checkRateLimit } from '@/lib/rateLimiter';
 import { env } from '@/lib/env';
 
 const PAYTECH_API_KEY = env.PAYTECH_API_KEY;
@@ -27,6 +28,10 @@ export async function POST(request: NextRequest) {
         const idToken = authHeader.split('Bearer ')[1];
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const userId = decodedToken.uid;
+        
+        // --- Rate Limiting Check ---
+        await checkRateLimit(userId, 'requestPayment');
+        // --- End Rate Limiting Check ---
 
         const body = await request.json();
         const { price, creditAmount, packageName } = body;
@@ -81,6 +86,9 @@ export async function POST(request: NextRequest) {
         }
 
     } catch (error: any) {
+        if (error.message.startsWith('Rate limit exceeded')) {
+            return NextResponse.json({ error: "Vous avez fait trop de tentatives de paiement. Veuillez patienter un instant." }, { status: 429 });
+        }
         console.error('Error in request-payment endpoint:', error);
 
         let errorMessage = "Erreur interne du serveur lors de la demande de paiement.";
