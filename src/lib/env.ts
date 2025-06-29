@@ -1,0 +1,38 @@
+import { z } from 'zod';
+
+const clientSchema = z.object({
+  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().min(1),
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().min(1),
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().min(1),
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().min(1),
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1),
+  NEXT_PUBLIC_FIREBASE_APP_ID: z.string().min(1),
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().min(1),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: z.string().optional(),
+});
+
+const serverSchema = z.object({
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1),
+  PAYTECH_API_KEY: z.string().min(1),
+  PAYTECH_API_SECRET: z.string().min(1),
+  GOOGLE_API_KEY: z.string().min(1).optional(),
+});
+
+const isServer = typeof window === 'undefined';
+
+// On the server, we validate both server and client variables.
+// On the client, we only validate client variables.
+const envSchema = isServer ? clientSchema.merge(serverSchema) : clientSchema;
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error(
+    '❌ Invalid environment variables:',
+    JSON.stringify(parsed.error.flatten().fieldErrors, null, 2)
+  );
+  throw new Error('Geçersiz ortam değişkenleri. Lütfen .env dosyanızı kontrol edin.');
+}
+
+export const env = parsed.data;

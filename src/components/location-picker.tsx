@@ -8,6 +8,7 @@ import { Skeleton } from './ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { FormDescription } from './ui/form';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { env } from '@/lib/env';
 
 const containerStyle = {
   width: '100%',
@@ -30,7 +31,7 @@ interface LocationPickerProps {
 
 export function LocationPicker({ initialPosition, onLocationSelect }: LocationPickerProps) {
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
 

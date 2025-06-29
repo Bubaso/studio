@@ -2,9 +2,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminDb } from '@/lib/firebaseAdmin';
 import { createHash } from 'crypto';
+import { env } from '@/lib/env';
 
-const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
-const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
+const PAYTECH_API_KEY = env.PAYTECH_API_KEY;
+const PAYTECH_API_SECRET = env.PAYTECH_API_SECRET;
 
 export async function POST(request: NextRequest) {
     // --- Configuration Checks ---
