@@ -58,11 +58,12 @@ export default function SignInPage() {
   }, [router, redirectTo]);
 
   useEffect(() => {
-    const processRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
+    // This effect should run only once on mount to check for a redirect result.
+    getRedirectResult(auth)
+      .then(async (result) => {
         if (result) {
-          setIsLoading(true);
+          // User has successfully signed in via redirect.
+          // Now create their user document in Firestore if it doesn't exist.
           const user = result.user;
           await createUserDocument(user, {
             name: user.displayName,
@@ -72,9 +73,11 @@ export default function SignInPage() {
             title: "Connexion réussie !",
             description: `Bienvenue, ${user.displayName || user.email}!`,
           });
-          // onAuthStateChanged will handle the final redirect
+          // The onAuthStateChanged listener will handle the final redirect.
         }
-      } catch (error: any) {
+      })
+      .catch((error) => {
+        // Handle errors from the redirect result
         console.error("OAuth Redirect Error:", error);
         let errorMessage = "Une erreur s'est produite lors de la connexion.";
         if (error.code === 'auth/account-exists-with-different-credential') {
@@ -85,12 +88,11 @@ export default function SignInPage() {
           description: errorMessage,
           variant: "destructive",
         });
-      } finally {
+      })
+      .finally(() => {
+        // Whether there was a result or not, the check is complete.
         setIsProcessingRedirect(false);
-        setIsLoading(false);
-      }
-    };
-    processRedirectResult();
+      });
   }, []);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
@@ -155,7 +157,8 @@ export default function SignInPage() {
         description: errorMessage,
         variant: "destructive",
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
