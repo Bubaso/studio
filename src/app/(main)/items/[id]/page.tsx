@@ -19,6 +19,7 @@ import { ItemStatsDisplay } from '@/components/item-stats-display';
 import { ReportItemButton } from '@/components/report-item-button';
 import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
+import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
 
 interface ItemPageProps {
   params: { id: string };
@@ -86,6 +87,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <ItemViewLogger item={item} />
+      <ConfirmSoldStatusClient item={item} />
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         {/* Left Column: Image Gallery & Video */}

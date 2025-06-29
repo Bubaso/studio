@@ -8,6 +8,7 @@ import {
   getDocs,
   serverTimestamp,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 export async function hasUserReportedItem(
@@ -31,6 +32,13 @@ export async function reportItemAsSold(
 ): Promise<{ success: boolean; error?: string; triggeredSuspectedSold?: boolean }> {
   if (!itemId || !userId) {
     return { success: false, error: "L'ID de l'article et de l'utilisateur sont requis." };
+  }
+
+  const itemRef = doc(db, 'items', itemId);
+  const itemSnap = await getDoc(itemRef);
+
+  if (!itemSnap.exists() || itemSnap.data().isSold || itemSnap.data().suspectedSold) {
+    return { success: false, error: "Cet article n'est plus disponible ou a déjà été signalé." };
   }
 
   // 1. Check if user already reported
@@ -59,22 +67,39 @@ export async function reportItemAsSold(
     const reportCount = reportsSnapshot.size;
 
     if (reportCount >= 2) {
-      const itemRef = doc(db, 'items', itemId);
       await updateDoc(itemRef, {
         suspectedSold: true,
       });
       triggeredSuspectedSold = true;
-      // TODO: Implement seller push notification logic here.
-      // This part requires a more complex setup (e.g., Cloud Functions, user FCM tokens)
-      // which is beyond the current scope.
       console.log(`Item ${itemId} marked as suspected sold. Seller should be notified.`);
     }
 
     return { success: true, triggeredSuspectedSold };
   } catch (error: any) {
     console.error('Error counting reports or updating item:', error);
-    // The report was submitted, but the subsequent logic failed.
-    // Return success but log the error.
     return { success: true, error: 'Le signalement a été soumis, mais une erreur est survenue lors de la mise à jour du statut.' };
   }
+}
+
+export async function deleteReportsForItem(itemId: string): Promise<void> {
+    if (!itemId) {
+        console.warn("deleteReportsForItem called without an itemId.");
+        return;
+    }
+    const reportsCollectionRef = collection(db, 'productReports', itemId, 'reports');
+    try {
+        const reportsSnapshot = await getDocs(reportsCollectionRef);
+        if (reportsSnapshot.empty) {
+            return; 
+        }
+        const batch = writeBatch(db);
+        reportsSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        console.log(`Successfully deleted ${reportsSnapshot.size} reports for item ${itemId}.`);
+    } catch (error) {
+        console.error(`Failed to delete reports for item ${itemId}:`, error);
+        throw new Error("Impossible de réinitialiser les signalements pour cet article.");
+    }
 }

@@ -5,6 +5,7 @@ import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryCo
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
+import { deleteReportsForItem } from './reportService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -439,13 +440,28 @@ export async function logItemView(itemId: string, userId: string, item: Partial<
 
 export async function markItemAsSold(itemId: string): Promise<void> {
   if (!db) {
-    console.error("Firestore (db) is not initialized. Check your Firebase configuration in .env");
     throw new Error("Firestore (db) is not initialized.");
   }
   const itemRef = doc(db, 'items', itemId);
   await updateDoc(itemRef, {
     isSold: true,
     soldAt: serverTimestamp(),
+    suspectedSold: deleteField(),
+  });
+}
+
+export async function rejectSuspectedSold(itemId: string): Promise<void> {
+  if (!db) {
+    throw new Error("Firestore (db) is not initialized.");
+  }
+  
+  // First, clear all existing reports for this item to reset the count
+  await deleteReportsForItem(itemId);
+  
+  // Then, remove the suspectedSold flag from the item
+  const itemRef = doc(db, 'items', itemId);
+  await updateDoc(itemRef, {
+    suspectedSold: deleteField(),
   });
 }
 
