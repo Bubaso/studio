@@ -66,7 +66,7 @@ export async function reportItemAsSold(
     const reportsSnapshot = await getDocs(reportsCollectionRef);
     const reportCount = reportsSnapshot.size;
 
-    if (reportCount >= 2) {
+    if (reportCount >= 1) { // Changed threshold from 2 to 1
       await updateDoc(itemRef, {
         suspectedSold: true,
       });
