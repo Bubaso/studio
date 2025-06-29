@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -89,6 +88,10 @@ export default function SignUpPage() {
   const handleOAuthSignUp = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
     setIsLoading(true);
     try {
+      if (provider.providerId === 'google.com') {
+        provider.addScope('profile');
+        provider.addScope('email');
+      }
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
