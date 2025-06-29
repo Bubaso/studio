@@ -17,13 +17,15 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { createUserDocument } from "@/services/userService";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 // For Apple, you might need to add custom scopes if required:
 // appleProvider.addScope('email');
 // appleProvider.addScope('name');
@@ -37,6 +39,8 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const isMobile = useIsMobile();
 
   const redirectTo = searchParams.get('redirect') || '/';
 
@@ -52,6 +56,42 @@ export default function SignInPage() {
       unsubscribe();
     };
   }, [router, redirectTo]);
+
+  useEffect(() => {
+    const processRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          setIsLoading(true);
+          const user = result.user;
+          await createUserDocument(user, {
+            name: user.displayName,
+            avatarUrl: user.photoURL,
+          });
+          toast({
+            title: "Connexion réussie !",
+            description: `Bienvenue, ${user.displayName || user.email}!`,
+          });
+          // onAuthStateChanged will handle the final redirect
+        }
+      } catch (error: any) {
+        console.error("OAuth Redirect Error:", error);
+        let errorMessage = "Une erreur s'est produite lors de la connexion.";
+        if (error.code === 'auth/account-exists-with-different-credential') {
+          errorMessage = "Un compte existe déjà avec cette adresse e-mail. Essayez de vous connecter différemment.";
+        }
+        toast({
+          title: "Erreur de connexion",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessingRedirect(false);
+        setIsLoading(false);
+      }
+    };
+    processRedirectResult();
+  }, []);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,24 +120,22 @@ export default function SignInPage() {
   const handleOAuthSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
     setIsLoading(true);
     try {
-      if (provider.providerId === 'google.com') {
-        provider.addScope('profile');
-        provider.addScope('email');
-        provider.setCustomParameters({ prompt: 'select_account' });
+      if (isMobile) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        await createUserDocument(user, {
+          name: user.displayName,
+          avatarUrl: user.photoURL,
+        });
+
+        toast({
+          title: "Connexion réussie !",
+          description: `Bienvenue, ${user.displayName || user.email}!`,
+        });
       }
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      await createUserDocument(user, {
-        name: user.displayName, 
-        avatarUrl: user.photoURL,
-      });
-
-      toast({
-        title: "Connexion réussie !",
-        description: `Bienvenue, ${user.displayName || user.email}!`,
-      });
-      // Redirect is handled by the useEffect watching firebaseUser
     } catch (error: any) {
       console.error("OAuth Sign-in Error:", error);
       let errorMessage = "Une erreur s'est produite lors de la connexion avec le fournisseur OAuth.";
@@ -117,15 +155,15 @@ export default function SignInPage() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
-  if (authLoading) {
+  if (authLoading || isProcessingRedirect) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
+        <p className="ml-4">Vérification de la session...</p>
       </div>
     );
   }
