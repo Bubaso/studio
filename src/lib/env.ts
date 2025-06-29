@@ -1,21 +1,22 @@
+
 import { z } from 'zod';
 
 const clientSchema = z.object({
-  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().default(''),
-  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().default(''),
-  NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().default(''),
-  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().default(''),
-  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().default(''),
-  NEXT_PUBLIC_FIREBASE_APP_ID: z.string().default(''),
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().default(''),
-  NEXT_PUBLIC_APP_URL: z.string().default('http://localhost:3000'),
+  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().optional().default(''),
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().optional().default(''),
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().optional().default(''),
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().optional().default(''),
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().optional().default(''),
+  NEXT_PUBLIC_FIREBASE_APP_ID: z.string().optional().default(''),
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().optional().default(''),
+  NEXT_PUBLIC_APP_URL: z.string().optional().default('http://localhost:3000'),
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: z.string().optional(),
 });
 
 const serverSchema = z.object({
-  GOOGLE_APPLICATION_CREDENTIALS: z.string().default(''),
-  PAYTECH_API_KEY: z.string().default(''),
-  PAYTECH_API_SECRET: z.string().default(''),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().optional().default(''),
+  PAYTECH_API_KEY: z.string().optional().default(''),
+  PAYTECH_API_SECRET: z.string().optional().default(''),
   GOOGLE_API_KEY: z.string().optional(),
 });
 
