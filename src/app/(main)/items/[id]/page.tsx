@@ -21,17 +21,11 @@ import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
 
+export const dynamic = 'force-dynamic';
+
 interface ItemPageProps {
   params: { id: string };
 }
-
-const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
-  'Moto': Bike,
-  'Voiture': Car,
-  'Pickup': Truck,
-  'Taxi Baggage': CarFront,
-  'Camion': Truck,
-};
 
 export default async function ItemPage({ params }: ItemPageProps) {
   const { id: itemId } = params; 
