@@ -91,6 +91,7 @@ export default function SignUpPage() {
       if (provider.providerId === 'google.com') {
         provider.addScope('profile');
         provider.addScope('email');
+        provider.setCustomParameters({ prompt: 'select_account' });
       }
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
