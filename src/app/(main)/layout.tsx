@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { BottomTabNavigator } from '@/components/layout/bottom-tab-navigator';
 import { UserActivityLogger } from '@/components/user-activity-logger';
 import { AuthProvider } from '@/context/AuthContext';
+import { ScrollToTop } from '@/components/scroll-to-top';
 
 export default function MainLayout({
   children,
@@ -14,6 +15,7 @@ export default function MainLayout({
 }) {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <div className="flex flex-col min-h-screen">
         <Header />
         <UserActivityLogger />
