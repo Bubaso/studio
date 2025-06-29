@@ -29,7 +29,7 @@ export function MapItemPreviewCard({ item }: MapItemPreviewCardProps) {
       <div className="p-2 space-y-1">
         <h3 className="text-sm font-semibold truncate" title={item.name}>{item.name}</h3>
         <p className="text-md font-bold text-primary">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-        <Link href={`/items/${item.id}`} target="_blank" rel="noopener noreferrer">
+        <Link href={`/items/${item.id}`}>
             <Button variant="secondary" size="sm" className="w-full mt-1">
                 Voir les détails <ArrowUpRight className="ml-2 h-4 w-4" />
             </Button>
