@@ -85,7 +85,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
         </div>
 
         {/* Right Column: Item Details, Seller Info, Actions */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
@@ -135,7 +135,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <CardTitle className="font-headline text-xl">Description de l'article</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
             </CardContent>
           </Card>
           
@@ -170,7 +170,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors">
+                  <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors break-words">
                     {seller.name || 'Vendeur Anonyme'}
                   </Link>
                    <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
