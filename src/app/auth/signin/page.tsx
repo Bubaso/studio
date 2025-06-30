@@ -1,7 +1,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { ShoppingBag, LogIn, Mail, Lock } from "lucide-react";
 import {
   Card,
@@ -21,15 +20,13 @@ import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { createUserDocument } from "@/services/userService";
 import { useIsMobile } from "@/hooks/use-mobile";
+import Link from 'next/link';
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
-// For Apple, you might need to add custom scopes if required:
-// appleProvider.addScope('email');
-// appleProvider.addScope('name');
 
 export default function SignInPage() {
   const router = useRouter();
@@ -94,14 +91,14 @@ export default function SignInPage() {
         // Whether there was a result or not, the check is complete.
         setIsProcessingRedirect(false);
       });
-  }, []);
+  }, [toast, router, redirectTo]);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Connexion réussie !", description: "Vous allez être redirigé." });
+      toast({ title: "Connexion réussie !", description: "Redirection en cours..." });
       // The useEffect hook will handle the redirect
     } catch (error: any) {
       let errorMessage = "Échec de la connexion. Vérifiez vos identifiants.";
@@ -136,12 +133,12 @@ export default function SignInPage() {
 
         toast({
           title: "Connexion réussie !",
-          description: `Bienvenue, ${user.displayName || user.email}!`,
+          description: `Bienvenue, ${user.displayName || user.email}`,
         });
       }
     } catch (error: any) {
       console.error("OAuth Sign-in Error:", error);
-      let errorMessage = "Une erreur s'est produite lors de la connexion avec le fournisseur OAuth.";
+      let errorMessage = "Une erreur s'est produite lors de la connexion.";
       if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = "Un compte existe déjà avec la même adresse e-mail mais des identifiants de connexion différents. Essayez de vous connecter avec le fournisseur utilisé à l'origine.";
       } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
@@ -149,7 +146,7 @@ export default function SignInPage() {
       } else if (error.code === 'auth/operation-not-allowed') {
           errorMessage = "La connexion avec ce fournisseur n'est pas activée. Veuillez vérifier la configuration Firebase.";
       } else if (error.code === 'auth/network-request-failed') {
-          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet et réessayez.";
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
       } else if (error.code === 'auth/unauthorized-domain') {
           errorMessage = "Ce domaine n'est pas autorisé pour les opérations OAuth. Vérifiez votre configuration Firebase.";
       }
@@ -186,7 +183,7 @@ export default function SignInPage() {
         <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
         </Link>
-        <CardTitle className="text-3xl font-headline">Connectez-vous à JëndJaay</CardTitle>
+        <CardTitle className="text-3xl font-headline">Connectez-vous à ReFind</CardTitle>
         <CardDescription>Accédez à votre compte pour acheter et vendre.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -20,24 +20,18 @@ import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { createUserDocument } from "@/services/userService"; 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useTranslations } from "next-intl";
-import {Link as IntlLink} from '@/navigation';
-
+import Link from 'next/link';
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
-// For Apple, you might need to add custom scopes if required:
-// appleProvider.addScope('email');
-// appleProvider.addScope('name');
 
 
 export default function SignUpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const t = useTranslations('Auth');
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -75,8 +69,8 @@ export default function SignUpPage() {
             avatarUrl: user.photoURL,
           });
           toast({
-            title: t('signupSuccessTitle'),
-            description: t('welcomeUser', { name: user.displayName || user.email }),
+            title: "Compte créé avec succès !",
+            description: `Bienvenue, ${user.displayName || user.email}!`,
           });
           // The onAuthStateChanged listener will handle the final redirect.
         }
@@ -84,12 +78,12 @@ export default function SignUpPage() {
       .catch((error) => {
         // Handle errors from the redirect result
         console.error("OAuth Redirect Error:", error);
-        let errorMessage = t('oauthError');
+        let errorMessage = "Une erreur s'est produite lors de la connexion.";
         if (error.code === 'auth/account-exists-with-different-credential') {
-          errorMessage = t('oauthAccountExistsError');
+          errorMessage = "Un compte existe déjà avec cette adresse e-mail. Essayez de vous connecter différemment.";
         }
         toast({
-          title: t('loginErrorTitle'),
+          title: "Erreur de connexion",
           description: errorMessage,
           variant: "destructive",
         });
@@ -98,7 +92,7 @@ export default function SignUpPage() {
         // Whether there was a result or not, the check is complete.
         setIsProcessingRedirect(false);
       });
-  }, [t, redirectTo, router]);
+  }, [toast, router, redirectTo]);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,8 +107,8 @@ export default function SignUpPage() {
       await createUserDocument(fbUser, { name }); 
       
       toast({ 
-        title: t('signupSuccessTitle'), 
-        description: t('welcomeAndAccountActive')
+        title: "Compte créé avec succès !", 
+        description: "Bienvenue ! Votre compte est maintenant actif."
       });
       router.push(redirectTo); 
     } catch (error: any) {
@@ -122,27 +116,27 @@ export default function SignUpPage() {
       
       if (error.code === 'auth/email-already-in-use') {
         toast({
-          title: t('emailInUseTitle'),
-          description: t('emailInUseDescription'),
+          title: "Adresse e-mail déjà utilisée",
+          description: "Un compte existe déjà avec cette adresse. Veuillez vous connecter.",
           variant: "destructive",
           action: (
             <Button asChild variant="secondary" size="sm">
-              <IntlLink href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
-                {t('loginAction')}
-              </IntlLink>
+              <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
+                Se connecter
+              </Link>
             </Button>
           ),
         });
       } else {
-        let errorMessage = t('signupError');
+        let errorMessage = "Échec de la création du compte. Veuillez réessayer.";
         if (error.code === 'auth/weak-password') {
-          errorMessage = t('weakPasswordError');
+          errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
         } else if (error.code === 'auth/invalid-email') {
-          errorMessage = t('invalidEmailError');
+          errorMessage = "Format d'email invalide.";
         } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) || error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
-          errorMessage = t('configError');
+          errorMessage = "Erreur de configuration ou requête invalide.";
         }
-        toast({ title: t('signupErrorTitle'), description: errorMessage, variant: "destructive" });
+        toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
       }
     } finally {
       setIsLoading(false);
@@ -163,26 +157,26 @@ export default function SignUpPage() {
         });
 
         toast({
-          title: t('signupSuccessTitle'),
-          description: t('welcomeUser', { name: user.displayName || user.email }),
+          title: "Compte créé avec succès !",
+          description: `Bienvenue, ${user.displayName || user.email}`,
         });
       }
     } catch (error: any) {
       console.error("OAuth Sign-up Error:", error);
-      let errorMessage = t('oauthError');
+      let errorMessage = "Une erreur s'est produite lors de la connexion.";
       if (error.code === 'auth/account-exists-with-different-credential') {
-        errorMessage = t('oauthAccountExistsErrorLong');
+        errorMessage = "Un compte existe déjà avec la même adresse e-mail mais des identifiants de connexion différents. Essayez de vous connecter avec le fournisseur utilisé à l'origine.";
       } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        errorMessage = t('popupClosedError');
+        errorMessage = "La fenêtre de connexion a été fermée avant la fin de l'opération.";
       } else if (error.code === 'auth/operation-not-allowed') {
-          errorMessage = t('oauthNotEnabledError');
+          errorMessage = "La connexion avec ce fournisseur n'est pas activée. Veuillez vérifier la configuration Firebase.";
       } else if (error.code === 'auth/network-request-failed') {
-          errorMessage = t('networkError');
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
       } else if (error.code === 'auth/unauthorized-domain') {
-          errorMessage = t('unauthorizedDomainError');
+          errorMessage = "Ce domaine n'est pas autorisé pour les opérations OAuth. Vérifiez votre configuration Firebase.";
       }
       toast({
-        title: t('oauthErrorTitle'),
+        title: "Erreur de connexion OAuth",
         description: errorMessage,
         variant: "destructive",
       });
@@ -195,7 +189,7 @@ export default function SignUpPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
-        <p className="ml-4">{t('verifyingSession')}</p>
+        <p className="ml-4">Vérification de la session...</p>
       </div>
     );
   }
@@ -203,7 +197,7 @@ export default function SignUpPage() {
   if (firebaseUser && !authLoading) { 
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>{t('alreadyLoggedIn')}</p>
+        <p>Vous êtes déjà connecté. Redirection...</p>
       </div>
     );
   }
@@ -211,20 +205,20 @@ export default function SignUpPage() {
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
-        <IntlLink href="/" className="inline-block mx-auto mb-4">
+        <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
-        </IntlLink>
-        <CardTitle className="text-3xl font-headline">{t('signupTitle')}</CardTitle>
-        <CardDescription>{t('signupDescription')}</CardDescription>
+        </Link>
+        <CardTitle className="text-3xl font-headline">Rejoignez ReFind Aujourd'hui</CardTitle>
+        <CardDescription>Créez votre compte pour commencer à acheter et vendre des articles uniques.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('fullNameLabel')}</Label>
+            <Label htmlFor="name">Nom complet</Label>
             <Input 
               id="name" 
               type="text" 
-              placeholder={t('fullNamePlaceholder')} 
+              placeholder="Votre Nom" 
               required 
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -232,11 +226,11 @@ export default function SignUpPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t('emailLabel')}</Label>
+            <Label htmlFor="email">Email</Label>
             <Input 
               id="email" 
               type="email" 
-              placeholder={t('emailPlaceholder')} 
+              placeholder="vous@example.com" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -244,11 +238,11 @@ export default function SignUpPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">{t('passwordLabel')}</Label>
+            <Label htmlFor="password">Mot de passe</Label>
             <Input 
               id="password" 
               type="password" 
-              placeholder={t('passwordPlaceholderStrong')} 
+              placeholder="Créez un mot de passe fort" 
               required 
               minLength={6}
               value={password}
@@ -258,13 +252,13 @@ export default function SignUpPage() {
           </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
             {isLoading ? <UserPlus className="mr-2 h-4 w-4 animate-ping" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            {t('createAccountAction')}
+            Créer un compte
           </Button>
         </form>
 
         <div className="my-6 flex items-center">
           <div className="flex-grow border-t border-muted-foreground/30"></div>
-          <span className="mx-4 text-xs text-muted-foreground">{t('or')}</span>
+          <span className="mx-4 text-xs text-muted-foreground">OU</span>
           <div className="flex-grow border-t border-muted-foreground/30"></div>
         </div>
 
@@ -272,31 +266,29 @@ export default function SignUpPage() {
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
             {/* TODO: Add Google Icon */}
             {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('signupWithGoogle')}
+            S'inscrire avec Google
           </Button>
           <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignUp(facebookProvider)} disabled={isLoading}>
             {/* TODO: Add Facebook Icon */}
             {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('signupWithFacebook')}
+            S'inscrire avec Facebook
           </Button>
           <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignUp(appleProvider)} disabled={isLoading}>
             {/* TODO: Add Apple Icon */}
             {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('signupWithApple')}
+            S'inscrire avec Apple
           </Button>
         </div>
 
       </CardContent>
       <CardFooter className="flex flex-col items-center pt-6">
         <p className="text-sm text-muted-foreground">
-          {t('alreadyHaveAccount')}{" "}
-          <IntlLink href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
-             {t('loginAction')} <LogIn className="inline ml-1 h-4 w-4" />
-          </IntlLink>
+          Vous avez déjà un compte ?{" "}
+          <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
+             Se connecter <LogIn className="inline ml-1 h-4 w-4" />
+          </Link>
         </p>
       </CardFooter>
     </Card>
   );
 }
-
-    

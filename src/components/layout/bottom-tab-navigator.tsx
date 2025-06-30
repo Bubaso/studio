@@ -1,9 +1,10 @@
+
 "use client";
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PlusCircle, ShoppingCart } from 'lucide-react'; // Added ShoppingCart
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export function BottomTabNavigator() {
   const pathname = usePathname();

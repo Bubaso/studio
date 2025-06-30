@@ -1,7 +1,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { ShoppingBag, Mail, Send } from "lucide-react";
 import {
   Card,
@@ -15,13 +14,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import Link from 'next/link';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,12 +40,9 @@ export default function ForgotPasswordPage() {
     } catch (error: any) {
       let errorMessage = "Une erreur s'est produite. Veuillez réessayer.";
       if (error.code === 'auth/invalid-email') {
-        errorMessage = "Adresse e-mail invalide.";
+        errorMessage = "Format d'email invalide.";
       } else if (error.code === 'auth/user-not-found') {
-        // For security, don't confirm if the user exists or not.
-        // Just show a generic success message.
         setIsEmailSent(true);
-        // We still log the real error for debugging if needed.
         console.log("User not found for password reset, but showing generic success message.");
       } else {
         toast({
@@ -77,7 +72,7 @@ export default function ForgotPasswordPage() {
       <CardContent>
         {isEmailSent ? (
           <div className="text-center p-4 bg-green-100/50 rounded-md">
-            <p className="text-green-800">Si un compte associé à <strong>{email}</strong> existe, un e-mail a été envoyé. Le lien expirera bientôt.</p>
+            <p className="text-green-800">{`Si un compte associé à ${email} existe, un e-mail a été envoyé. Le lien expirera bientôt.`}</p>
           </div>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">

@@ -3,20 +3,20 @@ import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
-  title: 'JëndJaay',
+  title: 'ReFind',
   description: 'Achetez et vendez des articles uniques d\'occasion.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="fr">
       <body className="font-body">
-        {children}
-        <Toaster />
+          {children}
+          <Toaster />
       </body>
     </html>
   );
