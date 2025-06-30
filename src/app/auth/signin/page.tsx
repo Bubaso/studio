@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -23,9 +24,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 // For Apple, you might need to add custom scopes if required:
 // appleProvider.addScope('email');
 // appleProvider.addScope('name');
@@ -255,7 +256,8 @@ export default function SignInPage() {
       </CardContent>
       <CardFooter className="flex flex-col items-center space-y-2 pt-6">
          <p className="text-sm text-muted-foreground">
-          Mot de passe oublié ? {/* <Link href="/auth/forgot-password" className="font-semibold text-primary hover:underline">Réinitialiser</Link> */}
+          Mot de passe oublié ?{" "}
+          <Link href="/auth/forgot-password" className="font-semibold text-primary hover:underline">Réinitialiser</Link>
         </p>
         <p className="text-sm text-muted-foreground">
           Pas encore de compte ?{" "}
