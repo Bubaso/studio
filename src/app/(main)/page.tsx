@@ -1,7 +1,4 @@
 
-import { cookies } from 'next/headers';
-import admin from '@/lib/firebaseAdmin';
-import { getPersonalizedRecommendations } from '@/ai/flows/suggest-recommendations-flow';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getItemsFromFirestore } from '@/services/itemService';
@@ -9,7 +6,8 @@ import { ItemCategories, type Item, type ItemCategory } from '@/lib/types';
 import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
-import { PersonalizedRecommendations } from '@/components/personalized-recommendations';
+import { PersonalizedContent } from '@/components/personalized-content';
+import admin from '@/lib/firebaseAdmin';
 
 
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -30,32 +28,12 @@ const categoryHints: { [key in ItemCategory]?: string } = {
   'Autre': 'various items',
 };
 
-async function getUserIdFromCookie(): Promise<string | null> {
-    try {
-        const cookieStore = cookies();
-        const sessionCookie = cookieStore.get('session')?.value;
-        if (sessionCookie) {
-            const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
-            return decodedToken.uid;
-        }
-        return null;
-    } catch (error) {
-        // Session cookie is invalid or expired.
-        return null;
-    }
-}
-
-
+// This page is now fully static on the server.
+// The dynamic, personalized parts are loaded on the client in PersonalizedContent.
 export default async function HomePage() {
   const db = admin?.firestore();
-  
-  const userId = await getUserIdFromCookie();
 
-  let recommendedItems: Item[] = [];
-  if (userId) {
-    recommendedItems = await getPersonalizedRecommendations(userId);
-  }
-
+  // Fetch data that does not depend on the user
   const { items: latestItems } = await getItemsFromFirestore({ pageSize: 8 });
 
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
@@ -91,23 +69,9 @@ export default async function HomePage() {
         <CategoryCarousel categories={categoriesWithData} />
       </section>
 
-      {recommendedItems.length > 0 ? (
-        <PersonalizedRecommendations items={recommendedItems} />
-      ) : (
-        latestItems.length > 0 && (
-          <section className="py-4 md:py-6">
-            <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-              Dernières trouvailles sur JëndJaay
-            </h2>
-            <FeaturedItemsGrid initialItems={latestItems} />
-            <div className="text-center mt-6 md:mt-8">
-              <Link href="/browse">
-                <Button variant="secondary" size="lg">Voir tous les articles</Button>
-              </Link>
-            </div>
-          </section>
-        )
-      )}
+      {/* The PersonalizedContent component will handle fetching user-specific data on the client */}
+      <PersonalizedContent latestItems={latestItems} />
+      
     </div>
   );
 }
