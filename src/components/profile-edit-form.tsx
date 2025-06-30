@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import { auth } from "@/lib/firebase";
 import { uploadAvatarAndGetURL, updateUserProfile } from "@/services/userService";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
 const MAX_AVATAR_SIZE_MB = 10; // Updated from 2 to 10
 const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -211,11 +211,3 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
     </Card>
   );
 }
-
-// These are just stubs for the generator, real imports will be used from @/components/ui
-const Card = ({ className, children }: { className?: string, children: React.ReactNode }) => <div className={cn("border bg-card text-card-foreground rounded-lg", className)}>{children}</div>;
-const CardHeader = ({ children }: { children: React.ReactNode }) => <div className="p-6 flex flex-col space-y-1.5">{children}</div>;
-const CardTitle = ({ className, children }: { className?: string, children: React.ReactNode }) => <h3 className={cn("font-semibold leading-none tracking-tight", className)}>{children}</h3>;
-const CardDescription = ({ children }: { children: React.ReactNode }) => <p className="text-sm text-muted-foreground">{children}</p>;
-const CardContent = ({ children }: { children: React.ReactNode }) => <div className="p-6 pt-0">{children}</div>;
-const cn = (...inputs: any[]) => inputs.filter(Boolean).join(' ');

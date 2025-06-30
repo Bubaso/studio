@@ -5,12 +5,13 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function PaymentSuccessPage() {
     const searchParams = useSearchParams();
@@ -96,8 +97,3 @@ export default function PaymentSuccessPage() {
         </div>
     );
 }
-
-// Dummy Alert component for structure, will use the real one from ui
-const Alert = ({children}:{children:React.ReactNode}) => <div className="border rounded-md p-4 text-left flex">{children}</div>;
-const AlertTitle = ({children}:{children:React.ReactNode}) => <h5 className="font-medium ml-2">{children}</h5>
-const AlertDescription = ({children}:{children:React.ReactNode}) => <div className="text-sm ml-2">{children}</div>
