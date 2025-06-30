@@ -111,7 +111,7 @@ export function Header() {
         <div className="container flex h-16 items-center">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <ShoppingBag className="h-6 w-6 text-primary" />
-            <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
+            <span className="font-bold font-headline text-2xl text-primary">JëndJaay</span>
           </Link>
         </div>
       </header>
@@ -123,7 +123,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <ShoppingBag className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline text-2xl text-primary">ReFind</span>
+          <span className="font-bold font-headline text-2xl text-primary">JëndJaay</span>
         </Link>
         <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
           {initialMainLinks.map((link) => (

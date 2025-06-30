@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -208,7 +207,7 @@ export default function SignUpPage() {
         <Link href="/" className="inline-block mx-auto mb-4">
           <ShoppingBag className="h-12 w-12 text-primary" />
         </Link>
-        <CardTitle className="text-3xl font-headline">Rejoignez ReFind Aujourd'hui</CardTitle>
+        <CardTitle className="text-3xl font-headline">Rejoignez JëndJaay Aujourd'hui</CardTitle>
         <CardDescription>Créez votre compte pour commencer à acheter et vendre des articles uniques.</CardDescription>
       </CardHeader>
       <CardContent>
