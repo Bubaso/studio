@@ -1,11 +1,9 @@
-
 // src/app/api/messages/create-thread/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
 import type { UserProfile, Item, MessageThread } from '@/lib/types';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
 import { checkRateLimit } from '@/lib/rateLimiter';
-import { env } from '@/lib/env';
 
 
 // Helper to convert Admin SDK Timestamp to ISO string

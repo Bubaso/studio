@@ -2,12 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 import { randomBytes } from 'crypto';
 import { checkRateLimit } from '@/lib/rateLimiter';
-import { env } from '@/lib/env';
 
-const PAYTECH_API_KEY = env.PAYTECH_API_KEY;
-const PAYTECH_API_SECRET = env.PAYTECH_API_SECRET;
+const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
+const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
 const PAYTECH_BASE_URL = 'https://paytech.sn';
-const APP_URL = env.NEXT_PUBLIC_APP_URL;
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
 export async function POST(request: NextRequest) {
     // --- Configuration Checks ---
