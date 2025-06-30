@@ -17,15 +17,15 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, sendEmailVerification } from "firebase/auth";
 import { createUserDocument } from "@/services/userService"; 
 import { useIsMobile } from "@/hooks/use-mobile";
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
-googleProvider.setCustomParameters({ prompt: 'select_account' });
 // For Apple, you might need to add custom scopes if required:
 // appleProvider.addScope('email');
 // appleProvider.addScope('name');
@@ -101,13 +101,18 @@ export default function SignUpPage() {
     setIsLoading(true);
     
     try {
+      auth.languageCode = 'fr';
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const fbUser = userCredential.user;
 
       await updateProfile(fbUser, { displayName: name });
       await createUserDocument(fbUser, { name }); 
+      await sendEmailVerification(fbUser);
       
-      toast({ title: "Compte créé !", description: `Bienvenue sur JëndJaay, ${name} !` });
+      toast({ 
+        title: "Compte créé avec succès !", 
+        description: `Un e-mail de vérification a été envoyé à ${email}. Veuillez vérifier votre boîte de réception pour activer votre compte.` 
+      });
       router.push(redirectTo); 
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
