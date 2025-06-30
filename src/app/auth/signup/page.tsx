@@ -116,17 +116,31 @@ export default function SignUpPage() {
       router.push(redirectTo); 
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
-      let errorMessage = "Échec de la création du compte. Veuillez réessayer.";
+      
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "Cette adresse e-mail est déjà utilisée.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Format d'email invalide.";
-      } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) || error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
-         errorMessage = "Erreur de configuration ou requête invalide. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans les paramètres de votre projet Firebase et que votre configuration API est correcte.";
+        toast({
+          title: "Adresse e-mail déjà utilisée",
+          description: "Un compte existe déjà avec cette adresse. Veuillez vous connecter.",
+          variant: "destructive",
+          action: (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
+                Se connecter
+              </Link>
+            </Button>
+          ),
+        });
+      } else {
+        let errorMessage = "Échec de la création du compte. Veuillez réessayer.";
+        if (error.code === 'auth/weak-password') {
+          errorMessage = "Le mot de passe doit comporter au moins 6 caractères.";
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = "Format d'email invalide.";
+        } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) || error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
+          errorMessage = "Erreur de configuration ou requête invalide. Veuillez vérifier que la méthode d'authentification par e-mail/mot de passe est activée dans les paramètres de votre projet Firebase et que votre configuration API est correcte.";
+        }
+        toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
       }
-      toast({ title: "Erreur d'inscription", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
