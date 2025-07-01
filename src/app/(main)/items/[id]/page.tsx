@@ -87,23 +87,25 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
   
   const SellerProfileCard = seller ? (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-center space-x-4">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-          <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div>
-          <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors break-words">
-            {seller.name || 'Vendeur Anonyme'}
-          </Link>
-           <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <Link href={`/profile/${seller.uid}`} className="block group">
+      <Card className="transition-shadow duration-200 group-hover:shadow-lg">
+        <CardHeader>
+          <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center space-x-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+            <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-semibold text-lg group-hover:text-primary transition-colors break-words">
+              {seller.name || 'Vendeur Anonyme'}
+            </div>
+             <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   ) : (
     <Card>
       <CardHeader>
