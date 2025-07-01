@@ -12,6 +12,7 @@ import type { MessageThread, UserProfile } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from '../NotificationCenter';
 
 interface NavLink {
   href: string;
@@ -177,6 +178,7 @@ export function Header() {
         <div className="flex items-center space-x-1 md:space-x-2">
           {currentUser ? (
             <>
+              <NotificationCenter />
               {userProfile && (
                 <TooltipProvider>
                   <Tooltip>

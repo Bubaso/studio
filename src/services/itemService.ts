@@ -6,6 +6,7 @@ import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
 import { deleteReportsForItem } from './reportService';
+import { createNotification } from './notificationService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -316,6 +317,7 @@ export async function createItemInFirestore(
 
   const batch = writeBatch(db);
   const userRef = doc(db, 'users', userId);
+  let newItemRef: any;
 
   try {
     const userSnap = await getDoc(userRef);
@@ -341,7 +343,7 @@ export async function createItemInFirestore(
     if (dataToSend.phoneNumber === undefined) delete dataToSend.phoneNumber;
     if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
 
-    const newItemRef = doc(collection(db, "items"));
+    newItemRef = doc(collection(db, "items"));
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
@@ -349,6 +351,32 @@ export async function createItemInFirestore(
     });
 
     await batch.commit();
+
+    // Notify subscribers after the item is successfully created
+    const sellerProfile = userSnap.data();
+    const sellerName = sellerProfile?.name || 'Un vendeur';
+    const sellerAvatar = sellerProfile?.avatarUrl;
+
+    const subscribersQuery = query(collection(db, `users/${userId}/subscribers`));
+    const subscribersSnapshot = await getDocs(subscribersQuery);
+
+    if (!subscribersSnapshot.empty) {
+        console.log(`Notifying ${subscribersSnapshot.size} subscribers about new item.`);
+        const notificationPromises = subscribersSnapshot.docs.map(subscriberDoc => {
+            const subscriberId = subscriberDoc.id;
+            return createNotification(subscriberId, {
+                type: 'new_item',
+                relatedUserId: userId,
+                relatedUserName: sellerName,
+                relatedUserAvatar: sellerAvatar,
+                itemId: newItemRef.id,
+                itemName: itemData.name,
+                itemImageUrl: itemData.imageUrls?.[0],
+            });
+        });
+        await Promise.all(notificationPromises);
+    }
+    
     return newItemRef.id;
 
   } catch (error) {

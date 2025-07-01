@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
 import { MapPin, CalendarDays } from 'lucide-react';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
+import { SubscribeButton } from '@/components/SubscribeButton';
 
 interface UserProfilePageProps {
   params: { userId: string };
@@ -30,17 +31,25 @@ export default async function UserProfilePage({ params }: UserProfilePageProps) 
           </Avatar>
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur Anonyme'}</h1>
+            
+            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
+                <span><strong>{user.subscriberCount || 0}</strong> Abonnés</span>
+                <span><strong>{user.subscriptionCount || 0}</strong> Abonnements</span>
+            </div>
+
             {user.location && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2" /> {user.location}
               </div>
             )}
-            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
+            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(user.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            {/* The ContactSellerButtonClient handles auth check and hides itself if the user is viewing their own profile */}
-            {/* It also correctly uses the API route instead of the deprecated server action */}
-            <ContactSellerButtonClient sellerId={user.uid} itemId="" />
+
+            <div className="flex items-center justify-center md:justify-start gap-2">
+                <ContactSellerButtonClient sellerId={user.uid} itemId="" />
+                <SubscribeButton targetUserId={user.uid} />
+            </div>
           </div>
         </CardContent>
       </Card>

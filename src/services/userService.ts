@@ -47,8 +47,10 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
         joinedDate,
         location: additionalData.location || '',
         lastActiveAt: serverTimestamp(),
-        credits: 0, // Initialize credits
-        freeListingsRemaining: 5, // Initialize free listings
+        credits: 0,
+        freeListingsRemaining: 5,
+        subscriberCount: 0,
+        subscriptionCount: 0,
       });
     }
   } catch (error) {
@@ -83,6 +85,8 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         lastActiveAt: lastActiveAtISO,
         credits: data.credits ?? 0,
         freeListingsRemaining: data.freeListingsRemaining ?? 0,
+        subscriberCount: data.subscriberCount || 0,
+        subscriptionCount: data.subscriptionCount || 0,
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);

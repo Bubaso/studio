@@ -46,6 +46,8 @@ export interface UserProfile {
   lastActiveAt?: string;
   credits: number; // User's credit balance
   freeListingsRemaining: number; // Number of free listings left
+  subscriberCount?: number; // How many people subscribe to this user
+  subscriptionCount?: number; // How many people this user subscribes to
 }
 
 export interface Review {
@@ -140,4 +142,18 @@ export interface UserCollection {
 export interface CollectionItem {
     itemId: string;
     addedAt: string; // ISO string
+}
+
+export interface Notification {
+  id: string;
+  type: 'new_item' | 'new_subscriber' | 'general';
+  userId: string; // The user who receives the notification
+  relatedUserId?: string; // The user who triggered the notification (e.g., the seller)
+  relatedUserName?: string;
+  relatedUserAvatar?: string;
+  itemId?: string;
+  itemName?: string;
+  itemImageUrl?: string;
+  createdAt: string;
+  isRead: boolean;
 }
