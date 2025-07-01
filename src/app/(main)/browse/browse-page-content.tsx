@@ -1,0 +1,363 @@
+
+"use client";
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ItemCard } from '@/components/item-card';
+import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Skeleton } from '@/components/ui/skeleton';
+import { FilterControls } from '@/components/filter-controls';
+import { getItemsFromFirestore } from '@/services/itemService';
+import { auth } from '@/lib/firebase';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Filter, X, MapPin, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { getDistance } from 'geolib';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ItemsMapView } from '@/components/items-map-view';
+
+
+export const dynamic = 'force-dynamic';
+
+const ITEMS_PER_PAGE = 50;
+
+// ActiveFilters component displays current filters as removable badges
+function ActiveFilters() {
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    
+    const activeFilters: { key: string; label: string; value: string }[] = [];
+
+    const categories = searchParams.getAll('category');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const condition = searchParams.get('condition');
+    const location = searchParams.get('location');
+    const lat = searchParams.get('lat');
+    const radius = searchParams.get('radius');
+
+    if (lat) activeFilters.push({ key: 'lat', label: 'Proximité', value: `~${radius || 25}km` });
+    categories.forEach(cat => activeFilters.push({ key: `category_${cat}`, label: 'Catégorie', value: cat }));
+    if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: 'Prix Min', value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: 'Prix Max', value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (condition) activeFilters.push({ key: 'condition', label: 'État', value: condition.charAt(0).toUpperCase() + condition.slice(1) });
+    if (location) activeFilters.push({ key: 'location', label: 'Lieu', value: location });
+
+    if (activeFilters.length === 0) {
+        return null;
+    }
+
+    const removeFilter = (keyToRemove: string, valueToRemove?: string) => {
+        const newParams = new URLSearchParams(searchParams.toString());
+        if (keyToRemove === 'lat') {
+            newParams.delete('lat');
+            newParams.delete('lng');
+            newParams.delete('radius');
+        } else if (keyToRemove.startsWith('category_')) {
+            const currentCategories = newParams.getAll('category');
+            const newCategories = currentCategories.filter(cat => cat !== valueToRemove);
+            newParams.delete('category');
+            newCategories.forEach(cat => newParams.append('category', cat));
+        } else {
+            newParams.delete(keyToRemove);
+        }
+        
+        router.replace(`${pathname}?${newParams.toString()}`);
+    };
+    
+    const clearAllFilters = () => {
+         const query = searchParams.get('q');
+         const view = searchParams.get('view'); // Preserve view on clear
+         const newParams = new URLSearchParams();
+         if (query) {
+            newParams.set('q', query);
+         }
+         if (view) {
+            newParams.set('view', view);
+         }
+         router.replace(`${pathname}?${newParams.toString()}`);
+    }
+
+    return (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <span className="text-sm font-medium text-muted-foreground">Filtres actifs:</span>
+            {activeFilters.map(filter => (
+                <Badge key={filter.key} variant="secondary" className="pl-2 pr-1 py-1 text-sm">
+                    {filter.label}: {filter.value}
+                    <button type="button" onClick={() => removeFilter(filter.key.startsWith('category_') ? 'category' : filter.key, filter.value)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                        <X className="h-3 w-3" />
+                        <span className="sr-only">Retirer le filtre {filter.label}</span>
+                    </button>
+                </Badge>
+            ))}
+             <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-primary hover:text-primary underline">
+                Tout effacer
+            </Button>
+        </div>
+    );
+}
+
+// ItemGrid component - now driven by searchParams string
+function ItemGrid() {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null; hasMore: boolean }>({ items: [], lastItemId: null, hasMore: false });
+  const [isLoading, setIsLoading] = useState(true);
+  const [initialAuthCheckDone, setInitialAuthCheckDone] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [cursors, setCursors] = useState<(string|null)[]>([null]);
+
+  const searchParams = useSearchParams();
+  const searchParamsString = searchParams.toString();
+  const queryParam = searchParams.get('q');
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setInitialAuthCheckDone(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Effect to reset pagination when filters change
+  useEffect(() => {
+    setPageNumber(1);
+    setCursors([null]);
+  }, [searchParamsString]);
+
+  useEffect(() => {
+    if (!initialAuthCheckDone) return;
+
+    const fetchPageData = async () => {
+        setIsLoading(true);
+        const cursor = cursors[pageNumber - 1];
+
+        // Get params for the fetch call from the hook
+        const categoriesParam = searchParams.getAll('category');
+        const minPriceParam = searchParams.get('minPrice');
+        const maxPriceParam = searchParams.get('maxPrice');
+        const locationParam = searchParams.get('location');
+        const conditionParam = searchParams.get('condition') as ItemCondition | null;
+        const latParam = searchParams.get('lat');
+        const lngParam = searchParams.get('lng');
+        const radiusParam = searchParams.get('radius');
+
+        const result = await getItemsFromFirestore({
+            query: queryParam || undefined,
+            categories: categoriesParam.length > 0 ? categoriesParam : undefined,
+            priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
+            priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
+            location: locationParam || undefined,
+            condition: conditionParam || undefined,
+            pageSize: latParam ? 200 : ITEMS_PER_PAGE, // Fetch more if location filtering client-side
+            lastVisibleItemId: cursor ?? undefined,
+        });
+        
+        let processedItems = result.items;
+
+        // Client-side location filtering
+        if (latParam && lngParam) {
+            const userLat = parseFloat(latParam);
+            const userLng = parseFloat(lngParam);
+            const radiusInMeters = (parseInt(radiusParam || '25', 10)) * 1000;
+
+            processedItems = processedItems.filter(item => {
+                if (item.latitude == null || item.longitude == null) return false;
+                try {
+                    const distance = getDistance(
+                        { latitude: userLat, longitude: userLng },
+                        { latitude: item.latitude, longitude: item.longitude }
+                    );
+                    return distance <= radiusInMeters;
+                } catch (e) {
+                    console.error("Error calculating distance", e);
+                    return false;
+                }
+            });
+        }
+
+        const finalItems = currentUser
+          ? processedItems.filter((item) => item.sellerId !== currentUser.uid)
+          : processedItems;
+
+        setPageData({ items: finalItems, lastItemId: result.lastItemId, hasMore: result.hasMore && !latParam });
+
+        if (result.hasMore && result.lastItemId && !cursors.includes(result.lastItemId) && !latParam) {
+          setCursors(prev => {
+             const newCursors = [...prev];
+             newCursors[pageNumber] = result.lastItemId;
+             return newCursors;
+          });
+        }
+        
+        setIsLoading(false);
+    };
+
+    fetchPageData().catch(error => {
+        console.error("Error fetching items in ItemGrid:", error);
+        setPageData({ items: [], lastItemId: null, hasMore: false });
+        setIsLoading(false);
+    });
+
+  }, [
+    pageNumber,
+    currentUser, 
+    initialAuthCheckDone, 
+    searchParamsString // The primary dependency for filter changes
+  ]);
+
+  const { items, hasMore } = pageData;
+
+  if (isLoading && items.length === 0) {
+    return <ItemGridSkeleton />;
+  }
+
+  const handleNextPage = () => {
+    if(hasMore) {
+      setPageNumber(prev => prev + 1);
+    }
+  }
+
+  const handlePrevPage = () => {
+    setPageNumber(prev => Math.max(1, prev - 1));
+  }
+
+
+  return (
+    <div className="flex-1">
+      {isLoading ? (
+         <ItemGridSkeleton />
+      ) : items.length > 0 ? (
+        <>
+          <p className="mb-4 text-muted-foreground">
+            Affichage de {items.length} articles
+            {queryParam && ` pour "${queryParam}"`}
+          </p>
+          <div className="grid grid-cols-2 gap-6">
+            {items.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+          {(pageNumber > 1 || hasMore) && (
+            <Pagination className="mt-8">
+              <PaginationContent>
+                {pageNumber > 1 && (
+                  <PaginationPrevious onClick={handlePrevPage} />
+                )}
+                <PaginationItem>
+                   <Button variant="outline" size="icon" disabled>{pageNumber}</Button>
+                </PaginationItem>
+                {hasMore && (
+                  <PaginationNext onClick={handleNextPage} />
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
+      ) : (
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
+          <p className="text-muted-foreground">Essayez d'ajuster vos filtres de recherche ou de rechercher autre chose.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemGridSkeleton() {
+  return (
+    <div className="flex-1">
+      <Skeleton className="h-6 w-1/4 mb-4" />
+      <div className="grid grid-cols-2 gap-6">
+        {Array.from({ length: 8 }).map((_, index) => ( // Show fewer skeletons for a better feel
+          <CardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="border rounded-lg p-4 space-y-3 shadow-sm bg-card">
+      <Skeleton className="h-40 w-full bg-muted/50" />
+      <Skeleton className="h-6 w-3/4 bg-muted/50" />
+      <Skeleton className="h-8 w-1/2 bg-muted/50" />
+      <Skeleton className="h-4 w-1/2 bg-muted/50" />
+      <Skeleton className="h-4 w-1/3 bg-muted/50" />
+      <Skeleton className="h-10 w-full mt-2 bg-muted/50" />
+    </div>
+  );
+}
+
+export default function BrowsePageContent() {
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const activeView = searchParams.get('view') || 'grid';
+  const queryParam = searchParams.get('q');
+  const categoryParams = searchParams.getAll('category');
+
+  const pageTitle = queryParam
+    ? `Résultats pour "${queryParam}"`
+    : categoryParams.length > 0
+    ? `Parcourir ${categoryParams.join(', ')}`
+    : 'Parcourir tous les articles';
+    
+  const handleViewChange = (view: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('view', view);
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
+  return (
+    <div className="space-y-6">
+       <Tabs value={activeView} onValueChange={handleViewChange} className="w-full">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
+                <div className="flex items-center gap-2">
+                    <TabsList>
+                        <TabsTrigger value="grid"><LayoutGrid className="mr-2 h-4 w-4"/>Grille</TabsTrigger>
+                        <TabsTrigger value="map"><MapIcon className="mr-2 h-4 w-4"/>Carte</TabsTrigger>
+                    </TabsList>
+                    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="outline">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filtres
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Filtres de recherche</SheetTitle>
+                            </SheetHeader>
+                            <FilterControls />
+                        </SheetContent>
+                    </Sheet>
+                </div>
+            </div>
+            
+            <div className="mt-4">
+              <ActiveFilters />
+            </div>
+
+            <TabsContent value="grid">
+              <Suspense fallback={<ItemGridSkeleton />}>
+                <ItemGrid />
+              </Suspense>
+            </TabsContent>
+            <TabsContent value="map">
+              <Suspense fallback={<Skeleton className="h-[70vh] w-full" />}>
+                <ItemsMapView />
+              </Suspense>
+            </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
