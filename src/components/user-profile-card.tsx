@@ -41,9 +41,9 @@ export function UserProfileCard({ user, listings }: UserProfileCardProps) {
                             <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {formattedJoinedDate}
                         </div>
 
-                        <div className="flex items-center justify-center md:justify-start gap-2">
+                        <div className="flex items-stretch justify-center md:justify-start gap-2">
                             <ContactSellerButtonClient sellerId={user.uid} itemId="" />
-                            <SubscribeButton targetUserId={user.uid} />
+                            <SubscribeButton targetUserId={user.uid} className="flex-1" />
                         </div>
                     </div>
                 </CardContent>

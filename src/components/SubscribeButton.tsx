@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -8,12 +7,14 @@ import { Loader2, UserPlus, UserCheck } from 'lucide-react';
 import { checkSubscription, toggleSubscription } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface SubscribeButtonProps {
   targetUserId: string;
+  className?: string;
 }
 
-export function SubscribeButton({ targetUserId }: SubscribeButtonProps) {
+export function SubscribeButton({ targetUserId, className }: SubscribeButtonProps) {
   const { firebaseUser, authLoading } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +57,7 @@ export function SubscribeButton({ targetUserId }: SubscribeButtonProps) {
   };
 
   if (authLoading || isLoading) {
-    return <Button variant="outline" disabled><Loader2 className="mr-2 h-4 w-4 animate-spin" />Chargement...</Button>;
+    return <Button variant="outline" disabled className={cn(className)}><Loader2 className="mr-2 h-4 w-4 animate-spin" />Chargement...</Button>;
   }
 
   // Don't show the button on your own profile
@@ -66,7 +67,7 @@ export function SubscribeButton({ targetUserId }: SubscribeButtonProps) {
   
   if (isSubscribed) {
     return (
-      <Button variant="secondary" onClick={handleToggle} disabled={isToggling}>
+      <Button variant="secondary" onClick={handleToggle} disabled={isToggling} className={cn(className)}>
         {isToggling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
         Abonné
       </Button>
@@ -74,7 +75,7 @@ export function SubscribeButton({ targetUserId }: SubscribeButtonProps) {
   }
 
   return (
-    <Button variant="outline" onClick={handleToggle} disabled={isToggling}>
+    <Button variant="outline" onClick={handleToggle} disabled={isToggling} className={cn(className)}>
       {isToggling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
       S'abonner
     </Button>
