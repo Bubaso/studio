@@ -20,6 +20,7 @@ import { ReportItemButton } from '@/components/report-item-button';
 import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
+import { SubscribeButton } from '@/components/SubscribeButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +85,35 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
+  
+  const SellerProfileCard = seller ? (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+      </CardHeader>
+      <CardContent className="flex items-center space-x-4">
+        <Avatar className="h-16 w-16">
+          <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+          <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div>
+          <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors break-words">
+            {seller.name || 'Vendeur Anonyme'}
+          </Link>
+           <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
+        </div>
+      </CardContent>
+    </Card>
+  ) : (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground">Informations sur le vendeur non disponibles ou le vendeur n'a pas été trouvé.</p>
+      </CardContent>
+    </Card>
+  );
 
 
   return (
@@ -92,17 +122,34 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <ConfirmSoldStatusClient item={item} />
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Left Column: Image Gallery & Video */}
+        {/* Left Column: Image Gallery & Seller Info on Desktop */}
         <div className="space-y-4">
             <ItemMediaGallery item={item} />
+            <div className="mt-8 hidden md:block">{SellerProfileCard}</div>
         </div>
 
-        {/* Right Column: Item Details, Seller Info, Actions */}
+        {/* Right Column: Item Details, Seller Info on Mobile, Actions */}
         <div className="space-y-6 min-w-0">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
           </div>
+          
+          {/* Mobile-only Compact Seller Info */}
+          {seller && (
+            <div className="md:hidden flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
+              <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                  <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="font-semibold text-md hover:text-primary transition-colors truncate">
+                  {seller.name || 'Vendeur Anonyme'}
+                </span>
+              </Link>
+              <SubscribeButton targetUserId={seller.uid} />
+            </div>
+          )}
 
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
@@ -186,34 +233,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </section>
           )}
           
-          {seller ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-                  <AvatarFallback>{(seller.name || 'V').substring(0,2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <Link href={`/profile/${seller.uid}`} className="font-semibold text-lg hover:text-primary transition-colors break-words">
-                    {seller.name || 'Vendeur Anonyme'}
-                  </Link>
-                   <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Informations sur le vendeur non disponibles ou le vendeur n'a pas été trouvé.</p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="md:hidden">{SellerProfileCard}</div>
           
           {item && <SellerActionsClient item={item} />}
 
