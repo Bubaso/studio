@@ -217,7 +217,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             {item && item.sellerId && !item.isSold && (
-                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} />
+                <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} className="h-16 text-lg md:h-12 md:text-base" />
             )}
             {item.phoneNumber && !item.isSold && (
                 <Button asChild variant="default" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base bg-green-600 hover:bg-green-700">

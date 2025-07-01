@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { UserProfile, Item } from '@/lib/types';
@@ -42,8 +43,8 @@ export function UserProfileCard({ user, listings }: UserProfileCardProps) {
                         </div>
 
                         <div className="flex items-stretch justify-center md:justify-start gap-2">
-                            <ContactSellerButtonClient sellerId={user.uid} itemId="" />
-                            <SubscribeButton targetUserId={user.uid} className="flex-1" />
+                            <ContactSellerButtonClient sellerId={user.uid} itemId="" className="w-2/3" />
+                            <SubscribeButton targetUserId={user.uid} className="w-1/3" />
                         </div>
                     </div>
                 </CardContent>

@@ -7,13 +7,15 @@ import { Button } from '@/components/ui/button';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
   itemId: string;
+  className?: string;
 }
 
-export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerButtonClientProps) {
+export function ContactSellerButtonClient({ sellerId, itemId, className }: ContactSellerButtonClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
@@ -71,7 +73,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
 
   if (isLoadingAuth) {
     return (
-      <Button variant="outline" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base" disabled>
+      <Button variant="outline" className={cn("w-full flex-1", className)} disabled>
         <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Contacter le vendeur
       </Button>
     );
@@ -85,7 +87,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
     const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
-      <Button variant="outline" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base" onClick={() => router.push(redirectTo)}>
+      <Button variant="outline" className={cn("w-full flex-1", className)} onClick={() => router.push(redirectTo)}>
         <MessageSquare className="mr-2 h-6 w-6" /> Contacter le vendeur (Connexion requise)
       </Button>
     );
@@ -95,7 +97,7 @@ export function ContactSellerButtonClient({ sellerId, itemId }: ContactSellerBut
     <Button 
         onClick={handleContactSeller} 
         variant="outline" 
-        className="w-full flex-1 h-16 text-lg md:h-12 md:text-base"
+        className={cn("w-full flex-1", className)}
         disabled={isPending}
     >
       {isPending ? (
