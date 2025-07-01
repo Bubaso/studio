@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export default function PaymentSuccessPage() {
+function SuccessPageContent() {
     const searchParams = useSearchParams();
     const ref = searchParams.get('ref');
     const { toast } = useToast();
@@ -95,5 +95,21 @@ export default function PaymentSuccessPage() {
                 </CardFooter>
             </Card>
         </div>
+    );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+}
+
+export default function PaymentSuccessPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <SuccessPageContent />
+        </Suspense>
     );
 }

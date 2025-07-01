@@ -1,13 +1,14 @@
 
 "use client";
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { XCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { XCircle, Loader2 } from 'lucide-react';
 
-export default function PaymentCancelPage() {
+function CancelPageContent() {
     const searchParams = useSearchParams();
     const ref = searchParams.get('ref');
 
@@ -39,5 +40,21 @@ export default function PaymentCancelPage() {
                 </CardFooter>
             </Card>
         </div>
+    );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+}
+
+export default function PaymentCancelPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <CancelPageContent />
+        </Suspense>
     );
 }

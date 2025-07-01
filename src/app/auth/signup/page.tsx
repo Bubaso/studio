@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag, UserPlus, LogIn } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ShoppingBag, UserPlus, LogIn, Loader2 } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
@@ -27,8 +28,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
 
-
-export default function SignUpPage() {
+function SignUpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -250,7 +250,7 @@ export default function SignUpPage() {
             />
           </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
-            {isLoading ? <UserPlus className="mr-2 h-4 w-4 animate-ping" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-ping" /> : <UserPlus className="mr-2 h-4 w-4" />}
             Créer un compte
           </Button>
         </form>
@@ -264,17 +264,17 @@ export default function SignUpPage() {
         <div className="space-y-3">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
             {/* TODO: Add Google Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             S'inscrire avec Google
           </Button>
           <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignUp(facebookProvider)} disabled={isLoading}>
             {/* TODO: Add Facebook Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             S'inscrire avec Facebook
           </Button>
           <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignUp(appleProvider)} disabled={isLoading}>
             {/* TODO: Add Apple Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             S'inscrire avec Apple
           </Button>
         </div>
@@ -290,4 +290,20 @@ export default function SignUpPage() {
       </CardFooter>
     </Card>
   );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
+        </div>
+    );
+}
+
+export default function SignUpPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <SignUpPageContent />
+        </Suspense>
+    );
 }

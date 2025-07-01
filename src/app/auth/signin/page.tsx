@@ -1,6 +1,7 @@
+
 "use client";
 
-import { ShoppingBag, LogIn, Mail, Lock } from "lucide-react";
+import { ShoppingBag, LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
@@ -27,7 +28,7 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 const facebookProvider = new FacebookAuthProvider();
 const appleProvider = new OAuthProvider('apple.com');
 
-export default function SignInPage() {
+function SignInPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -220,7 +221,7 @@ export default function SignInPage() {
             </div>
           </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
             Se connecter
           </Button>
         </form>
@@ -234,17 +235,17 @@ export default function SignInPage() {
         <div className="space-y-3">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn(googleProvider)} disabled={isLoading}>
             {/* TODO: Add Google Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Se connecter avec Google
           </Button>
           <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignIn(facebookProvider)} disabled={isLoading}>
             {/* TODO: Add Facebook Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Se connecter avec Facebook
           </Button>
           <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignIn(appleProvider)} disabled={isLoading}>
             {/* TODO: Add Apple Icon */}
-            {isLoading ? <LogIn className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Se connecter avec Apple
           </Button>
         </div>
@@ -264,4 +265,20 @@ export default function SignInPage() {
       </CardFooter>
     </Card>
   );
+}
+
+function LoadingFallback() {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
+        </div>
+    );
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <SignInPageContent />
+        </Suspense>
+    );
 }
