@@ -1,0 +1,70 @@
+"use client";
+
+import type { UserProfile, Item } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { ItemCard } from '@/components/item-card';
+import { MapPin, CalendarDays } from 'lucide-react';
+import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
+import { SubscribeButton } from '@/components/SubscribeButton';
+
+interface UserProfileCardProps {
+    user: UserProfile;
+    listings: Item[];
+}
+
+export function UserProfileCard({ user, listings }: UserProfileCardProps) {
+    const formattedJoinedDate = new Date(user.joinedDate).toLocaleDateString('fr-FR');
+
+    return (
+        <div className="space-y-8">
+            <Card className="shadow-lg">
+                <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                    <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-primary">
+                        <AvatarImage src={user.avatarUrl || undefined} alt={user.name || 'Utilisateur'} data-ai-hint={user.dataAiHint} />
+                        <AvatarFallback className="text-4xl">{(user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-center md:text-left">
+                        <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur Anonyme'}</h1>
+                        
+                        <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
+                            <span><strong>{user.subscriberCount || 0}</strong> Abonnés</span>
+                            <span><strong>{user.subscriptionCount || 0}</strong> Abonnements</span>
+                        </div>
+
+                        {user.location && (
+                        <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-1">
+                            <MapPin className="h-4 w-4 mr-2" /> {user.location}
+                        </div>
+                        )}
+                        <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
+                            <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {formattedJoinedDate}
+                        </div>
+
+                        <div className="flex items-center justify-center md:justify-start gap-2">
+                            <ContactSellerButtonClient sellerId={user.uid} itemId="" />
+                            <SubscribeButton targetUserId={user.uid} />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <section>
+                <h2 className="text-2xl font-bold font-headline mb-4">Annonces de {user.name ? user.name.split(' ')[0] : 'cet utilisateur'} ({listings.length})</h2>
+                {listings.length > 0 ? (
+                <div className="grid grid-cols-2 gap-6">
+                    {listings.map((item) => (
+                    <ItemCard key={item.id} item={item} />
+                    ))}
+                </div>
+                ) : (
+                <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                    <p>{user.name || 'Cet utilisateur'} n'a pas encore mis d'articles en vente.</p>
+                    </CardContent>
+                </Card>
+                )}
+            </section>
+        </div>
+    );
+}

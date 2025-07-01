@@ -43,8 +43,11 @@ export async function toggleSubscription(currentUserId: string, targetUserId: st
   const subscriptionRef = doc(currentUserRef, 'subscriptions', targetUserId);
   const subscriberRef = doc(targetUserRef, 'subscribers', currentUserId);
 
+  let isCurrentlySubscribed = false; // Declare variable outside the try block
+
   try {
-    const isCurrentlySubscribed = (await getDoc(subscriptionRef)).exists();
+    const subscriptionDoc = await getDoc(subscriptionRef);
+    isCurrentlySubscribed = subscriptionDoc.exists(); // Assign value inside the try block
 
     await runTransaction(db, async (transaction) => {
       if (isCurrentlySubscribed) {
@@ -66,6 +69,8 @@ export async function toggleSubscription(currentUserId: string, targetUserId: st
 
   } catch (error: any) {
     console.error("Error toggling subscription:", error);
+    // Now isCurrentlySubscribed is accessible here.
+    // It returns the state *before* the failed transaction.
     return { success: false, isSubscribed: isCurrentlySubscribed, error: "An error occurred. Please try again." };
   }
 }
