@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -7,6 +8,7 @@ import { BottomTabNavigator } from '@/components/layout/bottom-tab-navigator';
 import { UserActivityLogger } from '@/components/user-activity-logger';
 import { AuthProvider } from '@/context/AuthContext';
 import { ScrollToTop } from '@/components/scroll-to-top';
+import { FoundingMemberNotifier } from '@/components/FoundingMemberNotifier';
 
 export default function MainLayout({
   children,
@@ -15,6 +17,7 @@ export default function MainLayout({
 }) {
   return (
     <AuthProvider>
+      <FoundingMemberNotifier />
       <ScrollToTop />
       <div className="flex flex-col min-h-screen">
         <Header />

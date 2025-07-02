@@ -1,7 +1,8 @@
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs } from 'firebase/firestore'; // Added updateDoc
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction } from 'firebase/firestore'; // Added updateDoc and runTransaction
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -29,16 +30,32 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
   if (!firebaseUser) return;
 
   const userRef = doc(db, 'users', firebaseUser.uid);
-  
-  try {
-    const userSnapshot = await getDoc(userRef);
+  const counterRef = doc(db, 'counters', 'userCounter');
 
-    if (!userSnapshot.exists()) {
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userSnapshot = await transaction.get(userRef);
+
+      if (userSnapshot.exists()) {
+        // User already exists, do nothing in this transaction.
+        return;
+      }
+
+      // Get and increment the user counter
+      const counterDoc = await transaction.get(counterRef);
+      const currentCount = counterDoc.data()?.count || 0;
+      const newCount = currentCount + 1;
+
+      // Determine if the user is a founding member and set their free listings
+      const isFoundingMember = newCount <= 100;
+      const freeListings = isFoundingMember ? 15 : 5; // 10 bonus listings for first 100 users
+
+      // Prepare new user data
       const { email, displayName, photoURL } = firebaseUser;
       const joinedDate = new Date().toISOString();
       const userName = displayName || additionalData.name || email?.split('@')[0] || 'Utilisateur Anonyme';
 
-      await setDoc(userRef, {
+      const newUserDocData = {
         uid: firebaseUser.uid,
         email,
         name: userName,
@@ -48,13 +65,21 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
         location: additionalData.location || '',
         lastActiveAt: serverTimestamp(),
         credits: 0,
-        freeListingsRemaining: 5,
+        freeListingsRemaining: freeListings, // Set based on founding member status
         subscriberCount: 0,
         subscriptionCount: 0,
-      });
-    }
+        isFoundingMember: isFoundingMember, // Add the new flag
+      };
+
+      // Set the new user document
+      transaction.set(userRef, newUserDocData);
+      
+      // Update the counter using set with merge to create if it doesn't exist
+      transaction.set(counterRef, { count: newCount }, { merge: true });
+    });
+
   } catch (error) {
-    console.error("Error creating or checking user document: ", error);
+    console.error("Error creating user document with counter transaction: ", error);
     throw error;
   }
 };
@@ -87,6 +112,7 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         freeListingsRemaining: data.freeListingsRemaining ?? 0,
         subscriberCount: data.subscriberCount || 0,
         subscriptionCount: data.subscriptionCount || 0,
+        isFoundingMember: data.isFoundingMember || false, // Add new field
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);

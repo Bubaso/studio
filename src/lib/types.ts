@@ -1,10 +1,12 @@
 
+
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
   category: string;
   price: number;
   name: string;
+  description: string;
 }
 
 export const DeliveryOptions = ['Moto', 'Voiture', 'Pickup', 'Taxi Baggage', 'Camion', 'Remise en main propre'] as const;
@@ -53,6 +55,7 @@ export interface UserProfile {
   freeListingsRemaining: number; // Number of free listings left
   subscriberCount?: number; // How many people subscribe to this user
   subscriptionCount?: number; // How many people this user subscribes to
+  isFoundingMember?: boolean;
 }
 
 export interface Review {
