@@ -4,144 +4,129 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
-    function isAuthOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+    // HELPER FUNCTIONS
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Check if the update is only for basic profile fields
-    function isUpdatingOwnProfile(request, resource) {
-      let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
-      let allowedKeys = ['name', 'location', 'avatarUrl', 'dataAiHint'];
-      return changedKeys.hasOnly(allowedKeys);
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Checks if the user is updating only their general profile fields.
+    function isUpdatingOwnProfile() {
+      return isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'location', 'avatarUrl', 'dataAiHint']);
+    }
+
+    // Checks if the user is decrementing their own listing counters by exactly 1.
+    function isDecrementingListingCounter() {
+      let hasDecrementedFree = request.resource.data.freeListingsRemaining == resource.data.freeListingsRemaining - 1;
+      let hasDecrementedCredits = request.resource.data.credits == resource.data.credits - 1;
+      let onlyCounterChanged = request.resource.data.diff(resource.data).affectedKeys().hasOnly(['freeListingsRemaining']) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credits']);
+
+      return isOwner(userId) && onlyCounterChanged && (hasDecrementedFree || hasDecrementedCredits);
+    }
+
+    // Checks if the user is updating their own subscription count by exactly 1.
+    function isUpdatingOwnSubscriptionCount() {
+      return isOwner(userId) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscriptionCount']) &&
+             (request.resource.data.subscriptionCount == resource.data.subscriptionCount + 1 || request.resource.data.subscriptionCount == resource.data.subscriptionCount - 1);
+    }
+
+    // Checks if THIS user's subscriber count is being updated by exactly 1 by someone else.
+    function isBeingSubscribedTo() {
+      return !isOwner(userId) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['subscriberCount']) &&
+             (request.resource.data.subscriberCount == resource.data.subscriberCount + 1 || request.resource.data.subscriberCount == resource.data.subscriberCount - 1);
     }
     
-    // Check if the update is only for decrementing listing counts
-    function isDecrementingListingCount(request, resource) {
-        let diff = request.resource.data.diff(resource.data);
-        // Case 1: Using a free listing
-        let usedFree = diff.affectedKeys().hasOnly(['freeListingsRemaining']) &&
-                       request.resource.data.freeListingsRemaining == resource.data.freeListingsRemaining - 1;
-        // Case 2: Using a paid credit
-        let usedCredit = diff.affectedKeys().hasOnly(['credits']) &&
-                         request.resource.data.credits == resource.data.credits - 1;
-        return usedFree || usedCredit;
-    }
-    
-    // Check if a user is updating their own subscription count
-    function isManagingOwnSubscriptions(request, resource) {
-        let diff = request.resource.data.diff(resource.data);
-        return diff.affectedKeys().hasOnly(['subscriptionCount']) &&
-               (request.resource.data.subscriptionCount == resource.data.subscriptionCount + 1 ||
-                request.resource.data.subscriptionCount == resource.data.subscriptionCount - 1);
-    }
-    
-    // Check if another user is updating this user's subscriber count
-    function isBeingSubscribedTo(request, resource) {
-        let diff = request.resource.data.diff(resource.data);
-        return diff.affectedKeys().hasOnly(['subscriberCount']) &&
-               (request.resource.data.subscriberCount == resource.data.subscriberCount + 1 ||
-                request.resource.data.subscriberCount == resource.data.subscriberCount - 1);
-    }
-    
-    // USERS Collection
+    // MAIN RULES
+
     match /users/{userId} {
       allow read: if true;
-      allow create: if isAuthOwner(userId);
-      
-      allow update: if isAuthOwner(userId) && 
-                      (isUpdatingOwnProfile(request, resource) || 
-                       isDecrementingListingCount(request, resource) ||
-                       isManagingOwnSubscriptions(request, resource))
-                    ||
-                    // Allow another authenticated user to update ONLY the subscriber count
-                    (request.auth.uid != userId && isBeingSubscribedTo(request, resource));
+      allow create: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
 
-      // User Sub-collections
-      match /viewHistory/{docId} {
-        allow read, write: if isAuthOwner(userId);
+      // A user can be updated under very specific conditions.
+      allow update: if isSignedIn() && (
+        isUpdatingOwnProfile() ||
+        isDecrementingListingCounter() ||
+        isUpdatingOwnSubscriptionCount() ||
+        isBeingSubscribedTo()
+      );
+
+      // Subcollections for a user
+      match /subscriptions/{targetId} {
+        allow read, create, delete: if isSignedIn() && isOwner(userId);
       }
       match /subscribers/{subscriberId} {
-          allow read: if true;
-          // Only the subscriber can add/remove themselves from the list
-          allow create, delete: if request.auth.uid == subscriberId;
+        // Only the subscriber can create/delete their entry in someone else's list.
+        allow read: if isSignedIn() && isOwner(userId);
+        allow create, delete: if isSignedIn() && isOwner(subscriberId);
       }
-      match /subscriptions/{subscriptionId} {
-          allow read: if true;
-          // Only the user themselves can add/remove a subscription from their own list
-          allow create, delete: if isAuthOwner(userId);
+      match /viewHistory/{historyId} {
+        allow read, create: if isSignedIn() && isOwner(userId);
       }
-      match /notifications/{notificationId} {
-          allow read, write: if isAuthOwner(userId);
+       match /notifications/{notificationId} {
+        allow read, create, update: if isSignedIn() && isOwner(userId);
       }
     }
 
-    // ITEMS Collection
     match /items/{itemId} {
       allow read: if true;
-      allow create: if request.auth.uid == request.resource.data.sellerId;
-      allow update: if request.auth.uid == resource.data.sellerId;
-      allow delete: if request.auth.uid == resource.data.sellerId;
-      
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner(resource.data.sellerId);
+      allow delete: if isSignedIn() && isOwner(resource.data.sellerId);
+
       match /views/{viewId} {
-          allow create: if request.auth.uid != resource.data.sellerId;
-          allow read: if isAuthOwner(resource.data.sellerId);
+        allow create: if isSignedIn();
       }
     }
 
-    // COLLECTIONS (Favorites)
-    match /collections/{collectionId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      allow create: if isAuthOwner(request.resource.data.userId);
-      allow update, delete: if isAuthOwner(resource.data.userId);
-
-      match /items/{itemId} {
-        allow read: if isAuthOwner(resource.data.userId);
-        allow write: if isAuthOwner(request.resource.data.userId);
-        allow delete: if isAuthOwner(resource.data.userId);
-      }
-    }
-
-    // MESSAGE THREADS
     match /messageThreads/{threadId} {
-        allow read: if request.auth.uid in resource.data.participantIds;
-        allow create: if request.auth.uid in request.resource.data.participantIds;
-        // Allow updates for new messages, marking as seen, or blocking
-        allow update: if request.auth.uid in resource.data.participantIds;
+      allow read, update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow create: if isSignedIn(); // Creation is handled by API route
 
-        match /messages/{messageId} {
-            allow read: if request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
-            allow create: if request.auth.uid == request.resource.data.senderId;
-            allow update: if request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
-        }
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        allow create: if isSignedIn(); // Creation is handled by API route
+        allow update: if isSignedIn(); // For marking as read
+      }
     }
     
-    // PRODUCT REPORTS
-    match /productReports/{itemId}/reports/{userId} {
-        allow create: if isAuthOwner(userId);
-        // Only the user who made the report can see it. No one can update/delete through client.
-        allow read: if isAuthOwner(userId);
-    }
-    
-    // REVIEWS
     match /reviews/{reviewId} {
         allow read: if true;
-        // A user can create a review if they are the author.
-        // They cannot review their own items.
-        allow create: if isAuthOwner(request.resource.data.reviewerId) &&
-                       request.resource.data.reviewerId != request.resource.data.sellerId;
+        allow create: if isSignedIn() && isOwner(request.resource.data.reviewerId);
+    }
+
+    match /collections/{collectionId} {
+      allow read, create, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+
+      match /items/{itemId} {
+          allow read, create, delete: if isSignedIn() && isOwner(get(/databases/$(database)/documents/collections/$(collectionId)).data.userId);
+      }
     }
     
-    // PAYMENT INTENTS
+    match /productReports/{itemId} {
+       // Anyone can create a report document for an item
+       allow create: if isSignedIn();
+       
+       match /reports/{userId} {
+         // The user can create their own report, but cannot read/update/delete any.
+         allow create: if isSignedIn() && isOwner(userId);
+         allow read, update, delete: if false;
+       }
+    }
+    
+    match /counters/{counterId} {
+      // The userCounter can only be updated via transactions in the backend. No direct client access.
+      allow read, write: if false;
+    }
+    
     match /paymentIntents/{intentId} {
-        // User can create a payment intent for themselves.
-        allow create: if isAuthOwner(request.resource.data.userId);
-        // User can read their own payment intents, for status checking on success page.
-        allow read: if isAuthOwner(resource.data.userId);
-        // Only backend can update status. No client updates allowed.
-        allow update: if false;
+        allow read, create: if isSignedIn() && isOwner(resource.data.userId);
+        allow update: if false; // Only backend can update via IPN
     }
   }
 }
-
-    
