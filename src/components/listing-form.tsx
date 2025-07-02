@@ -22,7 +22,7 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake, Lightbulb } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -34,7 +34,8 @@ import { TitleSuggestion } from "./title-suggestion";
 import { DescriptionSuggestion } from "./description-suggestion";
 import { LocationPicker } from "./location-picker";
 import { CategorySuggestion } from "./category-suggestion";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription as DialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as DialogTitle } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import { LISTING_COST_IN_CREDITS } from "@/lib/config";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -449,10 +450,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       <AlertDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Crédits Insuffisants</AlertDialogTitle>
-            <AlertDialogDescription>
+            <DialogTitle>Crédits Insuffisants</DialogTitle>
+            <DialogDescription>
               Vous avez utilisé toutes vos annonces gratuites. Pour continuer, vous devez acheter des crédits.
-            </AlertDialogDescription>
+            </DialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Plus tard</AlertDialogCancel>
@@ -741,6 +742,21 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             render={({ fieldState }) => (
               <FormItem>
                 <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
+                
+                <Alert className="bg-primary/5 border-primary/20 text-foreground !mt-4">
+                  <Lightbulb className="h-4 w-4 text-primary" />
+                  <AlertTitle className="font-bold text-primary">Conseils pour de superbes photos et vidéos</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc pl-5 space-y-1 mt-2 text-sm text-muted-foreground">
+                      <li><strong>Lumière Naturelle :</strong> Privilégiez la lumière du jour et évitez les ombres portées pour des couleurs fidèles.</li>
+                      <li><strong>Fond Neutre :</strong> Un arrière-plan simple (un mur blanc, un drap uni) mettra votre article en valeur.</li>
+                      <li><strong>Plusieurs Angles :</strong> Photographiez l'article sous tous ses angles (avant, arrière, côtés, intérieur).</li>
+                      <li><strong>Détails et Défauts :</strong> Montrez les gros plans des détails importants et n'hésitez pas à filmer les éventuels défauts pour plus de transparence.</li>
+                      <li><strong>Vidéo en Action :</strong> Si possible, montrez l'article en cours d'utilisation dans une courte vidéo.</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+
                 <FormControl>
                   <Input
                     type="file"
