@@ -228,3 +228,31 @@ export async function getUserViewHistory(userId: string, count: number = 10): Pr
     return [];
   }
 }
+
+export async function deleteUserAccount(): Promise<{ success: boolean; error?: string }> {
+  const user = auth.currentUser;
+  if (!user) {
+    return { success: false, error: "Vous devez être connecté pour supprimer votre compte." };
+  }
+
+  try {
+    const idToken = await user.getIdToken(true);
+    const response = await fetch('/api/user/delete', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${idToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || "Une erreur s'est produite lors de la suppression du compte.");
+    }
+    
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("Error calling delete user account API:", error);
+    return { success: false, error: error.message };
+  }
+}
