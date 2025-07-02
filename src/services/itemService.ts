@@ -334,7 +334,7 @@ export async function createItemInFirestore(
     } else if (hasEnoughCredits) {
       batch.update(userRef, { credits: increment(-LISTING_COST_IN_CREDITS) });
     } else {
-      throw new Error("Fonds insuffisants pour publier l'annonce.");
+      throw new Error("Crédits ou annonces gratuites insuffisants.");
     }
 
     const dataToSend: any = { ...itemData };
@@ -543,3 +543,5 @@ export async function deleteItem(itemId: string): Promise<void> {
   const itemDocRef = doc(db, 'items', itemId);
   await deleteDoc(itemDocRef);
 }
+
+    
