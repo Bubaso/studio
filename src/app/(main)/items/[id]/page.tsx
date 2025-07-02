@@ -6,7 +6,7 @@ import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/type
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront, Handshake, Wallet } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -34,6 +34,7 @@ const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
   'Pickup': Truck,
   'Taxi Baggage': CarFront,
   'Camion': Truck,
+  'Yerinde Teslim': Handshake,
 };
 
 export default async function ItemPage({ params }: ItemPageProps) {
@@ -185,19 +186,33 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
-          {item.deliveryOptions && item.deliveryOptions.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-                {item.deliveryOptions.map((option) => {
-                    const Icon = deliveryOptionIcons[option];
-                    return (
-                        <Badge key={option} variant="outline" className="text-sm py-1 px-3">
-                            <Icon className="h-4 w-4 mr-2" />
-                            {option}
-                        </Badge>
-                    )
-                })}
-            </div>
-          )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline text-xl">Détails de la livraison</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+                {(item.deliveryOptions && item.deliveryOptions.length > 0) ? (
+                    item.deliveryOptions.map((option) => {
+                        const Icon = deliveryOptionIcons[option] || Package;
+                        return (
+                            <Badge key={option} variant="outline" className="text-sm py-1 px-3">
+                                <Icon className="h-4 w-4 mr-2" />
+                                {option}
+                            </Badge>
+                        )
+                    })
+                ) : null}
+                {item.shippingPayer && (
+                    <Badge variant="outline" className="text-sm py-1 px-3">
+                        <Wallet className="h-4 w-4 mr-2" />
+                        <span>Payé par: <strong>{item.shippingPayer}</strong></span>
+                    </Badge>
+                )}
+                {(!item.deliveryOptions || item.deliveryOptions.length === 0) && !item.shippingPayer && (
+                    <p className="text-sm text-muted-foreground">Aucun détail de livraison n'a été spécifié.</p>
+                )}
+            </CardContent>
+          </Card>
 
           <div className="flex items-center gap-2">
             <FavoriteButtonClient itemId={itemId} sellerId={item.sellerId} size="default" />

@@ -17,12 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition, UserProfile, DeliveryOptions, type DeliveryOption } from "@/lib/types";
+import { ItemCategories, ItemConditions, type Item, type ItemCategory, type ItemCondition, UserProfile, DeliveryOptions, type DeliveryOption, ShippingPayers, type ShippingPayer } from "@/lib/types";
 import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -81,6 +81,7 @@ const listingFormSchema = z.object({
   }),
   phoneNumber: z.string().optional(),
   deliveryOptions: z.array(z.enum(DeliveryOptions)).optional(),
+  shippingPayer: z.enum(ShippingPayers).optional(),
 }).refine(data => {
     if (data.showPhoneNumber === 'yes') {
         return !!data.phoneNumber && data.phoneNumber.trim().length > 5;
@@ -104,6 +105,7 @@ const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
   'Pickup': Truck,
   'Taxi Baggage': CarFront,
   'Camion': Truck,
+  'Yerinde Teslim': Handshake,
 };
 
 
@@ -144,6 +146,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       showPhoneNumber: initialItemData?.phoneNumber ? 'yes' : 'no',
       phoneNumber: initialItemData?.phoneNumber || "",
       deliveryOptions: initialItemData?.deliveryOptions || [],
+      shippingPayer: initialItemData?.shippingPayer || undefined,
     },
   });
   
@@ -177,6 +180,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             showPhoneNumber: initialItemData.phoneNumber ? 'yes' : 'no',
             phoneNumber: initialItemData.phoneNumber || "",
             deliveryOptions: initialItemData.deliveryOptions || [],
+            shippingPayer: initialItemData.shippingPayer || undefined,
         });
         setImagePreviews(initialItemData.imageUrls || []);
         setRemoveExistingVideo(false);
@@ -386,6 +390,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         dataAiHint: dataAiHintForImage,
         phoneNumber: values.showPhoneNumber === 'yes' ? values.phoneNumber : undefined,
         deliveryOptions: values.deliveryOptions,
+        shippingPayer: values.shippingPayer,
       };
 
       if (isEditMode && initialItemData?.id) {
@@ -698,6 +703,35 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <FormField
+                control={form.control}
+                name="shippingPayer"
+                render={({ field }) => (
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                    <FormLabel className="text-base">Qui paie la livraison ?</FormLabel>
+                    <FormControl>
+                    <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2"
+                    >
+                        {ShippingPayers.map((payer) => (
+                            <FormItem key={payer} className="flex items-center space-x-2 space-y-0">
+                                <FormControl>
+                                    <RadioGroupItem value={payer} id={`payer-${payer}`} />
+                                </FormControl>
+                                <FormLabel htmlFor={`payer-${payer}`} className="font-normal cursor-pointer">
+                                    {payer}
+                                </FormLabel>
+                            </FormItem>
+                        ))}
+                    </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
             />
 
 

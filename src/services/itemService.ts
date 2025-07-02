@@ -73,6 +73,7 @@ const mapDocToItem = (document: any): Item => {
     soldAt: data.soldAt ? convertTimestampToISO(data.soldAt as FirebaseTimestampType) : undefined,
     phoneNumber: data.phoneNumber || undefined,
     deliveryOptions: data.deliveryOptions || [],
+    shippingPayer: data.shippingPayer,
   };
 };
 
@@ -342,6 +343,7 @@ export async function createItemInFirestore(
     if (dataToSend.longitude === undefined) delete dataToSend.longitude;
     if (dataToSend.phoneNumber === undefined) delete dataToSend.phoneNumber;
     if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
+    if (dataToSend.shippingPayer === undefined) delete dataToSend.shippingPayer;
 
     newItemRef = doc(collection(db, "items"));
     batch.set(newItemRef, {
@@ -418,6 +420,9 @@ export async function updateItemInFirestore(
   }
   if ('deliveryOptions' in dataToUpdate && dataToUpdate.deliveryOptions === undefined) {
     dataToUpdate.deliveryOptions = deleteField();
+  }
+  if ('shippingPayer' in dataToUpdate && dataToUpdate.shippingPayer === undefined) {
+    dataToUpdate.shippingPayer = deleteField();
   }
   
   dataToUpdate.lastUpdated = serverTimestamp();
