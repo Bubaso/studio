@@ -7,10 +7,10 @@ export interface ViewHistoryItem {
   name: string;
 }
 
-export const DeliveryOptions = ['Moto', 'Voiture', 'Pickup', 'Taxi Baggage', 'Camion', 'Yerinde Teslim'] as const;
+export const DeliveryOptions = ['Moto', 'Voiture', 'Pickup', 'Taxi Baggage', 'Camion', 'Remise en main propre'] as const;
 export type DeliveryOption = typeof DeliveryOptions[number];
 
-export const ShippingPayers = ['Satıcı', 'Alıcı', 'Satıcı ve alıcı ortak'] as const;
+export const ShippingPayers = ['Vendeur', 'Acheteur', 'Partagé'] as const;
 export type ShippingPayer = typeof ShippingPayers[number];
 
 

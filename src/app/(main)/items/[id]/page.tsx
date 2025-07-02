@@ -34,7 +34,7 @@ const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
   'Pickup': Truck,
   'Taxi Baggage': CarFront,
   'Camion': Truck,
-  'Yerinde Teslim': Handshake,
+  'Remise en main propre': Handshake,
 };
 
 export default async function ItemPage({ params }: ItemPageProps) {
