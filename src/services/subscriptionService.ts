@@ -43,25 +43,42 @@ export async function toggleSubscription(currentUserId: string, targetUserId: st
   const subscriptionRef = doc(currentUserRef, 'subscriptions', targetUserId);
   const subscriberRef = doc(targetUserRef, 'subscribers', currentUserId);
 
-  let isCurrentlySubscribed = false; // Declare variable outside the try block
+  let isCurrentlySubscribed = false; 
 
   try {
     const subscriptionDoc = await getDoc(subscriptionRef);
-    isCurrentlySubscribed = subscriptionDoc.exists(); // Assign value inside the try block
+    isCurrentlySubscribed = subscriptionDoc.exists();
 
     await runTransaction(db, async (transaction) => {
+      const currentUserDoc = await transaction.get(currentUserRef);
+      const targetUserDoc = await transaction.get(targetUserRef);
+
+      if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
+        throw new Error("User profile not found.");
+      }
+      
+      const currentUserData = currentUserDoc.data();
+      const targetUserData = targetUserDoc.data();
+
       if (isCurrentlySubscribed) {
         // Unsubscribe logic
         transaction.delete(subscriptionRef);
         transaction.delete(subscriberRef);
-        transaction.update(currentUserRef, { subscriptionCount: increment(-1) });
-        transaction.update(targetUserRef, { subscriberCount: increment(-1) });
+        // Manually decrement counts
+        const newSubscriptionCount = (currentUserData.subscriptionCount || 1) - 1;
+        const newSubscriberCount = (targetUserData.subscriberCount || 1) - 1;
+        transaction.update(currentUserRef, { subscriptionCount: newSubscriptionCount < 0 ? 0 : newSubscriptionCount });
+        transaction.update(targetUserRef, { subscriberCount: newSubscriberCount < 0 ? 0 : newSubscriberCount });
+
       } else {
         // Subscribe logic
         transaction.set(subscriptionRef, { subscribedAt: new Date() });
         transaction.set(subscriberRef, { subscribedAt: new Date() });
-        transaction.update(currentUserRef, { subscriptionCount: increment(1) });
-        transaction.update(targetUserRef, { subscriberCount: increment(1) });
+        // Manually increment counts
+        const newSubscriptionCount = (currentUserData.subscriptionCount || 0) + 1;
+        const newSubscriberCount = (targetUserData.subscriberCount || 0) + 1;
+        transaction.update(currentUserRef, { subscriptionCount: newSubscriptionCount });
+        transaction.update(targetUserRef, { subscriberCount: newSubscriberCount });
       }
     });
 
@@ -69,8 +86,6 @@ export async function toggleSubscription(currentUserId: string, targetUserId: st
 
   } catch (error: any) {
     console.error("Error toggling subscription:", error);
-    // Now isCurrentlySubscribed is accessible here.
-    // It returns the state *before* the failed transaction.
     return { success: false, isSubscribed: isCurrentlySubscribed, error: "An error occurred. Please try again." };
   }
 }
