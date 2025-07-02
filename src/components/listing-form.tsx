@@ -22,7 +22,7 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake, Lightbulb } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake, Lightbulb, MapPin } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -582,6 +582,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               }
               onLocationSelect={handleLocationSelected}
             />
+             <Alert className="!mt-4 border-primary/20 bg-primary/5">
+                <MapPin className="h-4 w-4 text-primary" />
+                <AlertTitle className="font-bold text-primary">Pourquoi un lieu précis est-il important ?</AlertTitle>
+                <AlertDescription>
+                Indiquer un lieu exact permet aux acheteurs proches de vous de trouver votre article plus facilement, notamment sur la carte. Cela augmente la confiance et facilite grandement l'organisation de la livraison.
+                </AlertDescription>
+            </Alert>
             <FormField
               control={form.control}
               name="location"
