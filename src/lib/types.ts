@@ -39,6 +39,7 @@ export interface Item {
   soldAt?: string;
   lowActivity?: boolean;
   phoneNumber?: string;
+  whatsappNumber?: string;
   deliveryOptions?: DeliveryOption[];
   shippingPayer?: ShippingPayer;
 }

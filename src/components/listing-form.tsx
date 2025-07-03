@@ -22,7 +22,7 @@ import { PriceSuggestion } from "./price-suggestion";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake, Lightbulb, MapPin } from "lucide-react";
+import { Loader2, UploadCloud, XCircle, Save, Sparkles, CheckCircle, RefreshCw, Video, Gem, Bike, Car, Truck, CarFront, Handshake, Lightbulb, MapPin, Phone } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { uploadImageAndGetURL, uploadVideoAndGetURL, createItemInFirestore, updateItemInFirestore } from "@/services/itemService";
@@ -77,20 +77,27 @@ const listingFormSchema = z.object({
     .refine((file) => file.size <= MAX_VIDEO_SIZE_MB * 1024 * 1024, `La taille maximale de la vidéo est de ${MAX_VIDEO_SIZE_MB}MB.`)
     .refine((file) => ACCEPTED_VIDEO_TYPES.includes(file.type), "Formats vidéo acceptés : .mp4, .webm, .mov.")
     .optional(),
-  showPhoneNumber: z.enum(['yes', 'no'], {
-    required_error: "Veuillez choisir si vous souhaitez afficher votre numéro.",
-  }),
+  allowCall: z.boolean().default(false),
+  allowWhatsApp: z.boolean().default(false),
   phoneNumber: z.string().optional(),
+  whatsappNumber: z.string().optional(),
   deliveryOptions: z.array(z.enum(DeliveryOptions)).optional(),
   shippingPayer: z.enum(ShippingPayers).optional(),
-}).refine(data => {
-    if (data.showPhoneNumber === 'yes') {
-        return !!data.phoneNumber && data.phoneNumber.trim().length > 5;
+}).superRefine((data, ctx) => {
+    if (data.allowCall && (!data.phoneNumber || data.phoneNumber.trim().length < 6)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Un numéro de téléphone valide est requis pour les appels.",
+            path: ["phoneNumber"],
+        });
     }
-    return true;
-}, {
-    message: "Un numéro de téléphone valide est requis.",
-    path: ['phoneNumber'],
+    if (data.allowWhatsApp && (!data.whatsappNumber || data.whatsappNumber.trim().length < 6)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Un numéro WhatsApp valide est requis.",
+            path: ["whatsappNumber"],
+        });
+    }
 });
 
 
@@ -108,6 +115,13 @@ const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
   'Camion': Truck,
   'Remise en main propre': Handshake,
 };
+
+const WhatsAppIcon = () => (
+    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
+        <title>WhatsApp</title>
+        <path d="M12.04 2.015c-5.524 0-10 4.478-10 10.002 0 1.75.45 3.415 1.256 4.863L2.07 22.07l5.247-1.372a9.962 9.962 0 0 0 4.72 1.21h.005c5.524 0 10-4.478 10-10.002s-4.476-10-10-10.002zM12.04 20.116h-.005a8.144 8.144 0 0 1-4.155-1.18l-.297-.176-3.085.807.82-3.013-.194-.31a8.14 0 0 1-1.27-4.382c0-4.512 3.655-8.17 8.168-8.17s8.167 3.657 8.167 8.17c0 4.513-3.655 8.17-8.168 8.17zm4.49-5.838c-.247-.124-1.46-.718-1.688-.802-.227-.082-.392-.123-.556.124-.164.246-.638.802-.782.966-.144.164-.288.184-.535.062-.247-.124-.96-.35-1.83-1.125-.678-.598-1.14-1.334-1.275-1.562-.134-.228-.014-.35.11-.474.11-.11.247-.288.37-.432.124-.144.164-.246.246-.41.082-.164.04-.308-.02-.432-.06-.124-.556-1.34-.763-1.838-.207-.498-.415-.43-.557-.438-.144-.008-.308-.008-.473-.008a.892.892 0 0 0-.64.308c-.207.228-.782.763-.782 1.854s.8 2.148.922 2.312c.124.164 1.562 2.38 3.79 3.326.54.232.96.37 1.284.473.535.164 1.02.144 1.406.082.43-.072 1.265-.515 1.442-1.012.178-.498.178-.926.124-1.012-.05-.082-.174-.134-.42-.258z"></path>
+    </svg>
+);
 
 
 export function ListingForm({ initialItemData = null }: ListingFormProps) {
@@ -144,13 +158,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       longitude: initialItemData?.longitude,
       imageFiles: [],
       videoFile: undefined,
-      showPhoneNumber: initialItemData?.phoneNumber ? 'yes' : 'no',
+      allowCall: initialItemData?.phoneNumber ? true : false,
+      allowWhatsApp: initialItemData?.whatsappNumber ? true : false,
       phoneNumber: initialItemData?.phoneNumber || "",
+      whatsappNumber: initialItemData?.whatsappNumber || "",
       deliveryOptions: initialItemData?.deliveryOptions || [],
       shippingPayer: initialItemData?.shippingPayer || undefined,
     },
   });
   
+  const allowCall = form.watch('allowCall');
+  const allowWhatsApp = form.watch('allowWhatsApp');
+
   useEffect(() => {
     if (firebaseUser) {
       setIsLoadingProfile(true);
@@ -178,8 +197,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             longitude: initialItemData.longitude,
             imageFiles: [],
             videoFile: undefined,
-            showPhoneNumber: initialItemData.phoneNumber ? 'yes' : 'no',
+            allowCall: !!initialItemData.phoneNumber,
+            allowWhatsApp: !!initialItemData.whatsappNumber,
             phoneNumber: initialItemData.phoneNumber || "",
+            whatsappNumber: initialItemData.whatsappNumber || "",
             deliveryOptions: initialItemData.deliveryOptions || [],
             shippingPayer: initialItemData.shippingPayer || undefined,
         });
@@ -389,7 +410,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         imageUrls: finalImageUrls, 
         videoUrl: finalVideoUrl,
         dataAiHint: dataAiHintForImage,
-        phoneNumber: values.showPhoneNumber === 'yes' ? values.phoneNumber : undefined,
+        phoneNumber: values.allowCall ? values.phoneNumber : undefined,
+        whatsappNumber: values.allowWhatsApp ? values.whatsappNumber : undefined,
         deliveryOptions: values.deliveryOptions,
         shippingPayer: values.shippingPayer,
       };
@@ -602,62 +624,87 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="showPhoneNumber"
-              render={({ field }) => (
-              <FormItem className="space-y-3 rounded-lg border p-4 bg-muted/30">
-                  <FormLabel className="text-base">Afficher votre numéro de téléphone sur l'annonce ?</FormLabel>
-                  <FormDescription>
-                  Les acheteurs pourront vous appeler directement. Sinon, ils vous contacteront via la messagerie du site.
-                  </FormDescription>
-                  <FormControl>
-                  <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex gap-4 pt-2"
-                  >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                              <RadioGroupItem value="yes" id="phone-yes" />
-                          </FormControl>
-                          <FormLabel htmlFor="phone-yes" className="font-normal cursor-pointer">
-                              Oui
-                          </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                              <RadioGroupItem value="no" id="phone-no" />
-                          </FormControl>
-                          <FormLabel htmlFor="phone-no" className="font-normal cursor-pointer">
-                              Non
-                          </FormLabel>
-                      </FormItem>
-                  </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-              </FormItem>
-              )}
-            />
-
-            {form.watch('showPhoneNumber') === 'yes' && (
-                <div className="pl-4 border-l-2 border-primary animate-in fade-in-20">
-                <FormField
-                    control={form.control}
-                    name="phoneNumber"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Numéro de téléphone à afficher</FormLabel>
-                        <FormControl>
-                        <Input type="tel" placeholder="ex: 77 123 45 67" {...field} value={field.value || ''}/>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
+            <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
+                <FormLabel className="text-base">Méthodes de contact alternatives</FormLabel>
+                <FormDescription>
+                    Choisissez comment les acheteurs peuvent vous contacter, en plus de la messagerie interne.
+                </FormDescription>
+                <div className="space-y-4 pt-2">
+                    <FormField
+                        control={form.control}
+                        name="allowCall"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel className="flex items-center gap-2 cursor-pointer">
+                                        <Phone className="h-4 w-4" /> Appel téléphonique
+                                    </FormLabel>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+                    {allowCall && (
+                        <div className="pl-8">
+                        <FormField
+                            control={form.control}
+                            name="phoneNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Numéro de téléphone</FormLabel>
+                                    <FormControl>
+                                        <Input type="tel" placeholder="ex: 77 123 45 67" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        </div>
                     )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="allowWhatsApp"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                     <FormLabel className="flex items-center gap-2 cursor-pointer">
+                                       <WhatsAppIcon /> WhatsApp
+                                    </FormLabel>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+                     {allowWhatsApp && (
+                        <div className="pl-8">
+                        <FormField
+                            control={form.control}
+                            name="whatsappNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Numéro WhatsApp</FormLabel>
+                                    <FormControl>
+                                        <Input type="tel" placeholder="ex: +221 77 123 45 67" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        </div>
+                    )}
                 </div>
-            )}
-            
+            </div>
+
             <FormField
               control={form.control}
               name="deliveryOptions"

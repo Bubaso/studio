@@ -72,6 +72,7 @@ const mapDocToItem = (document: any): Item => {
     isSold: data.isSold || false,
     soldAt: data.soldAt ? convertTimestampToISO(data.soldAt as FirebaseTimestampType) : undefined,
     phoneNumber: data.phoneNumber || undefined,
+    whatsappNumber: data.whatsappNumber || undefined,
     deliveryOptions: data.deliveryOptions || [],
     shippingPayer: data.shippingPayer,
   };
@@ -342,6 +343,7 @@ export async function createItemInFirestore(
     if (dataToSend.latitude === undefined) delete dataToSend.latitude;
     if (dataToSend.longitude === undefined) delete dataToSend.longitude;
     if (dataToSend.phoneNumber === undefined) delete dataToSend.phoneNumber;
+    if (dataToSend.whatsappNumber === undefined) delete dataToSend.whatsappNumber;
     if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
     if (dataToSend.shippingPayer === undefined) delete dataToSend.shippingPayer;
 
@@ -411,6 +413,9 @@ export async function updateItemInFirestore(
   }
   if ('phoneNumber' in dataToUpdate && dataToUpdate.phoneNumber === undefined) {
     dataToUpdate.phoneNumber = deleteField();
+  }
+  if ('whatsappNumber' in dataToUpdate && dataToUpdate.whatsappNumber === undefined) {
+    dataToUpdate.whatsappNumber = deleteField();
   }
   if ('latitude' in dataToUpdate && dataToUpdate.latitude === undefined) {
     dataToUpdate.latitude = deleteField();
