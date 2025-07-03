@@ -1,3 +1,4 @@
+
 "use client";
 import Link from 'next/link';
 import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Heart, Circle, Gem } from 'lucide-react';
@@ -13,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '@/lib/utils';
 import { NotificationCenter } from '../NotificationCenter';
+import { useTranslations } from 'next-intl';
 
 interface NavLink {
   href: string;
@@ -21,18 +23,8 @@ interface NavLink {
   id?: string;
 }
 
-const initialMainLinks: NavLink[] = [
-  { href: '/browse', label: 'Parcourir', icon: <Search className="h-4 w-4" /> },
-  { href: '/sell', label: 'Vendre', icon: <PlusCircle className="h-4 w-4" /> },
-];
-
-const initialUserLinks: NavLink[] = [
-  { href: '/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" />, id: 'messages' },
-  { href: '/favorites', label: 'Favoris', icon: <Heart className="h-4 w-4" /> },
-];
-
-
 export function Header() {
+  const t = useTranslations('Header');
   const pathname = usePathname();
   const router = useRouter();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
@@ -40,6 +32,16 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  const mainLinks: NavLink[] = [
+    { href: '/browse', label: t('nav.browse'), icon: <Search className="h-4 w-4" /> },
+    { href: '/sell', label: t('nav.sell'), icon: <PlusCircle className="h-4 w-4" /> },
+  ];
+
+  const userLinks: NavLink[] = [
+    { href: '/messages', label: t('nav.messages'), icon: <MessageSquare className="h-4 w-4" />, id: 'messages' },
+    { href: '/favorites', label: t('nav.favorites'), icon: <Heart className="h-4 w-4" /> },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -127,7 +129,7 @@ export function Header() {
           <span className="font-bold font-headline text-2xl text-primary">JëndJaay</span>
         </Link>
         <nav className="flex items-center space-x-4 lg:space-x-6 mr-auto">
-          {initialMainLinks.map((link) => (
+          {mainLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -139,7 +141,7 @@ export function Header() {
               <span className="md:hidden" title={link.label}>{link.icon}</span>
             </Link>
           ))}
-          {currentUser && initialUserLinks.map((link) => (
+          {currentUser && userLinks.map((link) => (
              <Link
               key={link.href}
               href={link.href}
@@ -168,7 +170,7 @@ export function Header() {
            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
            <Input
             type="search"
-            placeholder="Rechercher des articles..."
+            placeholder={t('searchPlaceholder')}
             className="pl-8 h-9 w-full sm:w-[200px] lg:w-[250px] rounded-md"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -196,26 +198,26 @@ export function Header() {
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Vous avez {userProfile.credits} crédits. Cliquez pour en acheter plus.</p>
+                      <p>{t('userMenu.creditsTooltip', { credits: userProfile.credits })}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               )}
               <Link href="/profile">
-                <Button variant="ghost" size="icon" aria-label="Profil">
+                <Button variant="ghost" size="icon" aria-label={t('userMenu.profileTooltip')}>
                   <UserIcon className="h-5 w-5" />
                 </Button>
               </Link>
               <Button variant="ghost" className="h-10 w-10 p-0 md:h-9 md:w-auto md:px-3" onClick={handleSignOut}>
                 <LogOut className="h-5 w-5 md:h-4 md:w-4 md:mr-2" />
-                <span className="hidden md:inline">Déconnexion</span>
+                <span className="hidden md:inline">{t('userMenu.signOut')}</span>
               </Button>
             </>
           ) : (
             <Link href="/auth/signin">
               <Button variant="ghost" size="sm">
                 <LogIn className="h-4 w-4 mr-1 md:mr-2" />
-                Connexion
+                {t('userMenu.signIn')}
               </Button>
             </Link>
           )}

@@ -1,1 +1,18 @@
-{}
+
+{
+  "Header": {
+    "searchPlaceholder": "Rechercher des articles...",
+    "nav": {
+      "browse": "Parcourir",
+      "sell": "Vendre",
+      "messages": "Messages",
+      "favorites": "Favoris"
+    },
+    "userMenu": {
+      "creditsTooltip": "Vous avez {credits} crédits. Cliquez pour en acheter plus.",
+      "profileTooltip": "Profil",
+      "signIn": "Connexion",
+      "signOut": "Déconnexion"
+    }
+  }
+}

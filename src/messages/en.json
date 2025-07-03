@@ -1,1 +1,18 @@
-{}
+
+{
+  "Header": {
+    "searchPlaceholder": "Search for items...",
+    "nav": {
+      "browse": "Browse",
+      "sell": "Sell",
+      "messages": "Messages",
+      "favorites": "Favorites"
+    },
+    "userMenu": {
+      "creditsTooltip": "You have {credits} credits. Click to buy more.",
+      "profileTooltip": "Profile",
+      "signIn": "Sign In",
+      "signOut": "Sign Out"
+    }
+  }
+}
