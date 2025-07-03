@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Sparkles, Loader2, Lightbulb, Check, RefreshCw } from 'lucide-react';
 import { suggestDescription, SuggestDescriptionInput } from '@/ai/flows/suggest-description-flow';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
 interface DescriptionSuggestionProps {
   itemDescription: string;
@@ -13,6 +14,7 @@ interface DescriptionSuggestionProps {
 }
 
 export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested }: DescriptionSuggestionProps) {
+  const t = useTranslations('DescriptionSuggestion');
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
 
   const handleSuggestDescription = useCallback(async () => {
     if (!itemDescription || itemDescription.trim().length < 20) {
-      setError('Veuillez fournir une description plus détaillée (au moins 20 caractères) pour obtenir une suggestion.');
+      setError(t('errorMinChars'));
       return;
     }
     setIsLoading(true);
@@ -33,23 +35,23 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
       if (result.suggestedDescription) {
         setSuggestion(result.suggestedDescription);
       } else {
-        setError('Impossible de générer une suggestion. Veuillez essayer de modifier votre description.');
+        setError(t('errorGeneric'));
       }
     } catch (e) {
       console.error('Erreur lors de la suggestion de description :', e);
-      setError('Impossible de suggérer une description. Veuillez réessayer.');
+      setError(t('errorGeneric'));
     } finally {
       setIsLoading(false);
     }
-  }, [itemDescription]);
+  }, [itemDescription, t]);
 
   const applySuggestion = () => {
     if (suggestion) {
       onDescriptionSuggested(suggestion);
       setSuggestion(null); // Clear suggestion after applying one
       toast({
-        title: "Description Appliquée",
-        description: "La description suggérée par l'IA a été appliquée.",
+        title: t('toastApplied'),
+        description: t('toastAppliedDesc'),
       });
     }
   };
@@ -59,7 +61,7 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center text-sm font-medium">
           <Sparkles className="mr-2 h-4 w-4 text-primary" />
-          Voulez-vous améliorer votre description ?
+          {t('title')}
         </div>
         <Button
           type="button"
@@ -73,20 +75,20 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
           ) : (
             <Lightbulb className="mr-2 h-4 w-4" />
           )}
-          Obtenir une suggestion
+          {t('button')}
         </Button>
       </div>
 
       {error && (
         <Alert variant="destructive" className="text-xs">
-          <AlertTitle>Erreur</AlertTitle>
+          <AlertTitle>{t('errorTitle')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {suggestion && (
         <div className="space-y-3">
-          <p className="text-xs text-muted-foreground">Suggestion de l'IA :</p>
+          <p className="text-xs text-muted-foreground">{t('suggestionPrefix')}</p>
           <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
             {suggestion}
           </div>
@@ -99,7 +101,7 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
               disabled={isLoading}
             >
               <RefreshCw className="mr-2 h-3 w-3" />
-              Suggérer une autre
+              {t('regenerate')}
             </Button>
             <Button
               type="button"
@@ -108,7 +110,7 @@ export function DescriptionSuggestion({ itemDescription, onDescriptionSuggested 
               onClick={applySuggestion}
             >
               <Check className="mr-2 h-4 w-4" />
-              Accepter la suggestion
+              {t('accept')}
             </Button>
           </div>
         </div>

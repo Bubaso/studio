@@ -30,5 +30,155 @@
     },
     "latestFindings": "Latest Finds on JëndJaay",
     "forYou": "Especially for You"
+  },
+  "SellPage": {
+    "title": "Sell Your Item",
+    "subtitle": "Easily list your used items and reach thousands of potential buyers."
+  },
+  "ListingForm": {
+    "labels": {
+      "description": "Description",
+      "name": "Item Name",
+      "category": "Category",
+      "condition": "Condition",
+      "price": "Price (XOF)",
+      "contactMethods": "Alternative Contact Methods",
+      "phoneNumber": "Phone Number",
+      "whatsappNumber": "WhatsApp Number",
+      "deliveryOptions": "Delivery Options",
+      "shippingPayer": "Who pays for delivery?",
+      "itemImages": "Item Images (Max {maxFiles})",
+      "video": "Item Video (Optional, Max {maxVideoSize}MB)"
+    },
+    "placeholders": {
+      "description": "Describe your item in detail...",
+      "name": "e.g., Vintage leather jacket",
+      "category": "Select a category",
+      "condition": "Select the item's condition",
+      "price": "e.g., 25000",
+      "phone": "e.g., 77 123 45 67",
+      "whatsapp": "e.g., +221 77 123 45 67"
+    },
+    "descriptions": {
+      "contactMethods": "Choose how buyers can contact you, in addition to internal messaging.",
+      "itemImages": "Upload up to {maxFiles} images (Max {maxFileSize}MB each). Formats: PNG, JPG, GIF, WEBP.",
+      "itemImagesEdit": " Existing images will be kept if you don't upload new ones.",
+      "video": "Listings with at least a short video sell faster."
+    },
+    "buttons": {
+      "saveChanges": "Save Changes",
+      "createListing": "Create Listing",
+      "sending": "Sending...",
+      "submitting": "Submitting listing..."
+    },
+    "dialogs": {
+      "insufficientCreditsTitle": "Insufficient Credits",
+      "insufficientCreditsDescription": "You have used all your free listings. To continue, you must purchase credits.",
+      "later": "Later",
+      "buyCredits": "Buy Credits"
+    },
+    "toasts": {
+      "error": "Error",
+      "authRequired": "You must be logged in to perform this action.",
+      "imageRequired": "Please upload at least one image for your listing.",
+      "uploadingImage": "Uploading image {current} of {total}...",
+      "uploadingVideo": "Uploading video...",
+      "savingListing": "Saving listing...",
+      "updateSuccessTitle": "Listing Updated!",
+      "updateSuccessDescription": "Your item \"{itemName}\" has been successfully modified.",
+      "createSuccessTitle": "Listing Created!",
+      "createSuccessDescription": "Your item \"{itemName}\" has been successfully listed for sale.",
+      "saveErrorTitle": "Save Error",
+      "createError": "Failed to create listing. {errorDetails}",
+      "updateError": "Failed to update listing. {errorDetails}",
+      "tryAgain": "Please try again."
+    },
+    "locationInfo": {
+      "title": "Why is a precise location important?",
+      "description": "Indicating an exact location allows buyers near you to find your item more easily, especially on the map. This increases trust and greatly facilitates delivery organization."
+    },
+    "mediaTips": {
+      "title": "Tips for great photos and videos",
+      "tip1": "Natural Light: Prefer daylight and avoid harsh shadows for true colors.",
+      "tip2": "Neutral Background: A simple background (a white wall, a plain sheet) will highlight your item.",
+      "tip3": "Multiple Angles: Photograph the item from all angles (front, back, sides, inside).",
+      "tip4": "Details and Flaws: Show close-ups of important details and don't hesitate to film any potential flaws for transparency.",
+      "tip5": "Video in Action: If possible, show the item being used in a short video."
+    },
+    "contactOptions": {
+      "phone": "Phone call",
+      "whatsapp": "WhatsApp"
+    },
+    "deliveryPayers": {
+      "seller": "Seller",
+      "buyer": "Buyer",
+      "shared": "Shared"
+    },
+    "errors": {
+      "imageLimit": "You have reached the limit of {maxFiles} images."
+    }
+  },
+  "DescriptionSuggestion": {
+    "title": "Want to improve your description?",
+    "button": "Get a suggestion",
+    "errorMinChars": "Please provide a more detailed description (at least 20 characters) to get a suggestion.",
+    "errorGeneric": "Could not generate a suggestion. Please try modifying your description.",
+    "errorTitle": "Error",
+    "suggestionPrefix": "AI Suggestion:",
+    "regenerate": "Suggest another",
+    "accept": "Accept suggestion",
+    "toastApplied": "Description Applied",
+    "toastAppliedDesc": "The AI-suggested description has been applied."
+  },
+  "TitleSuggestion": {
+    "title": "No inspiration for the title?",
+    "button": "Suggest titles",
+    "errorMinChars": "Please provide a more detailed description (at least 20 characters) to get good suggestions.",
+    "errorGeneric": "Could not suggest titles. Please try again.",
+    "errorTitle": "Error",
+    "suggestionPrefix": "Click a title to use it:",
+    "toastApplied": "Title Applied",
+    "toastAppliedDesc": "The listing title has been updated."
+  },
+  "PriceSuggestion": {
+    "title": "AI Price Suggestion",
+    "description": "Get a price suggestion and a realistic range (in {currency}) based on your item's description.",
+    "descriptionLabel": "Item description (from above)",
+    "descriptionPlaceholder": "Please fill in the item description in the main form.",
+    "button": "Suggest a price range",
+    "errorNoDescription": "Please provide an item description first.",
+    "errorGeneric": "Could not suggest a price. Please try again.",
+    "errorTitle": "Error",
+    "suggestedRange": "Suggested Range: {low} - {high}",
+    "optimalPrice": "Optimal: {price}",
+    "applyPrice": "Apply this price"
+  },
+  "CategorySuggestion": {
+    "analyzing": "AI is analyzing the description...",
+    "errorGeneric": "Could not suggest a category at the moment.",
+    "suggestionPrefix": "AI Suggestion:",
+    "confidence": "(Confidence: {score}%)",
+    "button": "Choose this category",
+    "toastApplied": "Category Applied",
+    "toastAppliedDesc": "The category \"{category}\" has been selected."
+  },
+  "LocationPicker": {
+    "label": "Item Location",
+    "placeholder": "Enter an address or city",
+    "description": "Select an address from the list or drag the pin on the map.",
+    "loading": "Loading map...",
+    "errorTitle": "Map Loading Error",
+    "errorDescription": "Could not load the location picker. Please check your internet connection and Google Maps API configuration.",
+    "apiErrorTitle": "Google Maps API Unauthorized",
+    "apiErrorDesc1": "Your Google Maps API key is not authorized to use the \"Places API\" service.",
+    "apiErrorDesc2": "Action Required:",
+    "apiErrorStep1": "Go to your",
+    "apiErrorStep1Link": "Google Cloud credentials page",
+    "apiErrorStep2": "Select the API key you are using for this application.",
+    "apiErrorStep3": "In the \"API restrictions\" section, ensure that \"Places API\" is selected in the list of allowed APIs.",
+    "apiErrorStep4": "Save your changes.",
+    "legacyApiErrorTitle": "Google Maps API (Legacy) not activated",
+    "legacyApiErrorDesc": "Could not load the location picker. The \"Places\" API (legacy) is not enabled for your project.",
+    "legacyApiErrorAction": "Action Required: Ensure that the \"Maps JavaScript API\" and \"Places API\" are enabled in your Google Cloud project."
   }
 }

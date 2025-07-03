@@ -9,6 +9,7 @@ import { Wand2, Loader2, CheckCircle } from 'lucide-react';
 import { suggestPrice, SuggestPriceInput } from '@/ai/flows/suggest-price';
 import { Label } from './ui/label';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { useTranslations } from 'next-intl';
 
 interface PriceSuggestionProps {
   itemDescription: string;
@@ -16,6 +17,7 @@ interface PriceSuggestionProps {
 }
 
 export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSuggestionProps) {
+  const t = useTranslations('PriceSuggestion');
   const [priceRange, setPriceRange] = useState<{ low: number; optimal: number; high: number; currency: string } | null>(null);
   const [reasoning, setReasoning] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
 
   const handleSuggestPrice = async () => {
     if (!itemDescription.trim()) {
-      setError('Veuillez d\'abord fournir une description de l\'article.');
+      setError(t('errorNoDescription'));
       return;
     }
     setIsLoading(true);
@@ -47,7 +49,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
       setReasoning(result.reasoning);
     } catch (e) {
       console.error('Erreur lors de la suggestion de prix:', e);
-      setError('Impossible de suggérer un prix. Veuillez réessayer.');
+      setError(t('errorGeneric'));
     } finally {
       setIsLoading(false);
     }
@@ -68,18 +70,18 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
       <CardHeader>
         <CardTitle className="flex items-center font-headline">
           <Wand2 className="mr-2 h-5 w-5 text-primary" />
-          Suggestion de Prix par IA
+          {t('title')}
         </CardTitle>
         <CardDescription>
-          Obtenez une suggestion de prix et une fourchette réaliste (en {priceRange?.currency || 'FCFA'}) basée sur la description de votre article.
+          {t('description', { currency: priceRange?.currency || 'FCFA' })}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-            <Label htmlFor="item-description-preview">Description de l'article (ci-dessus)</Label>
+            <Label htmlFor="item-description-preview">{t('descriptionLabel')}</Label>
             <Textarea
                 id="item-description-preview"
-                value={itemDescription || "Veuillez remplir la description de l'article dans le formulaire principal."}
+                value={itemDescription || t('descriptionPlaceholder')}
                 readOnly
                 rows={3}
                 className="bg-muted"
@@ -93,23 +95,23 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
           ) : (
             <Wand2 className="mr-2 h-4 w-4" />
           )}
-          Suggérer une fourchette de prix
+          {t('button')}
         </Button>
         {error && (
           <Alert variant="destructive">
-            <AlertTitle>Erreur</AlertTitle>
+            <AlertTitle>{t('errorTitle')}</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         {priceRange && reasoning && (
           <Alert variant="default" className="bg-accent/10 border-accent/50">
             <AlertTitle className="text-accent font-semibold">
-              Fourchette Suggérée : {formatCurrency(priceRange.low, priceRange.currency)} - {formatCurrency(priceRange.high, priceRange.currency)}
+              {t('suggestedRange', { low: formatCurrency(priceRange.low, priceRange.currency), high: formatCurrency(priceRange.high, priceRange.currency) })}
             </AlertTitle>
             <AlertDescription className="text-accent/90 mb-2">{reasoning}</AlertDescription>
             <div className="flex flex-col sm:flex-row justify-between items-center mt-2 pt-2 border-t border-accent/20">
               <p className="text-sm text-accent font-medium">
-                Optimal : {formatCurrency(priceRange.optimal, priceRange.currency)}
+                {t('optimalPrice', { price: formatCurrency(priceRange.optimal, priceRange.currency) })}
               </p>
               <Button
                 type="button"
@@ -118,7 +120,7 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
                 onClick={handleApplyOptimalPrice}
                 className="mt-2 sm:mt-0 border-accent text-accent hover:bg-accent/20 hover:text-accent"
               >
-                <CheckCircle className="mr-2 h-4 w-4" /> Appliquer ce prix
+                <CheckCircle className="mr-2 h-4 w-4" /> {t('applyPrice')}
               </Button>
             </div>
           </Alert>

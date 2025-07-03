@@ -30,5 +30,155 @@
     },
     "latestFindings": "Dernières trouvailles sur JëndJaay",
     "forYou": "Spécialement pour vous"
+  },
+  "SellPage": {
+    "title": "Vendez votre article",
+    "subtitle": "Listez facilement vos articles d'occasion et touchez des milliers d'acheteurs potentiels."
+  },
+  "ListingForm": {
+    "labels": {
+      "description": "Description",
+      "name": "Nom de l'article",
+      "category": "Catégorie",
+      "condition": "État",
+      "price": "Prix (FCFA)",
+      "contactMethods": "Méthodes de contact alternatives",
+      "phoneNumber": "Numéro de téléphone",
+      "whatsappNumber": "Numéro WhatsApp",
+      "deliveryOptions": "Options de livraison",
+      "shippingPayer": "Qui paie la livraison ?",
+      "itemImages": "Images de l'article (Max {maxFiles})",
+      "video": "Vidéo de l'article (Optionnel, Max {maxVideoSize}Mo)"
+    },
+    "placeholders": {
+      "description": "Décrivez votre article en détail...",
+      "name": "ex: Veste en cuir vintage",
+      "category": "Sélectionnez une catégorie",
+      "condition": "Sélectionnez l'état de l'article",
+      "price": "ex: 25000",
+      "phone": "ex: 77 123 45 67",
+      "whatsapp": "ex: +221 77 123 45 67"
+    },
+    "descriptions": {
+      "contactMethods": "Choisissez comment les acheteurs peuvent vous contacter, en plus de la messagerie interne.",
+      "itemImages": "Téléchargez jusqu'à {maxFiles} images (Max {maxFileSize}Mo chacune). Formats: PNG, JPG, GIF, WEBP.",
+      "itemImagesEdit": " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles.",
+      "video": "Les annonces avec au moins une courte vidéo se vendent plus rapidement."
+    },
+    "buttons": {
+      "saveChanges": "Sauvegarder les modifications",
+      "createListing": "Créer l'annonce",
+      "sending": "Envoi en cours...",
+      "submitting": "Soumission de l'annonce..."
+    },
+    "dialogs": {
+      "insufficientCreditsTitle": "Crédits Insuffisants",
+      "insufficientCreditsDescription": "Vous avez utilisé toutes vos annonces gratuites. Pour continuer, vous devez acheter des crédits.",
+      "later": "Plus tard",
+      "buyCredits": "Acheter des crédits"
+    },
+    "toasts": {
+      "error": "Erreur",
+      "authRequired": "Vous devez être connecté pour effectuer cette action.",
+      "imageRequired": "Veuillez télécharger au moins une image pour votre annonce.",
+      "uploadingImage": "Téléversement de l'image {current} sur {total}...",
+      "uploadingVideo": "Téléversement de la vidéo...",
+      "savingListing": "Sauvegarde de l'annonce...",
+      "updateSuccessTitle": "Annonce mise à jour !",
+      "updateSuccessDescription": "Votre article \"{itemName}\" a été modifié avec succès.",
+      "createSuccessTitle": "Annonce créée !",
+      "createSuccessDescription": "Votre article \"{itemName}\" a été mis en vente avec succès.",
+      "saveErrorTitle": "Erreur de sauvegarde",
+      "createError": "Échec de la création de l'annonce. {errorDetails}",
+      "updateError": "Échec de la mise à jour de l'annonce. {errorDetails}",
+      "tryAgain": "Veuillez réessayer."
+    },
+    "locationInfo": {
+      "title": "Pourquoi un lieu précis est-il important ?",
+      "description": "Indiquer un lieu exact permet aux acheteurs proches de vous de trouver votre article plus facilement, notamment sur la carte. Cela augmente la confiance et facilite grandement l'organisation de la livraison."
+    },
+    "mediaTips": {
+      "title": "Conseils pour de superbes photos et vidéos",
+      "tip1": "Lumière Naturelle : Privilégiez la lumière du jour et évitez les ombres portées pour des couleurs fidèles.",
+      "tip2": "Fond Neutre : Un arrière-plan simple (un mur blanc, un drap uni) mettra votre article en valeur.",
+      "tip3": "Plusieurs Angles : Photographiez l'article sous tous ses angles (avant, arrière, côtés, intérieur).",
+      "tip4": "Détails et Défauts : Montrez les gros plans des détails importants et n'hésitez pas à filmer les éventuels défauts pour plus de transparence.",
+      "tip5": "Vidéo en Action : Si possible, montrez l'article en cours d'utilisation dans une courte vidéo."
+    },
+    "contactOptions": {
+      "phone": "Appel téléphonique",
+      "whatsapp": "WhatsApp"
+    },
+    "deliveryPayers": {
+      "seller": "Vendeur",
+      "buyer": "Acheteur",
+      "shared": "Partagé"
+    },
+    "errors": {
+      "imageLimit": "Vous avez atteint la limite de {maxFiles} images."
+    }
+  },
+  "DescriptionSuggestion": {
+    "title": "Voulez-vous améliorer votre description ?",
+    "button": "Obtenir une suggestion",
+    "errorMinChars": "Veuillez fournir une description plus détaillée (au moins 20 caractères) pour obtenir une suggestion.",
+    "errorGeneric": "Impossible de générer une suggestion. Veuillez essayer de modifier votre description.",
+    "errorTitle": "Erreur",
+    "suggestionPrefix": "Suggestion de l'IA :",
+    "regenerate": "Suggérer une autre",
+    "accept": "Accepter la suggestion",
+    "toastApplied": "Description Appliquée",
+    "toastAppliedDesc": "La description suggérée par l'IA a été appliquée."
+  },
+  "TitleSuggestion": {
+    "title": "Pas d'inspiration pour le titre ?",
+    "button": "Suggérer des titres",
+    "errorMinChars": "Veuillez fournir une description plus détaillée (au moins 20 caractères) pour obtenir de bonnes suggestions.",
+    "errorGeneric": "Impossible de suggérer des titres. Veuillez réessayer.",
+    "errorTitle": "Erreur",
+    "suggestionPrefix": "Cliquez sur un titre pour l'utiliser :",
+    "toastApplied": "Titre Appliqué",
+    "toastAppliedDesc": "Le titre de l'annonce a été mis à jour."
+  },
+  "PriceSuggestion": {
+    "title": "Suggestion de Prix par IA",
+    "description": "Obtenez une suggestion de prix et une fourchette réaliste (en {currency}) basée sur la description de votre article.",
+    "descriptionLabel": "Description de l'article (ci-dessus)",
+    "descriptionPlaceholder": "Veuillez remplir la description de l'article dans le formulaire principal.",
+    "button": "Suggérer une fourchette de prix",
+    "errorNoDescription": "Veuillez d'abord fournir une description de l'article.",
+    "errorGeneric": "Impossible de suggérer un prix. Veuillez réessayer.",
+    "errorTitle": "Erreur",
+    "suggestedRange": "Fourchette Suggérée : {low} - {high}",
+    "optimalPrice": "Optimal : {price}",
+    "applyPrice": "Appliquer ce prix"
+  },
+  "CategorySuggestion": {
+    "analyzing": "L'IA analyse la description...",
+    "errorGeneric": "Impossible de suggérer une catégorie pour le moment.",
+    "suggestionPrefix": "Suggestion IA :",
+    "confidence": "(Fiabilité : {score}%)",
+    "button": "Choisir cette catégorie",
+    "toastApplied": "Catégorie Appliquée",
+    "toastAppliedDesc": "La catégorie \"{category}\" a été sélectionnée."
+  },
+  "LocationPicker": {
+    "label": "Lieu de l'article",
+    "placeholder": "Saisissez une adresse ou une ville",
+    "description": "Sélectionnez une adresse dans la liste ou déplacez l'épingle sur la carte.",
+    "loading": "Chargement de la carte...",
+    "errorTitle": "Erreur de chargement de la carte",
+    "errorDescription": "Impossible de charger le sélecteur de lieu. Veuillez vérifier votre connexion internet et la configuration de l'API Google Maps.",
+    "apiErrorTitle": "API Google Maps non autorisée",
+    "apiErrorDesc1": "Votre clé API Google Maps n'est pas autorisée à utiliser le service \"Places API\".",
+    "apiErrorDesc2": "Action requise :",
+    "apiErrorStep1": "Allez à votre",
+    "apiErrorStep1Link": "page d'identifiants Google Cloud",
+    "apiErrorStep2": "Sélectionnez la clé API que vous utilisez pour cette application.",
+    "apiErrorStep3": "Dans la section \"Restrictions d'API\", assurez-vous que \"Places API\" est bien sélectionnée dans la liste des API autorisées.",
+    "apiErrorStep4": "Enregistrez vos modifications.",
+    "legacyApiErrorTitle": "API Google Maps (Legacy) non activée",
+    "legacyApiErrorDesc": "Impossible de charger le sélecteur de lieu. L'API \"Places\" (legacy) n'est pas activée pour votre projet.",
+    "legacyApiErrorAction": "Action requise : Assurez-vous que les API \"Maps JavaScript API\" et \"Places API\" sont activées dans votre projet Google Cloud."
   }
 }

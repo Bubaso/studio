@@ -30,5 +30,155 @@
     },
     "latestFindings": "JëndJaay'deki Son Bulunanlar",
     "forYou": "Size Özel"
+  },
+  "SellPage": {
+    "title": "Ürününüzü Satın",
+    "subtitle": "Kullanılmış ürünlerinizi kolayca listeleyin ve binlerce potansiyel alıcıya ulaşın."
+  },
+  "ListingForm": {
+    "labels": {
+      "description": "Açıklama",
+      "name": "Ürün Adı",
+      "category": "Kategori",
+      "condition": "Durum",
+      "price": "Fiyat (XOF)",
+      "contactMethods": "Alternatif İletişim Yöntemleri",
+      "phoneNumber": "Telefon Numarası",
+      "whatsappNumber": "WhatsApp Numarası",
+      "deliveryOptions": "Teslimat Seçenekleri",
+      "shippingPayer": "Teslimatı kim öder?",
+      "itemImages": "Ürün Resimleri (En fazla {maxFiles})",
+      "video": "Ürün Videosu (İsteğe bağlı, En fazla {maxVideoSize}MB)"
+    },
+    "placeholders": {
+      "description": "Ürününüzü detaylı olarak tanımlayın...",
+      "name": "ör: Vintage deri ceket",
+      "category": "Bir kategori seçin",
+      "condition": "Ürünün durumunu seçin",
+      "price": "ör: 25000",
+      "phone": "ör: 77 123 45 67",
+      "whatsapp": "ör: +221 77 123 45 67"
+    },
+    "descriptions": {
+      "contactMethods": "Alıcıların dahili mesajlaşmaya ek olarak sizinle nasıl iletişim kurabileceğini seçin.",
+      "itemImages": "{maxFiles} adede kadar resim yükleyin (Her biri en fazla {maxFileSize}MB). Formatlar: PNG, JPG, GIF, WEBP.",
+      "itemImagesEdit": " Yeni resim yüklemezseniz mevcut resimler korunacaktır.",
+      "video": "En azından kısa bir videosu olan ilanlar daha hızlı satılır."
+    },
+    "buttons": {
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createListing": "İlan Oluştur",
+      "sending": "Gönderiliyor...",
+      "submitting": "İlan gönderiliyor..."
+    },
+    "dialogs": {
+      "insufficientCreditsTitle": "Yetersiz Kredi",
+      "insufficientCreditsDescription": "Tüm ücretsiz ilanlarınızı kullandınız. Devam etmek için kredi satın almalısınız.",
+      "later": "Daha Sonra",
+      "buyCredits": "Kredi Satın Al"
+    },
+    "toasts": {
+      "error": "Hata",
+      "authRequired": "Bu işlemi yapmak için giriş yapmalısınız.",
+      "imageRequired": "Lütfen ilanınız için en az bir resim yükleyin.",
+      "uploadingImage": "Resim yükleniyor {current}/{total}...",
+      "uploadingVideo": "Video yükleniyor...",
+      "savingListing": "İlan kaydediliyor...",
+      "updateSuccessTitle": "İlan Güncellendi!",
+      "updateSuccessDescription": "\"{itemName}\" adlı ürününüz başarıyla değiştirildi.",
+      "createSuccessTitle": "İlan Oluşturuldu!",
+      "createSuccessDescription": "\"{itemName}\" adlı ürününüz başarıyla satışa çıkarıldı.",
+      "saveErrorTitle": "Kaydetme Hatası",
+      "createError": "İlan oluşturulamadı. {errorDetails}",
+      "updateError": "İlan güncellenemedi. {errorDetails}",
+      "tryAgain": "Lütfen tekrar deneyin."
+    },
+    "locationInfo": {
+      "title": "Doğru bir konum neden önemlidir?",
+      "description": "Doğru bir konum belirtmek, yakınınızdaki alıcıların ürününüzü, özellikle harita üzerinde daha kolay bulmasını sağlar. Bu, güveni artırır ve teslimat organizasyonunu büyük ölçüde kolaylaştırır."
+    },
+    "mediaTips": {
+      "title": "Harika fotoğraflar ve videolar için ipuçları",
+      "tip1": "Doğal Işık: Gerçek renkler için gün ışığını tercih edin ve sert gölgelerden kaçının.",
+      "tip2": "Nötr Arka Plan: Basit bir arka plan (beyaz bir duvar, düz bir çarşaf) ürününüzü öne çıkaracaktır.",
+      "tip3": "Çoklu Açılar: Ürünü tüm açılardan (ön, arka, yanlar, iç) fotoğraflayın.",
+      "tip4": "Detaylar ve Kusurlar: Önemli detayların yakın çekimlerini gösterin ve şeffaflık için olası kusurları filme almaktan çekinmeyin.",
+      "tip5": "Eylem Halinde Video: Mümkünse, ürünü kısa bir videoda kullanılırken gösterin."
+    },
+    "contactOptions": {
+      "phone": "Telefon araması",
+      "whatsapp": "WhatsApp"
+    },
+    "deliveryPayers": {
+      "seller": "Satıcı",
+      "buyer": "Alıcı",
+      "shared": "Paylaşımlı"
+    },
+    "errors": {
+      "imageLimit": "{maxFiles} resim sınırına ulaştınız."
+    }
+  },
+  "DescriptionSuggestion": {
+    "title": "Açıklamanızı geliştirmek ister misiniz?",
+    "button": "Öneri al",
+    "errorMinChars": "Bir öneri almak için lütfen daha ayrıntılı bir açıklama (en az 20 karakter) girin.",
+    "errorGeneric": "Bir öneri oluşturulamadı. Lütfen açıklamanızı değiştirmeyi deneyin.",
+    "errorTitle": "Hata",
+    "suggestionPrefix": "Yapay Zeka Önerisi:",
+    "regenerate": "Başka bir öneri",
+    "accept": "Öneriyi kabul et",
+    "toastApplied": "Açıklama Uygulandı",
+    "toastAppliedDesc": "Yapay zeka tarafından önerilen açıklama uygulandı."
+  },
+  "TitleSuggestion": {
+    "title": "Başlık için ilhamınız mı yok?",
+    "button": "Başlık önerileri al",
+    "errorMinChars": "İyi öneriler almak için lütfen daha ayrıntılı bir açıklama (en az 20 karakter) girin.",
+    "errorGeneric": "Başlık önerilemedi. Lütfen tekrar deneyin.",
+    "errorTitle": "Hata",
+    "suggestionPrefix": "Kullanmak için bir başlığa tıklayın:",
+    "toastApplied": "Başlık Uygulandı",
+    "toastAppliedDesc": "İlan başlığı güncellendi."
+  },
+  "PriceSuggestion": {
+    "title": "Yapay Zeka Fiyat Önerisi",
+    "description": "Ürün açıklamanıza göre bir fiyat önerisi ve gerçekçi bir aralık ({currency} cinsinden) alın.",
+    "descriptionLabel": "Ürün açıklaması (yukarıdan)",
+    "descriptionPlaceholder": "Lütfen ana formdaki ürün açıklamasını doldurun.",
+    "button": "Bir fiyat aralığı öner",
+    "errorNoDescription": "Lütfen önce bir ürün açıklaması girin.",
+    "errorGeneric": "Bir fiyat önerilemedi. Lütfen tekrar deneyin.",
+    "errorTitle": "Hata",
+    "suggestedRange": "Önerilen Aralık: {low} - {high}",
+    "optimalPrice": "Optimal: {price}",
+    "applyPrice": "Bu fiyatı uygula"
+  },
+  "CategorySuggestion": {
+    "analyzing": "Yapay zeka açıklamayı analiz ediyor...",
+    "errorGeneric": "Şu anda bir kategori önerilemiyor.",
+    "suggestionPrefix": "Yapay Zeka Önerisi:",
+    "confidence": "(Güvenilirlik: %{score})",
+    "button": "Bu kategoriyi seç",
+    "toastApplied": "Kategori Uygulandı",
+    "toastAppliedDesc": "\"{category}\" kategorisi seçildi."
+  },
+  "LocationPicker": {
+    "label": "Ürün Konumu",
+    "placeholder": "Bir adres veya şehir girin",
+    "description": "Listeden bir adres seçin veya raptiyeyi haritada sürükleyin.",
+    "loading": "Harita yükleniyor...",
+    "errorTitle": "Harita Yükleme Hatası",
+    "errorDescription": "Konum seçici yüklenemedi. Lütfen internet bağlantınızı ve Google Haritalar API yapılandırmanızı kontrol edin.",
+    "apiErrorTitle": "Google Haritalar API'si Yetkisiz",
+    "apiErrorDesc1": "Google Haritalar API anahtarınız \"Places API\" hizmetini kullanmak için yetkilendirilmemiş.",
+    "apiErrorDesc2": "Gerekli Eylem:",
+    "apiErrorStep1": "Şuraya gidin:",
+    "apiErrorStep1Link": "Google Cloud kimlik bilgileri sayfası",
+    "apiErrorStep2": "Bu uygulama için kullandığınız API anahtarını seçin.",
+    "apiErrorStep3": "\"API kısıtlamaları\" bölümünde, \"Places API\"nin izin verilen API'ler listesinde seçili olduğundan emin olun.",
+    "apiErrorStep4": "Değişikliklerinizi kaydedin.",
+    "legacyApiErrorTitle": "Google Haritalar API'si (Eski) etkinleştirilmemiş",
+    "legacyApiErrorDesc": "Konum seçici yüklenemedi. Projeniz için \"Places\" API (eski) etkinleştirilmemiş.",
+    "legacyApiErrorAction": "Gerekli Eylem: Google Cloud projenizde \"Maps JavaScript API\" ve \"Places API\"nin etkinleştirildiğinden emin olun."
   }
 }

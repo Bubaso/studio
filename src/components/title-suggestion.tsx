@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Sparkles, Loader2, Lightbulb, Check } from 'lucide-react';
 import { suggestTitle, SuggestTitleInput } from '@/ai/flows/suggest-title-flow';
+import { useTranslations } from 'next-intl';
 
 interface TitleSuggestionProps {
   itemDescription: string;
@@ -13,13 +14,14 @@ interface TitleSuggestionProps {
 }
 
 export function TitleSuggestion({ itemDescription, onTitleSuggested }: TitleSuggestionProps) {
+  const t = useTranslations('TitleSuggestion');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSuggestTitles = async () => {
     if (!itemDescription || itemDescription.trim().length < 20) {
-      setError('Veuillez fournir une description plus détaillée (au moins 20 caractères) pour obtenir de bonnes suggestions.');
+      setError(t('errorMinChars'));
       return;
     }
     setIsLoading(true);
@@ -32,7 +34,7 @@ export function TitleSuggestion({ itemDescription, onTitleSuggested }: TitleSugg
       setSuggestions(result.suggestedTitles);
     } catch (e) {
       console.error('Erreur lors de la suggestion de titres :', e);
-      setError('Impossible de suggérer des titres. Veuillez réessayer.');
+      setError(t('errorGeneric'));
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +50,7 @@ export function TitleSuggestion({ itemDescription, onTitleSuggested }: TitleSugg
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center text-sm font-medium">
           <Sparkles className="mr-2 h-4 w-4 text-primary" />
-          Pas d'inspiration pour le titre ?
+          {t('title')}
         </div>
         <Button
           type="button"
@@ -62,20 +64,20 @@ export function TitleSuggestion({ itemDescription, onTitleSuggested }: TitleSugg
           ) : (
             <Lightbulb className="mr-2 h-4 w-4" />
           )}
-          Suggérer des titres
+          {t('button')}
         </Button>
       </div>
 
       {error && (
         <Alert variant="destructive" className="text-xs">
-          <AlertTitle>Erreur</AlertTitle>
+          <AlertTitle>{t('errorTitle')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {suggestions.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Cliquez sur un titre pour l'utiliser :</p>
+          <p className="text-xs text-muted-foreground">{t('suggestionPrefix')}</p>
           <ul className="space-y-2">
             {suggestions.map((title, index) => (
               <li key={index}>

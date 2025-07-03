@@ -8,6 +8,7 @@ import { Skeleton } from './ui/skeleton';
 import { Loader2 } from 'lucide-react';
 import { FormDescription } from './ui/form';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { useTranslations } from 'next-intl';
 
 const containerStyle = {
   width: '100%',
@@ -29,9 +30,11 @@ interface LocationPickerProps {
 }
 
 export function LocationPicker({ initialPosition, onLocationSelect }: LocationPickerProps) {
+  const t = useTranslations('LocationPicker');
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
+    language: useTranslations.locale,
   });
 
   const [markerPosition, setMarkerPosition] = useState<{ lat: number, lng: number } | null>(initialPosition);
@@ -89,32 +92,32 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
   }, [onLocationSelect]);
 
   if (loadError) {
-    let title = "Erreur de chargement de la carte";
-    let message = <p>Impossible de charger le sélecteur de lieu. Veuillez vérifier votre connexion internet et la configuration de l'API Google Maps.</p>;
+    let title = t('errorTitle');
+    let message: React.ReactNode = <p>{t('errorDescription')}</p>;
 
     if (loadError.message.includes("ApiTargetBlockedMapError")) {
-        title = "API Google Maps non autorisée";
+        title = t('apiErrorTitle');
         message = (
             <>
-                <p>Votre clé API Google Maps n'est pas autorisée à utiliser le service "Places API".</p>
+                <p>{t('apiErrorDesc1')}</p>
                 <p className="mt-2 text-xs">
-                    <strong>Action requise :</strong>
+                    <strong>{t('apiErrorDesc2')}</strong>
                 </p>
                 <ol className="list-decimal list-inside text-xs mt-1 space-y-1">
-                    <li>Allez à votre <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener noreferrer" className="underline text-primary">page d'identifiants Google Cloud</a>.</li>
-                    <li>Sélectionnez la clé API que vous utilisez pour cette application.</li>
-                    <li>Dans la section "Restrictions d'API", assurez-vous que "Places API" est bien sélectionnée dans la liste des API autorisées.</li>
-                    <li>Enregistrez vos modifications.</li>
+                    <li>{t('apiErrorStep1')} <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener noreferrer" className="underline text-primary">{t('apiErrorStep1Link')}</a>.</li>
+                    <li>{t('apiErrorStep2')}</li>
+                    <li>{t('apiErrorStep3')}</li>
+                    <li>{t('apiErrorStep4')}</li>
                 </ol>
             </>
         );
     } else if (loadError.message.includes("LegacyApiNotActivatedMapError")) {
-        title = "API Google Maps (Legacy) non activée";
+        title = t('legacyApiErrorTitle');
         message = (
              <>
-                <p>Impossible de charger le sélecteur de lieu. L'API "Places" (legacy) n'est pas activée pour votre projet.</p>
+                <p>{t('legacyApiErrorDesc')}</p>
                 <p className="mt-2 text-xs">
-                    <strong>Action requise :</strong> Assurez-vous que les API "Maps JavaScript API" et "Places API" sont activées dans votre projet Google Cloud.
+                    <strong>{t('legacyApiErrorAction')}</strong>
                 </p>
             </>
         )
@@ -139,7 +142,7 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
             <Skeleton className="h-[300px] w-full" />
             <div className='flex justify-center items-center gap-2 p-4 text-muted-foreground'>
                 <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>Chargement de la carte...</span>
+                <span>{t('loading')}</span>
             </div>
         </div>
     );
@@ -148,7 +151,7 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
   return (
     <div className="space-y-4">
         <div>
-            <Label htmlFor="location-search">Lieu de l'article</Label>
+            <Label htmlFor="location-search">{t('label')}</Label>
             <Autocomplete
                 onLoad={onLoadAutocomplete}
                 onPlaceChanged={onPlaceChanged}
@@ -156,13 +159,13 @@ export function LocationPicker({ initialPosition, onLocationSelect }: LocationPi
                 <Input
                     id="location-search"
                     type="text"
-                    placeholder="Saisissez une adresse ou une ville"
+                    placeholder={t('placeholder')}
                     ref={inputRef}
                     defaultValue={initialPosition ? '' : ''} // This might need linking to a form value if needed
                 />
             </Autocomplete>
             <FormDescription className="mt-2">
-                Sélectionnez une adresse dans la liste ou déplacez l'épingle sur la carte.
+                {t('description')}
             </FormDescription>
         </div>
         <GoogleMap

@@ -8,6 +8,7 @@ import { suggestItemCategory, SuggestItemCategoryInput } from '@/ai/flows/sugges
 import type { ItemCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface CategorySuggestionProps {
   itemDescription: string;
@@ -16,6 +17,7 @@ interface CategorySuggestionProps {
 }
 
 export function CategorySuggestion({ itemDescription, onCategorySuggested, currentCategory }: CategorySuggestionProps) {
+  const t = useTranslations('CategorySuggestion');
   const [suggestion, setSuggestion] = useState<{ category: ItemCategory; confidence: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function CategorySuggestion({ itemDescription, onCategorySuggested, curre
           }
         } catch (e: any) {
           console.error('Erreur lors de la suggestion de catégorie :', e);
-          setError('Impossible de suggérer une catégorie pour le moment.');
+          setError(t('errorGeneric'));
           setSuggestion(null);
         } finally {
           setIsLoading(false);
@@ -64,7 +66,7 @@ export function CategorySuggestion({ itemDescription, onCategorySuggested, curre
       clearTimeout(handler);
       setIsLoading(false);
     };
-  }, [itemDescription, currentCategory, suggestionApplied]);
+  }, [itemDescription, currentCategory, suggestionApplied, t]);
 
   const applySuggestion = useCallback(() => {
     if (suggestion) {
@@ -72,17 +74,17 @@ export function CategorySuggestion({ itemDescription, onCategorySuggested, curre
       setSuggestion(null);
       setSuggestionApplied(true);
       toast({
-        title: "Catégorie Appliquée",
-        description: `La catégorie "${suggestion.category}" a été sélectionnée.`,
+        title: t('toastApplied'),
+        description: t('toastAppliedDesc', { category: suggestion.category }),
       });
     }
-  }, [suggestion, onCategorySuggested, toast]);
+  }, [suggestion, onCategorySuggested, toast, t]);
 
   if (isLoading) {
     return (
       <div className="mt-2 flex h-10 items-center justify-start gap-2 rounded-md bg-muted/50 px-3 text-xs text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        <span>L'IA analyse la description...</span>
+        <span>{t('analyzing')}</span>
       </div>
     );
   }
@@ -101,10 +103,10 @@ export function CategorySuggestion({ itemDescription, onCategorySuggested, curre
         <div className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 flex-shrink-0 text-primary" />
             <p className="text-sm">
-                <span className="text-muted-foreground">Suggestion IA :</span>{' '}
+                <span className="text-muted-foreground">{t('suggestionPrefix')}</span>{' '}
                 <strong className="font-bold text-primary">{suggestion.category}</strong>
                 <span className="ml-1.5 text-xs text-muted-foreground">
-                    (Fiabilité : {Math.round(suggestion.confidence * 100)}%)
+                    {t('confidence', { score: Math.round(suggestion.confidence * 100) })}
                 </span>
             </p>
         </div>
@@ -115,7 +117,7 @@ export function CategorySuggestion({ itemDescription, onCategorySuggested, curre
             className="w-full flex-shrink-0 sm:w-auto"
         >
             <Check className="mr-2 h-4 w-4" />
-            Choisir cette catégorie
+            {t('button')}
         </Button>
       </div>
     );
