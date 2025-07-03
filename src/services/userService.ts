@@ -245,14 +245,21 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error?: s
     });
 
     if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || "Une erreur s'est produite lors de la suppression du compte.");
+      // Try to parse the error from the server, but handle cases where it's not valid JSON
+      try {
+        const data = await response.json();
+        return { success: false, error: data.error || "Une erreur interne s'est produite lors de la suppression du compte." };
+      } catch (jsonError) {
+        // This happens if the server returns a non-JSON error page (e.g., HTML for a 500 error)
+        return { success: false, error: "Erreur de communication avec le serveur. La réponse n'est pas valide." };
+      }
     }
     
     return { success: true };
 
-  } catch (error: any) {
-    console.error("Error calling delete user account API:", error);
-    return { success: false, error: error.message };
+  } catch (networkError: any) {
+    // This catches errors from fetch() itself, like network-down issues.
+    console.error("Error calling delete user account API (network/fetch failed):", networkError);
+    return { success: false, error: networkError.message };
   }
 }
