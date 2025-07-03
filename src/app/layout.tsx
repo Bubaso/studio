@@ -23,14 +23,12 @@ export const metadata = {
 };
 
 export default function RootLayout({
-  children,
-  params: {locale}
+  children
 }: {
   children: React.ReactNode;
-  params: {locale: string};
 }) {
   return (
-    <html lang={locale} className={`${belleza.variable} ${alegreya.variable}`}>
+    <html className={`${belleza.variable} ${alegreya.variable}`}>
       <body className="font-body">
           {children}
           <Toaster />
