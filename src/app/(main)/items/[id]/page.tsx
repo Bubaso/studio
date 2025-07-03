@@ -6,7 +6,7 @@ import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/type
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront, Handshake, Wallet } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront, Handshake, Wallet, ShieldCheck } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -21,6 +21,7 @@ import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
 import { SubscribeButton } from '@/components/SubscribeButton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 export const dynamic = 'force-dynamic';
 
@@ -274,6 +275,19 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <ReportItemButton itemId={itemId} sellerId={item.sellerId} />
             </div>
           )}
+
+          <Alert variant="default" className="mt-6 bg-yellow-50 border-yellow-300 text-yellow-900 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300">
+            <ShieldCheck className="h-5 w-5 !text-yellow-800 dark:!text-yellow-300" />
+            <AlertTitle className="font-bold">Conseils de sécurité</AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc list-inside space-y-1 mt-1">
+                <li>Ne payez jamais d'avance un vendeur que vous ne connaissez pas.</li>
+                <li>Rencontrez le vendeur dans un lieu public et sûr.</li>
+                <li>Inspectez bien l'article avant de payer.</li>
+                <li>Assurez-vous que l'article correspond à la description avant de finaliser la transaction.</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
           
            <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex items-center">
