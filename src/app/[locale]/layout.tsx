@@ -21,7 +21,7 @@ export default async function MainLayout({
   children: React.ReactNode;
   params: {locale: string};
 }) {
-  const messages = await getMessages();
+  const messages = await getMessages({locale});
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
