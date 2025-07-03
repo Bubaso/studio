@@ -1,0 +1,34 @@
+
+{
+  "Header": {
+    "searchPlaceholder": "Ürünleri ara...",
+    "nav": {
+      "browse": "Gözat",
+      "sell": "Sat",
+      "messages": "Mesajlar",
+      "favorites": "Favoriler"
+    },
+    "userMenu": {
+      "creditsTooltip": "{credits} krediniz var. Daha fazla satın almak için tıklayın.",
+      "profileTooltip": "Profil",
+      "signIn": "Giriş Yap",
+      "signOut": "Çıkış Yap"
+    }
+  },
+  "HomePage": {
+    "exploreByCategory": "Kategoriye Göre Keşfet",
+    "viewAllItems": "Tüm Ürünleri Gör",
+    "onboarding": {
+      "slide1_title": "İkinci El Pazar Yerin",
+      "slide1_desc": "Benzersiz ürünler alın, satın ve eşyalarınıza ikinci bir hayat verin.",
+      "slide2_title": "Keşfet",
+      "slide2_desc": "Satıcılar tarafından listelenen binlerce ürünü keşfedin.",
+      "slide3_title": "Kolayca Sat",
+      "slide3_desc": "Sadece birkaç tıklamayla ürünlerinizi listeleyin ve fiyatınızı belirleyin.",
+      "slide4_title": "İletişim Kur",
+      "slide4_desc": "Alıcılar ve satıcılarla mesajlaşma yoluyla doğrudan iletişim kurun."
+    },
+    "latestFindings": "JëndJaay'deki Son Bulunanlar",
+    "forYou": "Size Özel"
+  }
+}
