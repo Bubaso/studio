@@ -1,6 +1,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { createNotification } from '@/services/notificationService';
+import type { UserProfile } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   if (!adminDb || !adminAuth || !admin) {
@@ -32,6 +34,13 @@ export async function POST(request: NextRequest) {
   const subscriberRef = targetUserRef.collection('subscribers').doc(currentUserId);
 
   try {
+    const currentUserSnap = await currentUserRef.get();
+    if (!currentUserSnap.exists()) {
+        return NextResponse.json({ success: false, error: "Current user profile not found." }, { status: 404 });
+    }
+    const currentUserProfile = currentUserSnap.data() as UserProfile;
+
+
     let isSubscribed = false;
     await adminDb.runTransaction(async (transaction) => {
       const subscriptionDoc = await transaction.get(subscriptionRef);
@@ -53,6 +62,15 @@ export async function POST(request: NextRequest) {
         isSubscribed = true;
       }
     });
+
+    if (isSubscribed) {
+        await createNotification(targetUserId, {
+            type: 'new_subscriber',
+            relatedUserId: currentUserId,
+            relatedUserName: currentUserProfile.name || 'Un utilisateur',
+            relatedUserAvatar: currentUserProfile.avatarUrl || undefined,
+        });
+    }
 
     return NextResponse.json({ success: true, isSubscribed });
   } catch (error: any) {
