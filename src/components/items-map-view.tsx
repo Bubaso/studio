@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -11,6 +12,7 @@ import { MapItemPreviewCard } from './map-item-preview-card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { MapIcon, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 
 const containerStyle = {
@@ -28,6 +30,7 @@ const defaultCenter = {
 const libraries: ("places")[] = ["places"];
 
 export function ItemsMapView() {
+  const t = useTranslations('ItemsMapView');
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
@@ -119,9 +122,9 @@ export function ItemsMapView() {
   if (loadError) {
     return (
         <Alert variant="destructive">
-            <AlertTitle>Erreur de chargement de la carte</AlertTitle>
+            <AlertTitle>{t('mapLoadErrorTitle')}</AlertTitle>
             <AlertDescription>
-            Impossible de charger Google Maps. Veuillez vérifier votre clé API et votre connexion internet.
+            {t('mapLoadErrorDesc')}
             </AlertDescription>
         </Alert>
     );
@@ -133,7 +136,7 @@ export function ItemsMapView() {
             <Skeleton className="h-[70vh] w-full" />
              <div className='flex justify-center items-center gap-2 p-4 text-muted-foreground'>
                 <Loader2 className="h-4 w-4 animate-spin"/>
-                <span>Chargement des annonces sur la carte...</span>
+                <span>{t('loadingMapItems')}</span>
             </div>
         </div>
     );
@@ -176,8 +179,8 @@ export function ItemsMapView() {
         ) : (
             <div className="text-center py-10 border rounded-lg shadow-sm bg-card h-[70vh] flex flex-col justify-center items-center">
                 <MapIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
-                <p className="text-muted-foreground">Aucun article avec des coordonnées n'a été trouvé pour ces filtres.</p>
+                <h2 className="text-2xl font-semibold mb-2">{t('noItemsFound')}</h2>
+                <p className="text-muted-foreground">{t('noLocatedItemsFound')}</p>
             </div>
         )}
     </div>

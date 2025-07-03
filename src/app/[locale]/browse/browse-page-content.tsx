@@ -19,6 +19,7 @@ import { Filter, X, MapPin, LayoutGrid, Map as MapIcon } from 'lucide-react';
 import { getDistance } from 'geolib';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemsMapView } from '@/components/items-map-view';
+import { useTranslations } from 'next-intl';
 
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +28,7 @@ const ITEMS_PER_PAGE = 50;
 
 // ActiveFilters component displays current filters as removable badges
 function ActiveFilters() {
+    const t = useTranslations('BrowsePage');
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -41,12 +43,12 @@ function ActiveFilters() {
     const lat = searchParams.get('lat');
     const radius = searchParams.get('radius');
 
-    if (lat) activeFilters.push({ key: 'lat', label: 'Proximité', value: `~${radius || 25}km` });
-    categories.forEach(cat => activeFilters.push({ key: `category_${cat}`, label: 'Catégorie', value: cat }));
-    if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: 'Prix Min', value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
-    if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: 'Prix Max', value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
-    if (condition) activeFilters.push({ key: 'condition', label: 'État', value: condition.charAt(0).toUpperCase() + condition.slice(1) });
-    if (location) activeFilters.push({ key: 'location', label: 'Lieu', value: location });
+    if (lat) activeFilters.push({ key: 'lat', label: t('filters.proximity'), value: `~${radius || 25}km` });
+    categories.forEach(cat => activeFilters.push({ key: `category_${cat}`, label: t('filters.category'), value: cat }));
+    if (minPrice && minPrice !== '0') activeFilters.push({ key: 'minPrice', label: t('filters.minPrice'), value: `${parseInt(minPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (maxPrice && maxPrice !== '500000') activeFilters.push({ key: 'maxPrice', label: t('filters.maxPrice'), value: `${parseInt(maxPrice, 10).toLocaleString('fr-FR')} XOF` });
+    if (condition) activeFilters.push({ key: 'condition', label: t('filters.condition'), value: condition.charAt(0).toUpperCase() + condition.slice(1) });
+    if (location) activeFilters.push({ key: 'location', label: t('filters.location'), value: location });
 
     if (activeFilters.length === 0) {
         return null;
@@ -85,18 +87,18 @@ function ActiveFilters() {
 
     return (
         <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-sm font-medium text-muted-foreground">Filtres actifs:</span>
+            <span className="text-sm font-medium text-muted-foreground">{t('activeFilters')}:</span>
             {activeFilters.map(filter => (
                 <Badge key={filter.key} variant="secondary" className="pl-2 pr-1 py-1 text-sm">
                     {filter.label}: {filter.value}
                     <button type="button" onClick={() => removeFilter(filter.key.startsWith('category_') ? 'category' : filter.key, filter.value)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
                         <X className="h-3 w-3" />
-                        <span className="sr-only">Retirer le filtre {filter.label}</span>
+                        <span className="sr-only">{t('removeFilter', { label: filter.label })}</span>
                     </button>
                 </Badge>
             ))}
              <Button variant="ghost" size="sm" onClick={clearAllFilters} className="text-primary hover:text-primary underline">
-                Tout effacer
+                {t('clearAll')}
             </Button>
         </div>
     );
@@ -104,6 +106,7 @@ function ActiveFilters() {
 
 // ItemGrid component - now driven by searchParams string
 function ItemGrid() {
+  const t = useTranslations('BrowsePage');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null; hasMore: boolean }>({ items: [], lastItemId: null, hasMore: false });
   const [isLoading, setIsLoading] = useState(true);
@@ -234,8 +237,8 @@ function ItemGrid() {
       ) : items.length > 0 ? (
         <>
           <p className="mb-4 text-muted-foreground">
-            Affichage de {items.length} articles
-            {queryParam && ` pour "${queryParam}"`}
+            {t('showingItems', { count: items.length })}
+            {queryParam && ` ${t('forQuery', { query: queryParam })}`}
           </p>
           <div className="grid grid-cols-2 gap-6">
             {items.map((item) => (
@@ -260,8 +263,8 @@ function ItemGrid() {
         </>
       ) : (
         <div className="text-center py-10">
-          <h2 className="text-2xl font-semibold mb-2">Aucun article trouvé</h2>
-          <p className="text-muted-foreground">Essayez d'ajuster vos filtres de recherche ou de rechercher autre chose.</p>
+          <h2 className="text-2xl font-semibold mb-2">{t('noItemsFound')}</h2>
+          <p className="text-muted-foreground">{t('tryAdjustingFilters')}</p>
         </div>
       )}
     </div>
@@ -295,6 +298,7 @@ function CardSkeleton() {
 }
 
 export default function BrowsePageContent() {
+  const t = useTranslations('BrowsePage');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -305,10 +309,10 @@ export default function BrowsePageContent() {
   const categoryParams = searchParams.getAll('category');
 
   const pageTitle = queryParam
-    ? `Résultats pour "${queryParam}"`
+    ? t('resultsFor', { query: queryParam })
     : categoryParams.length > 0
-    ? `Parcourir ${categoryParams.join(', ')}`
-    : 'Parcourir tous les articles';
+    ? t('browsing', { category: categoryParams.join(', ') })
+    : t('browsingAll');
     
   const handleViewChange = (view: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -323,19 +327,19 @@ export default function BrowsePageContent() {
                 <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary">{pageTitle}</h1>
                 <div className="flex items-center gap-2">
                     <TabsList>
-                        <TabsTrigger value="grid"><LayoutGrid className="mr-2 h-4 w-4"/>Grille</TabsTrigger>
-                        <TabsTrigger value="map"><MapIcon className="mr-2 h-4 w-4"/>Carte</TabsTrigger>
+                        <TabsTrigger value="grid"><LayoutGrid className="mr-2 h-4 w-4"/>{t('grid')}</TabsTrigger>
+                        <TabsTrigger value="map"><MapIcon className="mr-2 h-4 w-4"/>{t('map')}</TabsTrigger>
                     </TabsList>
                     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                         <SheetTrigger asChild>
                             <Button variant="outline">
                                 <Filter className="mr-2 h-4 w-4" />
-                                Filtres
+                                {t('filtersTitle')}
                             </Button>
                         </SheetTrigger>
                         <SheetContent>
                             <SheetHeader>
-                                <SheetTitle>Filtres de recherche</SheetTitle>
+                                <SheetTitle>{t('searchFilters')}</SheetTitle>
                             </SheetHeader>
                             <FilterControls />
                         </SheetContent>

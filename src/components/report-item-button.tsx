@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 interface ReportItemButtonProps {
   itemId: string;
@@ -21,6 +22,7 @@ interface ReportItemButtonProps {
 }
 
 export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportItemButtonProps) {
+  const t = useTranslations('ReportItemButton');
   const { firebaseUser: currentUser, authLoading } = useAuth();
   const [hasReported, setHasReported] = useState(false);
   const [isCheckingReport, setIsCheckingReport] = useState(true);
@@ -46,8 +48,8 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
     if (!currentUser) {
       toast({
         variant: "destructive",
-        title: "Connexion requise",
-        description: "Vous devez être connecté pour signaler un article.",
+        title: t('toast.loginRequiredTitle'),
+        description: t('toast.loginRequiredDesc'),
       });
       return;
     }
@@ -56,8 +58,8 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
       const result = await reportItemAsSold(itemId, currentUser.uid);
       if (result.success) {
         toast({
-          title: "Article signalé",
-          description: "Merci pour votre contribution ! Nous allons examiner ce signalement.",
+          title: t('toast.reportSuccessTitle'),
+          description: t('toast.reportSuccessDesc'),
         });
         setHasReported(true);
         if (result.triggeredSuspectedSold) {
@@ -66,8 +68,8 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
       } else {
         toast({
           variant: "destructive",
-          title: "Erreur",
-          description: result.error || "Impossible de signaler l'article.",
+          title: t('toast.errorTitle'),
+          description: result.error || t('toast.errorDesc'),
         });
       }
     });
@@ -89,14 +91,14 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
     const buttonContent = (
       <Button variant="outline" size={asIcon ? "icon" : "sm"} disabled className="text-green-600 border-green-600">
         <CheckCircle className="h-4 w-4" />
-        {!asIcon && <span className="ml-2">Signalé</span>}
+        {!asIcon && <span className="ml-2">{t('reported')}</span>}
       </Button>
     );
     return asIcon ? (
        <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
-          <TooltipContent><p>Vous avez déjà signalé cet article.</p></TooltipContent>
+          <TooltipContent><p>{t('alreadyReported')}</p></TooltipContent>
         </Tooltip>
       </TooltipProvider>
     ) : buttonContent;
@@ -105,7 +107,7 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
   const buttonContent = (
       <Button variant="outline" size={asIcon ? "icon" : "sm"} onClick={handleReport} disabled={isPending}>
         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
-        {!asIcon && <span className="ml-2">Article déjà vendu ?</span>}
+        {!asIcon && <span className="ml-2">{t('alreadySold')}</span>}
       </Button>
   );
   
@@ -113,7 +115,7 @@ export function ReportItemButton({ itemId, sellerId, asIcon = false }: ReportIte
      <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
-        <TooltipContent><p>Signaler comme potentiellement vendu</p></TooltipContent>
+        <TooltipContent><p>{t('reportAsSold')}</p></TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ) : buttonContent;

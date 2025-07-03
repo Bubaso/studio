@@ -180,5 +180,174 @@
     "legacyApiErrorTitle": "Google Maps API (Legacy) not activated",
     "legacyApiErrorDesc": "Could not load the location picker. The \"Places\" API (legacy) is not enabled for your project.",
     "legacyApiErrorAction": "Action Required: Ensure that the \"Maps JavaScript API\" and \"Places API\" are enabled in your Google Cloud project."
+  },
+  "BrowsePage": {
+    "activeFilters": "Active filters",
+    "removeFilter": "Remove filter {label}",
+    "clearAll": "Clear all",
+    "showingItems": "Showing {count} items",
+    "forQuery": "for \"{query}\"",
+    "noItemsFound": "No items found",
+    "tryAdjustingFilters": "Try adjusting your search filters or searching for something else.",
+    "resultsFor": "Results for \"{query}\"",
+    "browsing": "Browsing {category}",
+    "browsingAll": "Browsing All Items",
+    "grid": "Grid",
+    "map": "Map",
+    "filtersTitle": "Filters",
+    "searchFilters": "Search Filters",
+    "filters": {
+      "proximity": "Proximity",
+      "category": "Category",
+      "minPrice": "Min Price",
+      "maxPrice": "Max Price",
+      "condition": "Condition",
+      "location": "Location"
+    }
+  },
+  "FilterControls": {
+    "filterByProximity": "Filter by proximity",
+    "gettingLocation": "Getting your location...",
+    "radius": "Radius: {radius} km",
+    "locationErrorTitle": "Location Error",
+    "locationError": "Could not get location. Please check your browser permissions.",
+    "categories": "Categories",
+    "condition": "Condition",
+    "allConditions": "All Conditions",
+    "priceRange": "Price Range",
+    "locationText": "Location (Text)",
+    "locationPlaceholder": "e.g., Dakar, SN",
+    "clearAllFilters": "Clear all filters"
+  },
+  "ItemsMapView": {
+    "mapLoadErrorTitle": "Map Loading Error",
+    "mapLoadErrorDesc": "Could not load Google Maps. Please check your API key and internet connection.",
+    "loadingMapItems": "Loading listings on the map...",
+    "noItemsFound": "No Items Found",
+    "noLocatedItemsFound": "No items with coordinates were found for these filters."
+  },
+  "MapItemPreviewCard": {
+    "viewDetails": "View details"
+  },
+  "ItemCard": {
+    "sold": "SOLD",
+    "unconfirmedSold": "Unconfirmed: may be sold",
+    "lowActivity": "Low recent activity",
+    "viewSoldListing": "View Sold Listing",
+    "viewDetails": "View Details"
+  },
+  "ItemDetailPage": {
+    "missingItemId": "Missing item ID.",
+    "itemNotFound": "Item Not Found",
+    "itemNotFoundDesc": "The item with ID \"{itemId}\" does not exist or has been deleted.",
+    "backToListings": "Back to Listings",
+    "sellerInfo": "Seller Information",
+    "joinedOn": "Joined on {date}",
+    "anonymousSeller": "Anonymous Seller",
+    "sellerInfoUnavailable": "Seller information is not available or the seller was not found.",
+    "itemSold": "This item has been sold",
+    "unconfirmedSold": "Unconfirmed: may be sold",
+    "condition": "Condition:",
+    "deliveryDetails": "Delivery Details",
+    "paidBy": "Paid by:",
+    "noDeliveryDetails": "No delivery details specified.",
+    "itemDescription": "Item Description",
+    "contactSeller": "Contact Seller",
+    "callSeller": "Call Seller",
+    "contactOnWhatsApp": "Contact on WhatsApp",
+    "contactSellerLoginRequired": "Contact Seller (Login Required)",
+    "sending": "Sending...",
+    "similarItems": "Similar Items",
+    "safetyTips": "Safety Tips",
+    "safetyTip1": "Never pay in advance to a seller you don't know.",
+    "safetyTip2": "Meet the seller in a safe, public place.",
+    "safetyTip3": "Inspect the item thoroughly before paying.",
+    "safetyTip4": "Ensure the item matches the description before finalizing the transaction.",
+    "publishedOn": "Published on:",
+    "soldOn": "Sold on:",
+    "lastModified": "Last modified:",
+    "toasts": {
+      "discussionStarted": "Discussion Initiated",
+      "redirectingToDiscussion": "Redirecting to the discussion...",
+      "error": "Error",
+      "contactError": "Could not contact seller. Please try again.",
+      "communicationError": "Communication Error"
+    }
+  },
+  "ItemStats": {
+    "viewsToday": "{count, plural, one {# person saw this item today} other {# people saw this item today}}",
+    "saves": "{count, plural, one {# person saved this item} other {# people saved this item}}",
+    "activeListings": "{count, plural, one {# active listing by this seller} other {# active listings by this seller}}"
+  },
+  "ConfirmSoldStatus": {
+    "title": "Action Required: Confirm Item Status",
+    "description": "Users have reported this item as sold. Please confirm its status to maintain platform reliability.",
+    "yesSold": "Yes, it's sold",
+    "noAvailable": "No, still available",
+    "toast": {
+      "statusUpdated": "Status Updated",
+      "markedAsSold": "Your listing is now marked as sold.",
+      "error": "Error",
+      "confirmError": "Could not confirm the sale.",
+      "listingReactivated": "Listing Reactivated",
+      "reportsCleared": "Reports have been cleared and your listing is marked as available again.",
+      "updateError": "Could not update the listing."
+    }
+  },
+  "SellerActions": {
+    "loading": "Loading...",
+    "editListing": "Edit Listing",
+    "alreadySold": "Already Sold",
+    "markAsSold": "Mark as Sold",
+    "deleteListing": "Delete Listing",
+    "areYouSure": "Are you sure?",
+    "deleteConfirmation": "This action is irreversible. Your listing and its associated images will be permanently deleted.",
+    "cancel": "Cancel",
+    "yesDelete": "Yes, delete",
+    "toast": {
+      "error": "Error",
+      "unauthorized": "You are not authorized to perform this action.",
+      "updateSuccess": "Listing Updated",
+      "markedAsSoldSuccess": "Your item has been marked as sold.",
+      "markAsSoldError": "Could not mark as sold.",
+      "deleteSuccess": "Listing Deleted",
+      "deleteSuccessDesc": "Your listing has been deleted.",
+      "deleteError": "Could not delete the listing."
+    }
+  },
+  "ReportItemButton": {
+    "reported": "Reported",
+    "alreadyReported": "You have already reported this item.",
+    "reportAsSold": "Report as potentially sold",
+    "alreadySold": "Item already sold?",
+    "toast": {
+      "loginRequiredTitle": "Login Required",
+      "loginRequiredDesc": "You must be logged in to report an item.",
+      "reportSuccessTitle": "Item Reported",
+      "reportSuccessDesc": "Thank you for your contribution! We will review this report.",
+      "errorTitle": "Error",
+      "errorDesc": "Could not report the item."
+    }
+  },
+  "ReviewForm": {
+    "loading": "Loading review form...",
+    "loginToReview": "Login to leave a review",
+    "pleaseLoginToReview": "Please login to rate this item.",
+    "youAreTheSeller": "You are the seller",
+    "cannotReviewOwnItem": "You cannot leave a review on your own item.",
+    "reviewAlreadySubmitted": "Review already submitted",
+    "youHaveReviewed": "You have already left a review for this item.",
+    "thanksForReview": "Thank you for your review!",
+    "yourRating": "Your rating (out of 5)",
+    "chooseRating": "Choose a rating...",
+    "yourComment": "Your comment",
+    "shareYourExperience": "Share your experience with this item and the seller...",
+    "submitting": "Submitting...",
+    "submitReview": "Submit my review",
+    "toast": {
+      "reviewSubmitted": "Review Submitted!",
+      "reviewSaved": "Your review has been saved.",
+      "submissionError": "Submission Error"
+    }
   }
 }

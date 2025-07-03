@@ -8,6 +8,7 @@ import { MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
@@ -16,6 +17,7 @@ interface ContactSellerButtonClientProps {
 }
 
 export function ContactSellerButtonClient({ sellerId, itemId, className }: ContactSellerButtonClientProps) {
+  const t = useTranslations('ItemDetailPage');
   const router = useRouter();
   const { toast } = useToast();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
@@ -48,24 +50,24 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
 
         if (response.ok && data.threadId) {
             toast({
-            title: "Discussion initiée",
-            description: "Redirection vers la discussion...",
+              title: t('toasts.discussionStarted'),
+              description: t('toasts.redirectingToDiscussion'),
             });
             router.push(`/messages/${data.threadId}`);
         } else {
             console.error("Error from API:", data.error);
             toast({
             variant: "destructive",
-            title: "Erreur",
-            description: data.error || "Impossible de contacter le vendeur. Veuillez réessayer.",
+            title: t('toasts.error'),
+            description: data.error || t('toasts.contactError'),
             });
         }
         } catch (error) {
         console.error("Client-side error contacting seller:", error);
         toast({
             variant: "destructive",
-            title: "Erreur de communication",
-            description: "Une erreur s'est produite lors de la tentative de contact du vendeur.",
+            title: t('toasts.communicationError'),
+            description: t('toasts.contactError'),
         });
         }
     });
@@ -74,7 +76,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
   if (isLoadingAuth) {
     return (
       <Button variant="outline" className={cn("w-full flex-1", className)} disabled>
-        <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Contacter le vendeur
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" /> {t('contactSeller')}
       </Button>
     );
   }
@@ -88,7 +90,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
     const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
       <Button variant="outline" className={cn("w-full flex-1", className)} onClick={() => router.push(redirectTo)}>
-        <MessageSquare className="mr-2 h-6 w-6" /> Contacter le vendeur (Connexion requise)
+        <MessageSquare className="mr-2 h-6 w-6" /> {t('contactSellerLoginRequired')}
       </Button>
     );
   }
@@ -105,7 +107,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
       ) : (
         <MessageSquare className="mr-2 h-6 w-6" />
       )}
-      {isPending ? "Envoi..." : "Contacter le vendeur"}
+      {isPending ? t('sending') : t('contactSeller')}
     </Button>
   );
 }

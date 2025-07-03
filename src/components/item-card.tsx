@@ -9,6 +9,7 @@ import { Package, MapPin, Flag, TrendingDown, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButtonClient } from './favorite-button-client';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface ItemCardProps {
   item: Item;
@@ -18,6 +19,7 @@ interface ItemCardProps {
 const genericBlurDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 export function ItemCard({ item }: ItemCardProps) {
+  const t = useTranslations('ItemCard');
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
@@ -49,21 +51,21 @@ export function ItemCard({ item }: ItemCardProps) {
                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-2">
                     <Badge variant="destructive" className="text-xs py-1 px-3 transform-gpu scale-90 text-center">
                         <CheckCircle className="h-3 w-3 mr-1.5" />
-                        VENDU
+                        {t('sold')}
                     </Badge>
                 </div>
             ) : item.suspectedSold ? (
                 <div className="absolute inset-0 bg-gray-900/40 flex items-center justify-center p-2">
                     <Badge variant="destructive" className="text-xs py-1 px-3 transform-gpu scale-90 text-center">
                         <Flag className="h-3 w-3 mr-1.5" />
-                        Non confirmé : peut être vendu
+                        {t('unconfirmedSold')}
                     </Badge>
                 </div>
             ) : item.lowActivity && (
                  <div className="absolute inset-0 bg-gray-900/10 flex items-center justify-center p-2 pointer-events-none">
                     <Badge variant="outline" className="bg-background/90 text-xs py-1 px-3 text-center text-muted-foreground shadow-sm">
                         <TrendingDown className="h-3.5 w-3.5 mr-1.5" />
-                        Peu d’activité récente
+                        {t('lowActivity')}
                     </Badge>
                 </div>
             )}
@@ -91,7 +93,7 @@ export function ItemCard({ item }: ItemCardProps) {
         <CardFooter className="p-3 pt-2">
           <div className="w-full">
             <Badge variant={item.isSold ? "outline" : "secondary"} className="w-full justify-center py-1.5 text-xs hover:bg-accent hover:text-accent-foreground transition-colors">
-              {item.isSold ? 'Voir l\'annonce vendue' : 'Voir les détails'}
+              {item.isSold ? t('viewSoldListing') : t('viewDetails')}
             </Badge>
           </div>
         </CardFooter>

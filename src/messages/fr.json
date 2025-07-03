@@ -180,5 +180,174 @@
     "legacyApiErrorTitle": "API Google Maps (Legacy) non activée",
     "legacyApiErrorDesc": "Impossible de charger le sélecteur de lieu. L'API \"Places\" (legacy) n'est pas activée pour votre projet.",
     "legacyApiErrorAction": "Action requise : Assurez-vous que les API \"Maps JavaScript API\" et \"Places API\" sont activées dans votre projet Google Cloud."
+  },
+  "BrowsePage": {
+    "activeFilters": "Filtres actifs",
+    "removeFilter": "Retirer le filtre {label}",
+    "clearAll": "Tout effacer",
+    "showingItems": "Affichage de {count} articles",
+    "forQuery": "pour \"{query}\"",
+    "noItemsFound": "Aucun article trouvé",
+    "tryAdjustingFilters": "Essayez d'ajuster vos filtres de recherche ou de rechercher autre chose.",
+    "resultsFor": "Résultats pour \"{query}\"",
+    "browsing": "Parcourir {category}",
+    "browsingAll": "Parcourir tous les articles",
+    "grid": "Grille",
+    "map": "Carte",
+    "filtersTitle": "Filtres",
+    "searchFilters": "Filtres de recherche",
+    "filters": {
+      "proximity": "Proximité",
+      "category": "Catégorie",
+      "minPrice": "Prix Min",
+      "maxPrice": "Prix Max",
+      "condition": "État",
+      "location": "Lieu"
+    }
+  },
+  "FilterControls": {
+    "filterByProximity": "Filtrer par proximité",
+    "gettingLocation": "Obtention de votre position...",
+    "radius": "Rayon : {radius} km",
+    "locationErrorTitle": "Erreur de localisation",
+    "locationError": "Impossible de récupérer la position. Veuillez vérifier les autorisations de votre navigateur.",
+    "categories": "Catégories",
+    "condition": "État",
+    "allConditions": "Tous les états",
+    "priceRange": "Fourchette de prix",
+    "locationText": "Lieu (Texte)",
+    "locationPlaceholder": "ex: Dakar, SN",
+    "clearAllFilters": "Effacer tous les filtres"
+  },
+  "ItemsMapView": {
+    "mapLoadErrorTitle": "Erreur de chargement de la carte",
+    "mapLoadErrorDesc": "Impossible de charger Google Maps. Veuillez vérifier votre clé API et votre connexion internet.",
+    "loadingMapItems": "Chargement des annonces sur la carte...",
+    "noItemsFound": "Aucun article trouvé",
+    "noLocatedItemsFound": "Aucun article avec des coordonnées n'a été trouvé pour ces filtres."
+  },
+  "MapItemPreviewCard": {
+    "viewDetails": "Voir les détails"
+  },
+  "ItemCard": {
+    "sold": "VENDU",
+    "unconfirmedSold": "Non confirmé : peut être vendu",
+    "lowActivity": "Peu d’activité récente",
+    "viewSoldListing": "Voir l'annonce vendue",
+    "viewDetails": "Voir les détails"
+  },
+  "ItemDetailPage": {
+    "missingItemId": "ID d'article manquant.",
+    "itemNotFound": "Article non trouvé",
+    "itemNotFoundDesc": "L'article avec l'ID \"{itemId}\" n'existe pas ou a été supprimé.",
+    "backToListings": "Retourner aux annonces",
+    "sellerInfo": "Informations sur le vendeur",
+    "joinedOn": "Inscrit le {date}",
+    "anonymousSeller": "Vendeur Anonyme",
+    "sellerInfoUnavailable": "Informations sur le vendeur non disponibles ou le vendeur n'a pas été trouvé.",
+    "itemSold": "Cet article a été vendu",
+    "unconfirmedSold": "Non confirmé : peut être vendu",
+    "condition": "État :",
+    "deliveryDetails": "Détails de la livraison",
+    "paidBy": "Payé par :",
+    "noDeliveryDetails": "Aucun détail de livraison n'a été spécifié.",
+    "itemDescription": "Description de l'article",
+    "contactSeller": "Contacter le vendeur",
+    "callSeller": "Appeler le vendeur",
+    "contactOnWhatsApp": "Contacter sur WhatsApp",
+    "contactSellerLoginRequired": "Contacter le vendeur (Connexion requise)",
+    "sending": "Envoi...",
+    "similarItems": "Articles similaires",
+    "safetyTips": "Conseils de sécurité",
+    "safetyTip1": "Ne payez jamais d'avance un vendeur que vous ne connaissez pas.",
+    "safetyTip2": "Rencontrez le vendeur dans un lieu public et sûr.",
+    "safetyTip3": "Inspectez bien l'article avant de payer.",
+    "safetyTip4": "Assurez-vous que l'article correspond à la description avant de finaliser la transaction.",
+    "publishedOn": "Publié le :",
+    "soldOn": "Vendu le :",
+    "lastModified": "Dernière modification :",
+    "toasts": {
+      "discussionStarted": "Discussion initiée",
+      "redirectingToDiscussion": "Redirection vers la discussion...",
+      "error": "Erreur",
+      "contactError": "Impossible de contacter le vendeur. Veuillez réessayer.",
+      "communicationError": "Erreur de communication"
+    }
+  },
+  "ItemStats": {
+    "viewsToday": "{count, plural, one {# personne a vu cet article aujourd'hui} other {# personnes ont vu cet article aujourd'hui}}",
+    "saves": "{count, plural, one {# personne a sauvegardé cet article} other {# personnes ont sauvegardé cet article}}",
+    "activeListings": "{count, plural, one {# annonce active par ce vendeur} other {# annonces actives par ce vendeur}}"
+  },
+  "ConfirmSoldStatus": {
+    "title": "Action requise : Confirmer le statut de l'article",
+    "description": "Des utilisateurs ont signalé que cet article a été vendu. Veuillez confirmer son statut pour maintenir la fiabilité de la plateforme.",
+    "yesSold": "Oui, il est vendu",
+    "noAvailable": "Non, toujours disponible",
+    "toast": {
+      "statusUpdated": "Statut mis à jour",
+      "markedAsSold": "Votre annonce est maintenant marquée comme vendue.",
+      "error": "Erreur",
+      "confirmError": "Impossible de confirmer la vente.",
+      "listingReactivated": "Annonce réactivée",
+      "reportsCleared": "Les signalements ont été effacés et votre annonce est de nouveau marquée comme disponible.",
+      "updateError": "Impossible de mettre à jour l'annonce."
+    }
+  },
+  "SellerActions": {
+    "loading": "Chargement...",
+    "editListing": "Modifier l'annonce",
+    "alreadySold": "Déjà vendu",
+    "markAsSold": "Marquer comme vendu",
+    "deleteListing": "Supprimer l'annonce",
+    "areYouSure": "Êtes-vous sûr(e) ?",
+    "deleteConfirmation": "Cette action est irréversible. Votre annonce et ses images associées seront définitivement supprimées.",
+    "cancel": "Annuler",
+    "yesDelete": "Oui, supprimer",
+    "toast": {
+      "error": "Erreur",
+      "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",
+      "updateSuccess": "Annonce mise à jour",
+      "markedAsSoldSuccess": "Votre article a été marqué comme vendu.",
+      "markAsSoldError": "Impossible de marquer comme vendu.",
+      "deleteSuccess": "Annonce supprimée",
+      "deleteSuccessDesc": "Votre annonce a été supprimée.",
+      "deleteError": "Impossible de supprimer l'annonce."
+    }
+  },
+  "ReportItemButton": {
+    "reported": "Signalé",
+    "alreadyReported": "Vous avez déjà signalé cet article.",
+    "reportAsSold": "Signaler comme potentiellement vendu",
+    "alreadySold": "Article déjà vendu ?",
+    "toast": {
+      "loginRequiredTitle": "Connexion requise",
+      "loginRequiredDesc": "Vous devez être connecté pour signaler un article.",
+      "reportSuccessTitle": "Article signalé",
+      "reportSuccessDesc": "Merci pour votre contribution ! Nous allons examiner ce signalement.",
+      "errorTitle": "Erreur",
+      "errorDesc": "Impossible de signaler l'article."
+    }
+  },
+  "ReviewForm": {
+    "loading": "Chargement du formulaire d'avis...",
+    "loginToReview": "Connectez-vous pour laisser un avis",
+    "pleaseLoginToReview": "Veuillez vous connecter pour évaluer cet article.",
+    "youAreTheSeller": "Vous êtes le vendeur",
+    "cannotReviewOwnItem": "Vous ne pouvez pas laisser d'avis sur votre propre article.",
+    "reviewAlreadySubmitted": "Avis déjà soumis",
+    "youHaveReviewed": "Vous avez déjà laissé un avis pour cet article.",
+    "thanksForReview": "Merci pour votre avis !",
+    "yourRating": "Votre note (sur 5)",
+    "chooseRating": "Choisissez une note...",
+    "yourComment": "Votre commentaire",
+    "shareYourExperience": "Partagez votre expérience avec cet article et le vendeur...",
+    "submitting": "Envoi en cours...",
+    "submitReview": "Soumettre mon avis",
+    "toast": {
+      "reviewSubmitted": "Avis soumis !",
+      "reviewSaved": "Votre avis a été enregistré.",
+      "submissionError": "Erreur de soumission"
+    }
   }
 }

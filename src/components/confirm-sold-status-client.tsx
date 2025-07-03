@@ -10,12 +10,14 @@ import { Loader2, Check, X, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { markItemAsSold, rejectSuspectedSold } from '@/services/itemService';
 import type { Item } from '@/lib/types';
+import { useTranslations } from 'next-intl';
 
 interface ConfirmSoldStatusClientProps {
   item: Item;
 }
 
 export function ConfirmSoldStatusClient({ item }: ConfirmSoldStatusClientProps) {
+  const t = useTranslations('ConfirmSoldStatus');
   const [isConfirming, startConfirming] = useTransition();
   const [isRejecting, startRejecting] = useTransition();
   const { toast } = useToast();
@@ -33,10 +35,10 @@ export function ConfirmSoldStatusClient({ item }: ConfirmSoldStatusClientProps) 
     startConfirming(async () => {
       try {
         await markItemAsSold(item.id);
-        toast({ title: "Statut mis à jour", description: "Votre annonce est maintenant marquée comme vendue." });
+        toast({ title: t('toast.statusUpdated'), description: t('toast.markedAsSold') });
         router.refresh();
       } catch (error: any) {
-        toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de confirmer la vente." });
+        toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.confirmError') });
       }
     });
   };
@@ -45,10 +47,10 @@ export function ConfirmSoldStatusClient({ item }: ConfirmSoldStatusClientProps) 
     startRejecting(async () => {
       try {
         await rejectSuspectedSold(item.id);
-        toast({ title: "Annonce réactivée", description: "Les signalements ont été effacés et votre annonce est de nouveau marquée comme disponible." });
+        toast({ title: t('toast.listingReactivated'), description: t('toast.reportsCleared') });
         router.refresh();
       } catch (error: any) {
-        toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de mettre à jour l'annonce." });
+        toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.updateError') });
       }
     });
   };
@@ -56,17 +58,17 @@ export function ConfirmSoldStatusClient({ item }: ConfirmSoldStatusClientProps) 
   return (
     <Alert variant="destructive" className="mb-6 bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300 [&>svg]:text-yellow-800 dark:[&>svg]:text-yellow-300">
       <AlertTriangle className="h-4 w-4" />
-      <AlertTitle className="font-bold">Action requise : Confirmer le statut de l'article</AlertTitle>
+      <AlertTitle className="font-bold">{t('title')}</AlertTitle>
       <AlertDescription>
-        Des utilisateurs ont signalé que cet article a été vendu. Veuillez confirmer son statut pour maintenir la fiabilité de la plateforme.
+        {t('description')}
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <Button onClick={handleConfirm} disabled={isPending} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
             {isConfirming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-            Oui, il est vendu
+            {t('yesSold')}
           </Button>
           <Button onClick={handleReject} disabled={isPending} variant="outline" className="w-full sm:w-auto text-yellow-800 border-yellow-800/50 hover:bg-yellow-200/50 hover:text-yellow-900">
             {isRejecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
-            Non, toujours disponible
+            {t('noAvailable')}
           </Button>
         </div>
       </AlertDescription>

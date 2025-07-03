@@ -11,12 +11,14 @@ import { markItemAsSold, deleteItem } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 interface SellerActionsClientProps {
   item: Item;
 }
 
 export function SellerActionsClient({ item }: SellerActionsClientProps) {
+  const t = useTranslations('SellerActions');
   const [isMarkingSold, startMarkingSold] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const { toast } = useToast();
@@ -25,33 +27,33 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
 
   const handleMarkAsSold = () => {
      if (!currentUser || currentUser.uid !== item.sellerId) {
-      toast({ variant: "destructive", title: "Erreur", description: "Vous n'êtes pas autorisé à effectuer cette action." });
+      toast({ variant: "destructive", title: t('toast.error'), description: t('toast.unauthorized') });
       return;
     }
     startMarkingSold(async () => {
       try {
         await markItemAsSold(item.id);
-        toast({ title: "Annonce mise à jour", description: "Votre article a été marqué comme vendu." });
+        toast({ title: t('toast.updateSuccess'), description: t('toast.markedAsSoldSuccess') });
         router.refresh();
       } catch (error: any) {
-         toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de marquer comme vendu." });
+         toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.markAsSoldError') });
       }
     });
   };
 
   const handleDelete = () => {
     if (!currentUser || currentUser.uid !== item.sellerId) {
-        toast({ variant: "destructive", title: "Erreur", description: "Vous n'êtes pas autorisé à effectuer cette action." });
+        toast({ variant: "destructive", title: t('toast.error'), description: t('toast.unauthorized') });
         return;
     }
     startDeleting(async () => {
       try {
         await deleteItem(item.id);
-        toast({ title: "Annonce supprimée", description: "Votre annonce a été supprimée." });
+        toast({ title: t('toast.deleteSuccess'), description: t('toast.deleteSuccessDesc') });
         router.push(`/profile`);
         router.refresh();
       } catch (error: any) {
-        toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de supprimer l'annonce." });
+        toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.deleteError') });
       }
     });
   };
@@ -60,7 +62,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
     return (
       <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
         <Button disabled variant="outline" className="flex-1">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Chargement...
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('loading')}
         </Button>
       </div>
     );
@@ -74,34 +76,34 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
     <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
       <Button asChild variant="secondary" className="flex-1">
         <Link href={`/items/${item.id}/edit`}>
-          <Edit3 className="mr-2 h-4 w-4" /> Modifier l'annonce
+          <Edit3 className="mr-2 h-4 w-4" /> {t('editListing')}
         </Link>
       </Button>
 
       <Button onClick={handleMarkAsSold} disabled={isMarkingSold || item.isSold} variant="outline" className="flex-1">
         {isMarkingSold ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-        {item.isSold ? 'Déjà vendu' : 'Marquer comme vendu'}
+        {item.isSold ? t('alreadySold') : t('markAsSold')}
       </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" disabled={isDeleting} className="flex-1">
             {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash className="mr-2 h-4 w-4" />}
-            Supprimer l'annonce
+            {t('deleteListing')}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr(e) ?</AlertDialogTitle>
+            <AlertDialogTitle>{t('areYouSure')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. Votre annonce et ses images associées seront définitivement supprimées.
+              {t('deleteConfirmation')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Oui, supprimer
+                {t('yesDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

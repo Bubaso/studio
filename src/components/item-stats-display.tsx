@@ -8,6 +8,7 @@ import type { Item } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { useTranslations } from 'next-intl';
 
 interface ItemStatsDisplayProps {
   itemId: string;
@@ -15,6 +16,7 @@ interface ItemStatsDisplayProps {
 }
 
 export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
+  const t = useTranslations('ItemStats');
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [favoriteCount, setFavoriteCount] = useState<number | null>(null);
   const [activeListingsCount, setActiveListingsCount] = useState<number | null>(null);
@@ -77,7 +79,7 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
     }
   }, [sellerId]);
 
-  const StatItem = ({ icon: Icon, count, text }: { icon: React.ElementType, count: number | null, text: string }) => {
+  const StatItem = ({ icon: Icon, count, message }: { icon: React.ElementType, count: number | null, message: string }) => {
     if (count === null) {
       return (
         <div className="flex items-center text-xs text-muted-foreground mr-3 last:mr-0">
@@ -86,12 +88,10 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
         </div>
       );
     }
-    // Removed the condition that hid the stat if count was 0 for views or favorites.
-    // Now, it will render "0 personnes ont vu..." or "0 personnes ont sauvegardé..."
     return (
       <div className="flex items-center text-xs text-muted-foreground mr-3 last:mr-0">
         <Icon className="h-3.5 w-3.5 mr-1" />
-        {count} {text}
+        {message}
       </div>
     );
   };
@@ -99,33 +99,21 @@ export function ItemStatsDisplay({ itemId, sellerId }: ItemStatsDisplayProps) {
   const allStatsLoaded = viewCount !== null && favoriteCount !== null && activeListingsCount !== null;
   const noMeaningfulStats = allStatsLoaded && viewCount === 0 && favoriteCount === 0 && activeListingsCount === 0;
 
-  // If all stats are loaded and all are 0, then we hide the entire block.
-  // Otherwise, we attempt to render stats. Individual stats (like views) will show even if 0,
-  // unless this condition hides the whole block.
   if (noMeaningfulStats) {
       return null;
   }
 
-  // If not all stats are loaded yet, and some might be 0 already, we still might want to show skeletons or early-loaded stats.
-  // The noMeaningfulStats check is primarily for the case where *everything* is definitively 0.
-
   return (
     <div className="flex flex-wrap items-center mt-2 mb-3">
-      {/* Render view count if loaded (not null), even if 0 */}
-      {(viewCount !== null) && <StatItem icon={Eye} count={viewCount} text="personnes ont vu cet article aujourd'hui" />}
-      
-      {/* Render favorite count if loaded (not null), even if 0 */}
-      {(favoriteCount !== null) && <StatItem icon={Heart} count={favoriteCount} text="personnes ont sauvegardé cet article" />}
-      
-      {/* Render active listings if loaded (not null), even if 0 */}
+      {(viewCount !== null) && <StatItem icon={Eye} count={viewCount} message={t('viewsToday', {count: viewCount})} />}
+      {(favoriteCount !== null) && <StatItem icon={Heart} count={favoriteCount} message={t('saves', {count: favoriteCount})} />}
       {(activeListingsCount !== null && sellerId) && (
-        <StatItem icon={ListChecks} count={activeListingsCount} text={`annonce(s) active(s) par ce vendeur`} />
+        <StatItem icon={ListChecks} count={activeListingsCount} message={t('activeListings', {count: activeListingsCount})} />
       )}
 
-      {/* Show skeletons for stats that are still loading */}
-      {(viewCount === null) && <StatItem icon={Eye} count={null} text="personnes ont vu cet article aujourd'hui" />}
-      {(favoriteCount === null) && <StatItem icon={Heart} count={null} text="personnes ont sauvegardé cet article" />}
-      {(activeListingsCount === null && sellerId) && <StatItem icon={ListChecks} count={null} text="annonce(s) active(s) par ce vendeur" />}
+      {(viewCount === null) && <StatItem icon={Eye} count={null} message="..." />}
+      {(favoriteCount === null) && <StatItem icon={Heart} count={null} message="..." />}
+      {(activeListingsCount === null && sellerId) && <StatItem icon={ListChecks} count={null} message="..." />}
     </div>
   );
 }

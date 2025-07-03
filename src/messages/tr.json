@@ -180,5 +180,174 @@
     "legacyApiErrorTitle": "Google Haritalar API'si (Eski) etkinleştirilmemiş",
     "legacyApiErrorDesc": "Konum seçici yüklenemedi. Projeniz için \"Places\" API (eski) etkinleştirilmemiş.",
     "legacyApiErrorAction": "Gerekli Eylem: Google Cloud projenizde \"Maps JavaScript API\" ve \"Places API\"nin etkinleştirildiğinden emin olun."
+  },
+  "BrowsePage": {
+    "activeFilters": "Aktif filtreler",
+    "removeFilter": "{label} filtresini kaldır",
+    "clearAll": "Tümünü temizle",
+    "showingItems": "{count} ürün gösteriliyor",
+    "forQuery": "\"{query}\" için",
+    "noItemsFound": "Ürün bulunamadı",
+    "tryAdjustingFilters": "Arama filtrelerinizi ayarlamayı veya başka bir şey aramayı deneyin.",
+    "resultsFor": "\"{query}\" için sonuçlar",
+    "browsing": "{category} kategorisine göz atılıyor",
+    "browsingAll": "Tüm Ürünlere Göz Atılıyor",
+    "grid": "Izgara",
+    "map": "Harita",
+    "filtersTitle": "Filtreler",
+    "searchFilters": "Arama Filtreleri",
+    "filters": {
+      "proximity": "Yakınlık",
+      "category": "Kategori",
+      "minPrice": "Min Fiyat",
+      "maxPrice": "Maks Fiyat",
+      "condition": "Durum",
+      "location": "Konum"
+    }
+  },
+  "FilterControls": {
+    "filterByProximity": "Yakınlığa göre filtrele",
+    "gettingLocation": "Konumunuz alınıyor...",
+    "radius": "Yarıçap: {radius} km",
+    "locationErrorTitle": "Konum Hatası",
+    "locationError": "Konum alınamadı. Lütfen tarayıcı izinlerinizi kontrol edin.",
+    "categories": "Kategoriler",
+    "condition": "Durum",
+    "allConditions": "Tüm Durumlar",
+    "priceRange": "Fiyat Aralığı",
+    "locationText": "Konum (Metin)",
+    "locationPlaceholder": "ör: Dakar, SN",
+    "clearAllFilters": "Tüm filtreleri temizle"
+  },
+  "ItemsMapView": {
+    "mapLoadErrorTitle": "Harita Yükleme Hatası",
+    "mapLoadErrorDesc": "Google Haritalar yüklenemedi. Lütfen API anahtarınızı ve internet bağlantınızı kontrol edin.",
+    "loadingMapItems": "İlanlar haritaya yükleniyor...",
+    "noItemsFound": "Ürün Bulunamadı",
+    "noLocatedItemsFound": "Bu filtreler için koordinatları olan hiçbir ürün bulunamadı."
+  },
+  "MapItemPreviewCard": {
+    "viewDetails": "Detayları gör"
+  },
+  "ItemCard": {
+    "sold": "SATILDI",
+    "unconfirmedSold": "Onaylanmadı: satılmış olabilir",
+    "lowActivity": "Düşük son aktivite",
+    "viewSoldListing": "Satılan İlanı Görüntüle",
+    "viewDetails": "Detayları Gör"
+  },
+  "ItemDetailPage": {
+    "missingItemId": "Eksik ürün ID'si.",
+    "itemNotFound": "Ürün Bulunamadı",
+    "itemNotFoundDesc": "\"{itemId}\" ID'li ürün mevcut değil veya silinmiş.",
+    "backToListings": "İlanlara Geri Dön",
+    "sellerInfo": "Satıcı Bilgileri",
+    "joinedOn": "Katılım tarihi: {date}",
+    "anonymousSeller": "Anonim Satıcı",
+    "sellerInfoUnavailable": "Satıcı bilgileri mevcut değil veya satıcı bulunamadı.",
+    "itemSold": "Bu ürün satıldı",
+    "unconfirmedSold": "Onaylanmadı: satılmış olabilir",
+    "condition": "Durum:",
+    "deliveryDetails": "Teslimat Detayları",
+    "paidBy": "Ödeyen:",
+    "noDeliveryDetails": "Teslimat detayı belirtilmemiş.",
+    "itemDescription": "Ürün Açıklaması",
+    "contactSeller": "Satıcıyla İletişime Geç",
+    "callSeller": "Satıcıyı Ara",
+    "contactOnWhatsApp": "WhatsApp'tan İletişime Geç",
+    "contactSellerLoginRequired": "Satıcıyla İletişime Geç (Giriş Gerekli)",
+    "sending": "Gönderiliyor...",
+    "similarItems": "Benzer Ürünler",
+    "safetyTips": "Güvenlik İpuçları",
+    "safetyTip1": "Tanımadığınız bir satıcıya asla ön ödeme yapmayın.",
+    "safetyTip2": "Satıcıyla güvenli, halka açık bir yerde buluşun.",
+    "safetyTip3": "Ödeme yapmadan önce ürünü iyice inceleyin.",
+    "safetyTip4": "İşlemi tamamlamadan önce ürünün açıklamaya uyduğundan emin olun.",
+    "publishedOn": "Yayınlanma tarihi:",
+    "soldOn": "Satılma tarihi:",
+    "lastModified": "Son düzenleme:",
+    "toasts": {
+      "discussionStarted": "Görüşme Başlatıldı",
+      "redirectingToDiscussion": "Görüşmeye yönlendiriliyorsunuz...",
+      "error": "Hata",
+      "contactError": "Satıcıyla iletişim kurulamadı. Lütfen tekrar deneyin.",
+      "communicationError": "İletişim Hatası"
+    }
+  },
+  "ItemStats": {
+    "viewsToday": "{count, plural, one {Bugün # kişi bu ürünü gördü} other {Bugün # kişi bu ürünü gördü}}",
+    "saves": "{count, plural, one {# kişi bu ürünü kaydetti} other {# kişi bu ürünü kaydetti}}",
+    "activeListings": "{count, plural, one {Bu satıcının # aktif ilanı var} other {Bu satıcının # aktif ilanı var}}"
+  },
+  "ConfirmSoldStatus": {
+    "title": "Eylem Gerekli: Ürün Durumunu Onayla",
+    "description": "Kullanıcılar bu ürünün satıldığını bildirdi. Platformun güvenilirliğini korumak için lütfen durumunu onaylayın.",
+    "yesSold": "Evet, satıldı",
+    "noAvailable": "Hayır, hala mevcut",
+    "toast": {
+      "statusUpdated": "Durum Güncellendi",
+      "markedAsSold": "İlanınız şimdi satıldı olarak işaretlendi.",
+      "error": "Hata",
+      "confirmError": "Satış onaylanamadı.",
+      "listingReactivated": "İlan Yeniden Etkinleştirildi",
+      "reportsCleared": "Raporlar temizlendi ve ilanınız tekrar mevcut olarak işaretlendi.",
+      "updateError": "İlan güncellenemedi."
+    }
+  },
+  "SellerActions": {
+    "loading": "Yükleniyor...",
+    "editListing": "İlanı Düzenle",
+    "alreadySold": "Zaten Satıldı",
+    "markAsSold": "Satıldı Olarak İşaretle",
+    "deleteListing": "İlanı Sil",
+    "areYouSure": "Emin misiniz?",
+    "deleteConfirmation": "Bu işlem geri alınamaz. İlanınız ve ilgili resimleri kalıcı olarak silinecektir.",
+    "cancel": "İptal",
+    "yesDelete": "Evet, sil",
+    "toast": {
+      "error": "Hata",
+      "unauthorized": "Bu işlemi yapma yetkiniz yok.",
+      "updateSuccess": "İlan Güncellendi",
+      "markedAsSoldSuccess": "Ürününüz satıldı olarak işaretlendi.",
+      "markAsSoldError": "Satıldı olarak işaretlenemedi.",
+      "deleteSuccess": "İlan Silindi",
+      "deleteSuccessDesc": "İlanınız silindi.",
+      "deleteError": "İlan silinemedi."
+    }
+  },
+  "ReportItemButton": {
+    "reported": "Bildirildi",
+    "alreadyReported": "Bu ürünü zaten bildirdiniz.",
+    "reportAsSold": "Potansiyel olarak satıldı olarak bildir",
+    "alreadySold": "Ürün zaten satıldı mı?",
+    "toast": {
+      "loginRequiredTitle": "Giriş Gerekli",
+      "loginRequiredDesc": "Bir ürünü bildirmek için giriş yapmalısınız.",
+      "reportSuccessTitle": "Ürün Bildirildi",
+      "reportSuccessDesc": "Katkınız için teşekkürler! Bu raporu inceleyeceğiz.",
+      "errorTitle": "Hata",
+      "errorDesc": "Ürün bildirilemedi."
+    }
+  },
+  "ReviewForm": {
+    "loading": "Yorum formu yükleniyor...",
+    "loginToReview": "Yorum bırakmak için giriş yapın",
+    "pleaseLoginToReview": "Lütfen bu ürünü oylamak için giriş yapın.",
+    "youAreTheSeller": "Siz satıcısınız",
+    "cannotReviewOwnItem": "Kendi ürününüze yorum yapamazsınız.",
+    "reviewAlreadySubmitted": "Yorum zaten gönderildi",
+    "youHaveReviewed": "Bu ürün için zaten bir yorum bıraktınız.",
+    "thanksForReview": "Yorumunuz için teşekkürler!",
+    "yourRating": "Puanınız (5 üzerinden)",
+    "chooseRating": "Bir puan seçin...",
+    "yourComment": "Yorumunuz",
+    "shareYourExperience": "Bu ürün ve satıcıyla olan deneyiminizi paylaşın...",
+    "submitting": "Gönderiliyor...",
+    "submitReview": "Yorumumu gönder",
+    "toast": {
+      "reviewSubmitted": "Yorum Gönderildi!",
+      "reviewSaved": "Yorumunuz kaydedildi.",
+      "submissionError": "Gönderme Hatası"
+    }
   }
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -5,12 +6,14 @@ import Image from 'next/image';
 import type { Item } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface MapItemPreviewCardProps {
   item: Item;
 }
 
 export function MapItemPreviewCard({ item }: MapItemPreviewCardProps) {
+  const t = useTranslations('MapItemPreviewCard');
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/200x150.png';
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
@@ -31,7 +34,7 @@ export function MapItemPreviewCard({ item }: MapItemPreviewCardProps) {
         <p className="text-md font-bold text-primary">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
         <Link href={`/items/${item.id}`}>
             <Button variant="secondary" size="sm" className="w-full mt-1">
-                Voir les détails <ArrowUpRight className="ml-2 h-4 w-4" />
+                {t('viewDetails')} <ArrowUpRight className="ml-2 h-4 w-4" />
             </Button>
         </Link>
       </div>
