@@ -25,9 +25,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import { useTranslations } from 'next-intl';
 
 export default function MessagesPage() {
+  const t = useTranslations('MessagesPage');
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -64,9 +65,9 @@ export default function MessagesPage() {
     setIsDeleting(threadId);
     try {
         await deleteThreadForUser(threadId, currentUser.uid);
-        toast({ title: "Conversation supprimée", description: "La conversation a été retirée de votre liste." });
+        toast({ title: t('toast.threadDeletedTitle'), description: t('toast.threadDeletedDesc') });
     } catch (error) {
-        toast({ variant: "destructive", title: "Erreur", description: "Impossible de supprimer la conversation." });
+        toast({ variant: "destructive", title: t('toast.errorTitle'), description: t('toast.deleteError') });
         console.error("Error deleting thread:", error);
     } finally {
         setIsDeleting(null);
@@ -78,7 +79,7 @@ export default function MessagesPage() {
     const otherParticipantIndex = thread.participantIds.findIndex(id => id !== currentUser.uid);
     const name = otherParticipantIndex !== -1 && thread.participantNames && thread.participantNames[otherParticipantIndex] 
                  ? thread.participantNames[otherParticipantIndex] 
-                 : 'Utilisateur Inconnu';
+                 : t('unknownUser');
     const avatar = otherParticipantIndex !== -1 && thread.participantAvatars && thread.participantAvatars[otherParticipantIndex]
                    ? thread.participantAvatars[otherParticipantIndex]
                    : 'https://placehold.co/100x100.png?text=?';
@@ -91,7 +92,7 @@ export default function MessagesPage() {
   };
 
   if (isLoadingAuth) {
-    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-2">Chargement de l'authentification...</p></div>;
+    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-2">{t('loadingAuth')}</p></div>;
   }
 
   if (!currentUser) {
@@ -99,9 +100,10 @@ export default function MessagesPage() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <Info className="h-4 w-4" />
-          <AlertTitle>Accès refusé</AlertTitle>
+          <AlertTitle>{t('accessDeniedTitle')}</AlertTitle>
           <AlertDescription>
-            Veuillez <Link href="/auth/signin" className="underline hover:text-primary">vous connecter</Link> pour voir vos messages.
+            {t('accessDeniedDesc')}
+            <Link href="/auth/signin" className="underline hover:text-primary ml-1">{t('loginLink')}</Link>
           </AlertDescription>
         </Alert>
       </div>
@@ -111,18 +113,18 @@ export default function MessagesPage() {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-headline text-primary">Vos Messages</h1>
+        <h1 className="text-3xl font-bold font-headline text-primary">{t('title')}</h1>
       </div>
 
       {isLoadingThreads && threads.length === 0 && (
-         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-2">Chargement des fils de discussion...</p></div>
+         <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /> <p className="ml-2">{t('loadingThreads')}</p></div>
       )}
 
       {!isLoadingThreads && threads.length > 0 && (
         <div className="space-y-3">
           {threads.map((thread) => {
             const otherParticipant = getOtherParticipantDetails(thread);
-            const lastMessageText = thread.lastMessageText || "Pas encore de messages.";
+            const lastMessageText = thread.lastMessageText || t('noMessagesYet');
             const isLastMessageFromCurrentUser = thread.lastMessageSenderId === currentUser.uid;
             const currentUserHasSeenLatest = thread.participantsWhoHaveSeenLatest?.includes(currentUser.uid);
             const hasUnreadMessages = !isLastMessageFromCurrentUser && !currentUserHasSeenLatest;
@@ -143,7 +145,7 @@ export default function MessagesPage() {
                     <div className="flex-1 overflow-hidden">
                       <p className={cn("font-semibold text-lg truncate group-hover:text-primary", hasUnreadMessages ? "text-primary" : "")}>{otherParticipant.name}</p>
                       <p className={cn("text-sm truncate", hasUnreadMessages ? "text-foreground font-medium" : "text-muted-foreground")}>
-                        {isLastMessageFromCurrentUser ? "Vous : " : ""}
+                        {isLastMessageFromCurrentUser ? t('youPrefix') : ""}
                         {lastMessageText}
                       </p>
                     </div>
@@ -171,15 +173,13 @@ export default function MessagesPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Supprimer cette conversation ?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Cette action est irréversible. La conversation sera retirée de votre liste, mais l'autre participant la verra toujours.
-                          </AlertDialogDescription>
+                          <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
+                          <AlertDialogDescription>{t('deleteConfirmDesc')}</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                           <AlertDialogAction onClick={() => handleDeleteThread(thread.id)} className="bg-destructive hover:bg-destructive/90">
-                            Supprimer
+                            {t('delete')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -196,8 +196,8 @@ export default function MessagesPage() {
         <Card>
           <CardContent className="p-10 text-center">
             <MessageSquarePlus className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold">Aucun message pour le moment</h3>
-            <p className="text-muted-foreground">Commencez une conversation en contactant un vendeur ou un utilisateur depuis leur profil ou une annonce.</p>
+            <h3 className="text-xl font-semibold">{t('noThreadsTitle')}</h3>
+            <p className="text-muted-foreground">{t('noThreadsDesc')}</p>
           </CardContent>
         </Card>
       )}

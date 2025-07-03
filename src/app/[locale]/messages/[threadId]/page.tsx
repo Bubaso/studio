@@ -24,6 +24,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { CustomAudioPlayer } from '@/components/custom-audio-player';
 import { getItemByIdFromFirestore } from '@/services/itemService';
+import { useTranslations } from 'next-intl';
 
 // Sub-component for the list of discussed items
 const DiscussedItemsList = ({
@@ -39,10 +40,11 @@ const DiscussedItemsList = ({
     onDeleteItem: (itemId: string) => void;
     unreadItemIds: string[];
 }) => {
+    const t = useTranslations('MessageThreadPage');
     return (
         <Card className="flex h-full w-full flex-col">
             <div className="p-3 border-b">
-                <h3 className="font-semibold text-lg font-headline">Articles Concernés</h3>
+                <h3 className="font-semibold text-lg font-headline">{t('discussedItems')}</h3>
             </div>
             <ScrollArea className="flex-1">
                 <div className="flex flex-col">
@@ -79,15 +81,15 @@ const DiscussedItemsList = ({
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitleComponent>Supprimer cette conversation ?</AlertDialogTitleComponent>
+                                        <AlertDialogTitleComponent>{t('deleteItemConvTitle')}</AlertDialogTitleComponent>
                                         <AlertDialogDescription>
-                                            La conversation concernant l'article "{item.name}" sera supprimée de votre vue. L'autre participant la verra toujours. Cette action est irréversible.
+                                            {t('deleteItemConvDesc', { itemName: item.name })}
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                                         <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">
-                                            Supprimer
+                                            {t('delete')}
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -112,7 +114,9 @@ const MobileDiscussedItemsList = ({
     onSelectItem: (itemId: string) => void;
     onDeleteItem: (itemId: string) => void;
     unreadItemIds: string[];
-}) => (
+}) => {
+    const t = useTranslations('MessageThreadPage');
+    return (
     <div className="md:hidden p-2 border-b">
         <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-3">
@@ -146,15 +150,15 @@ const MobileDiscussedItemsList = ({
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitleComponent>Supprimer cette conversation ?</AlertDialogTitleComponent>
+                                    <AlertDialogTitleComponent>{t('deleteItemConvTitle')}</AlertDialogTitleComponent>
                                     <AlertDialogDescription>
-                                        La conversation concernant "{item.name}" sera supprimée de votre vue.
+                                        {t('deleteItemConvDesc', { itemName: item.name })}
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                                     <AlertDialogAction onClick={() => onDeleteItem(item.id)} className="bg-destructive hover:bg-destructive/90">
-                                        Supprimer
+                                        {t('delete')}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
@@ -165,10 +169,12 @@ const MobileDiscussedItemsList = ({
             <ScrollBar orientation="horizontal" />
         </ScrollArea>
     </div>
-);
+)};
 
 
 export default function MessageThreadPage() {
+  const t = useTranslations('MessageThreadPage');
+  const tMessages = useTranslations('MessagesPage');
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -222,19 +228,19 @@ export default function MessageThreadPage() {
     const unsubscribe = listenToThreadDocument(threadId, (thread) => {
         if (thread) {
             if (thread.deletedFor?.includes(currentUser.uid)) {
-                toast({ variant: "destructive", title: "Non trouvé", description: "Ce fil de discussion est introuvable." });
+                toast({ variant: "destructive", title: t('toast.notFoundTitle'), description: t('toast.notFoundDesc') });
                 router.push('/messages');
                 return;
             }
             setThreadInfo(thread);
         } else {
-            toast({ variant: "destructive", title: "Non trouvé", description: "Ce fil de discussion est introuvable." });
+            toast({ variant: "destructive", title: t('toast.notFoundTitle'), description: t('toast.notFoundDesc') });
             router.push('/messages');
         }
     });
 
     return () => unsubscribe();
-  }, [threadId, currentUser?.uid]);
+  }, [threadId, currentUser?.uid, router, t, toast]);
 
   // Fetch/update discussed items when threadInfo changes
   useEffect(() => {
@@ -260,7 +266,7 @@ export default function MessageThreadPage() {
     };
 
     fetchItems();
-  }, [threadInfo, currentUser?.uid]);
+  }, [threadInfo, currentUser?.uid, discussedItems]);
 
   // Select initial item once items and thread are loaded
   useEffect(() => {
@@ -334,7 +340,7 @@ export default function MessageThreadPage() {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { 
-        toast({ variant: "destructive", title: "Fichier trop volumineux", description: "La taille maximale de l'image est de 5MB." });
+        toast({ variant: "destructive", title: t('toast.fileTooLargeTitle'), description: t('toast.imageTooLargeDesc') });
         return;
       }
       setImageToSend(file);
@@ -365,7 +371,7 @@ export default function MessageThreadPage() {
         uploadedImageUrl = await uploadChatImageAndGetURL(imageToSend, threadInfo.id, currentUser.uid);
       } catch (error) {
         console.error("Failed to upload image:", error);
-        toast({ variant: "destructive", title: "Erreur de téléversement", description: "L'image n'a pas pu être envoyée."});
+        toast({ variant: "destructive", title: t('toast.uploadErrorTitle'), description: t('toast.imageUploadErrorDesc')});
         setIsSending(false);
         setIsUploadingImage(false);
         return;
@@ -380,7 +386,7 @@ export default function MessageThreadPage() {
       clearImageAttachment();
     } catch (error: any) {
       console.error("Failed to send message:", error);
-      toast({ variant: "destructive", title: "Erreur d'envoi", description: error.message || "Le message n'a pas pu être envoyé."});
+      toast({ variant: "destructive", title: t('toast.sendErrorTitle'), description: error.message || t('toast.messageSendErrorDesc')});
     } finally {
       setIsSending(false);
     }
@@ -400,7 +406,7 @@ export default function MessageThreadPage() {
       }
     } catch (error) {
       console.error("Failed to send audio message:", error);
-      toast({ variant: "destructive", title: "Erreur d'envoi", description: "Le message vocal n'a pas pu être envoyé." });
+      toast({ variant: "destructive", title: t('toast.sendErrorTitle'), description: t('toast.audioSendErrorDesc') });
     } finally {
       setIsSending(false);
     }
@@ -440,7 +446,7 @@ export default function MessageThreadPage() {
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      toast({ variant: "destructive", title: "Accès au microphone refusé", description: "Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur." });
+      toast({ variant: "destructive", title: t('toast.micDeniedTitle'), description: t('toast.micDeniedDesc') });
     }
   };
 
@@ -490,9 +496,9 @@ export default function MessageThreadPage() {
             setMessages([]);
         }
 
-        toast({ title: "Conversation supprimée", description: "La conversation pour cet article a été retirée." });
+        toast({ title: t('toast.itemConvDeletedTitle'), description: t('toast.itemConvDeletedDesc') });
     } catch (error) {
-        toast({ variant: "destructive", title: "Erreur", description: "Impossible de supprimer la conversation de cet article." });
+        toast({ variant: "destructive", title: tMessages('toast.errorTitle'), description: t('toast.itemConvDeleteErrorDesc') });
         console.error("Error deleting item conversation:", error);
     }
   };
@@ -501,19 +507,19 @@ export default function MessageThreadPage() {
     if (!currentUser || !threadInfo) return;
     const conversationIsBlocked = !!threadInfo.blockedBy;
     if (conversationIsBlocked && threadInfo.blockedBy !== currentUser.uid) {
-        toast({ variant: "destructive", title: "Action non autorisée", description: "Seul l'utilisateur qui a bloqué peut débloquer." });
+        toast({ variant: "destructive", title: t('toast.unauthorizedActionTitle'), description: t('toast.unblockerOnly') });
         return;
     }
     try {
         if (conversationIsBlocked) {
             await unblockThread(threadInfo.id);
-            toast({ title: "Utilisateur débloqué", description: "Vous pouvez à nouveau échanger des messages." });
+            toast({ title: t('toast.userUnblockedTitle'), description: t('toast.userUnblockedDesc') });
         } else {
             await blockThread(threadInfo.id, currentUser.uid);
-            toast({ title: "Utilisateur bloqué", description: "La conversation est maintenant bloquée." });
+            toast({ title: t('toast.userBlockedTitle'), description: t('toast.userBlockedDesc') });
         }
     } catch (error) {
-        toast({ variant: "destructive", title: "Erreur", description: "L'opération de blocage/déblocage a échoué." });
+        toast({ variant: "destructive", title: tMessages('toast.errorTitle'), description: t('toast.toggleBlockErrorDesc') });
     }
   };
 
@@ -537,8 +543,8 @@ export default function MessageThreadPage() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <Info className="h-4 w-4" />
-          <AlertTitle>Fil de discussion non trouvé</AlertTitle>
-          <AlertDescription>Ce fil de discussion n'existe pas ou vous n'y avez pas accès.</AlertDescription>
+          <AlertTitle>{t('toast.notFoundTitle')}</AlertTitle>
+          <AlertDescription>{t('toast.notFoundDesc')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -546,7 +552,7 @@ export default function MessageThreadPage() {
   
   const otherParticipantId = threadInfo.participantIds.find(id => id !== currentUser.uid);
   const otherParticipantIndex = threadInfo.participantIds.indexOf(otherParticipantId!);
-  const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : 'Utilisateur';
+  const otherParticipantName = otherParticipantIndex !== -1 && threadInfo.participantNames[otherParticipantIndex] ? threadInfo.participantNames[otherParticipantIndex] : tMessages('unknownUser');
   const otherParticipantAvatar = otherParticipantIndex !== -1  && threadInfo.participantAvatars[otherParticipantIndex] ? threadInfo.participantAvatars[otherParticipantIndex] : 'https://placehold.co/100x100.png?text=?';
 
   const isConversationBlocked = !!threadInfo.blockedBy;
@@ -554,12 +560,12 @@ export default function MessageThreadPage() {
   
   const unreadItemIds = threadInfo.unreadItemsFor?.[currentUser.uid] || [];
 
-  let placeholderText = "Écrivez votre message...";
+  let placeholderText = t('writeMessagePlaceholder');
   if (isConversationBlocked) {
       if (amITheBlocker) {
-          placeholderText = "Vous avez bloqué cet utilisateur. Débloquez pour envoyer un message.";
+          placeholderText = t('blockedPlaceholderYou');
       } else {
-          placeholderText = "Cet utilisateur vous a bloqué. Vous ne pouvez pas répondre.";
+          placeholderText = t('blockedPlaceholderThem');
       }
   }
 
@@ -574,7 +580,7 @@ export default function MessageThreadPage() {
         {/* Right Panel for Chat */}
         <div className="flex-1 flex flex-col min-w-0">
             <header className="p-3 border-b flex items-center space-x-3 sticky top-0 bg-card z-10">
-                <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="mr-1" aria-label="Retour aux messages">
+                <Button variant="ghost" size="icon" onClick={() => router.push('/messages')} className="mr-1" aria-label={t('backToMessages')}>
                 <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <Avatar className="h-10 w-10">
@@ -585,7 +591,7 @@ export default function MessageThreadPage() {
                     <h2 className="text-lg font-semibold font-headline">{otherParticipantName}</h2>
                     {isConversationBlocked && (
                         <p className="text-xs text-destructive font-medium">
-                            {amITheBlocker ? "Vous avez bloqué cet utilisateur." : "Cet utilisateur vous a bloqué."}
+                            {amITheBlocker ? t('youBlockedUser') : t('userBlockedYou')}
                         </p>
                     )}
                 </div>
@@ -601,9 +607,9 @@ export default function MessageThreadPage() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={handleBlockUser}>
                                     {isConversationBlocked ? (
-                                        <><UserCheck className="mr-2 h-4 w-4" /><span>Débloquer</span></>
+                                        <><UserCheck className="mr-2 h-4 w-4" /><span>{t('unblock')}</span></>
                                     ) : (
-                                        <><UserX className="mr-2 h-4 w-4" /><span>Bloquer</span></>
+                                        <><UserX className="mr-2 h-4 w-4" /><span>{t('block')}</span></>
                                     )}
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -621,7 +627,7 @@ export default function MessageThreadPage() {
                         {messages.map((msg) => {
                             const isCurrentUserSender = msg.senderId === currentUser.uid;
                             const senderAvatar = isCurrentUserSender ? (currentUser.photoURL || undefined) : otherParticipantAvatar;
-                            const senderNameDisplay = isCurrentUserSender ? "Vous" : msg.senderName;
+                            const senderNameDisplay = isCurrentUserSender ? t('you') : msg.senderName;
                             const isSeenByOther = isCurrentUserSender && otherParticipantId && msg.readBy?.includes(otherParticipantId);
                             
                             return (
@@ -655,13 +661,13 @@ export default function MessageThreadPage() {
                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <div className="relative w-full max-w-[300px] aspect-[4/3] mb-1.5 rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted/50">
-                                                <Image src={msg.imageUrl} alt="Pièce jointe" fill className="object-contain" data-ai-hint="message image" />
+                                                <Image src={msg.imageUrl} alt={t('attachment')} fill className="object-contain" data-ai-hint="message image" />
                                             </div>
                                         </DialogTrigger>
                                         <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background flex items-center justify-center">
-                                            <DialogHeader><DialogTitle className="sr-only">Image en plein écran</DialogTitle></DialogHeader>
+                                            <DialogHeader><DialogTitle className="sr-only">{t('fullscreenImage')}</DialogTitle></DialogHeader>
                                             <div className="relative w-full h-full">
-                                            <Image src={msg.imageUrl} alt="Pièce jointe en grand" fill className="object-contain rounded-md" data-ai-hint="message image" />
+                                            <Image src={msg.imageUrl} alt={t('attachment')} fill className="object-contain rounded-md" data-ai-hint="message image" />
                                             </div>
                                         </DialogContent>
                                     </Dialog>
@@ -676,7 +682,7 @@ export default function MessageThreadPage() {
                                 </div>
                                 {isCurrentUserSender && (
                                     <Avatar className="h-8 w-8 self-end mb-1"> 
-                                    <AvatarImage src={currentUser.photoURL || undefined} alt="Vous" data-ai-hint="profil personne" />
+                                    <AvatarImage src={currentUser.photoURL || undefined} alt={t('you')} data-ai-hint="profil personne" />
                                     <AvatarFallback>{(currentUser.displayName || "M").substring(0,1).toUpperCase()}</AvatarFallback>
                                     </Avatar>
                                 )}
@@ -691,7 +697,7 @@ export default function MessageThreadPage() {
                         <div className="flex items-center w-full gap-4">
                           <div className="flex items-center gap-2 text-red-500 font-medium">
                             <Mic className="h-5 w-5 animate-pulse" />
-                            <span>Enregistrement... {formatTime(recordingTime)}</span>
+                            <span>{t('recording', { time: formatTime(recordingTime) })}</span>
                           </div>
                           <Button onClick={handleStopRecording} variant="destructive" size="icon">
                             <Pause className="h-5 w-5" />
@@ -714,14 +720,14 @@ export default function MessageThreadPage() {
                           {imagePreview && (
                           <div className="mb-2 p-2 border rounded-md bg-muted/50 relative w-24 h-24">
                               <Image src={imagePreview} alt="Aperçu" fill className="object-cover rounded-md" />
-                              <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment} aria-label="Retirer l'image">
+                              <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 z-10" onClick={clearImageAttachment} aria-label={t('attachImage')}>
                               <X className="h-3 w-3" />
                               </Button>
                           </div>
                           )}
                           <div className="flex items-end space-x-2">
                             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageFileChange} className="hidden" />
-                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend || isConversationBlocked} aria-label="Joindre une image">
+                            <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isSending || !!imageToSend || isConversationBlocked} aria-label={t('attachImage')}>
                                 {isUploadingImage ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
                             </Button>
                             <Textarea
@@ -739,11 +745,11 @@ export default function MessageThreadPage() {
                                 disabled={isSending || isConversationBlocked}
                             />
                              {newMessage.trim() ? (
-                                <Button onClick={handleSendMessage} disabled={isSending || isConversationBlocked} aria-label="Envoyer le message">
+                                <Button onClick={handleSendMessage} disabled={isSending || isConversationBlocked} aria-label={t('sendMessage')}>
                                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </Button>
                              ) : (
-                                <Button onClick={handleStartRecording} disabled={isSending || isConversationBlocked} aria-label="Envoyer un message vocal">
+                                <Button onClick={handleStartRecording} disabled={isSending || isConversationBlocked} aria-label={t('sendVoiceMessage')}>
                                     <Mic className="h-4 w-4" />
                                 </Button>
                              )}
@@ -755,8 +761,8 @@ export default function MessageThreadPage() {
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-center p-4 bg-background/30">
                     <Package className="h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold">Sélectionnez un article</h3>
-                    <p className="text-muted-foreground">Veuillez sélectionner un article ci-dessus pour voir la conversation.</p>
+                    <h3 className="text-xl font-semibold">{t('selectAnItem')}</h3>
+                    <p className="text-muted-foreground">{t('selectAnItemDesc')}</p>
                 </div>
             )}
         </div>
