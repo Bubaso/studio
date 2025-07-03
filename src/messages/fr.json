@@ -14,5 +14,21 @@
       "signIn": "Connexion",
       "signOut": "Déconnexion"
     }
+  },
+  "HomePage": {
+    "exploreByCategory": "Explorer par Catégorie",
+    "viewAllItems": "Voir tous les articles",
+    "onboarding": {
+      "slide1_title": "Votre Marché d'Occasion",
+      "slide1_desc": "Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.",
+      "slide2_title": "Découvrez",
+      "slide2_desc": "Explorez des milliers d'articles mis en vente par des vendeurs.",
+      "slide3_title": "Vendez Facilement",
+      "slide3_desc": "Mettez en vente vos articles en quelques clics et fixez votre prix.",
+      "slide4_title": "Connectez-vous",
+      "slide4_desc": "Communiquez directement avec les acheteurs et vendeurs via messagerie."
+    },
+    "latestFindings": "Dernières trouvailles sur JëndJaay",
+    "forYou": "Spécialement pour vous"
   }
 }

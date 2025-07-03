@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -6,26 +7,7 @@ import { storage } from '@/lib/firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
-
-// Original static slide data
-const onboardingSlidesData = [
-    {
-      title: "Votre Marché d'Occasion",
-      description: "Achetez et vendez des articles uniques et donnez une seconde vie à vos objets.",
-    },
-    {
-      title: "Découvrez",
-      description: "Explorez des milliers d'articles mis en vente par des vendeurs.",
-    },
-    {
-      title: "Vendez Facilement",
-      description: "Mettez en vente vos articles en quelques clics et fixez votre prix.",
-    },
-    {
-      title: "Connectez-vous",
-      description: "Communiquez directement avec les acheteurs et vendeurs via messagerie.",
-    },
-];
+import { useTranslations } from 'next-intl';
 
 // Interface for media fetched from Firebase Storage
 interface PromotionalMedia {
@@ -43,6 +25,14 @@ interface OnboardingSlide {
 }
 
 export function HeroOnboarding() {
+    const t = useTranslations('HomePage.onboarding');
+    const onboardingSlidesData = [
+      { title: t('slide1_title'), description: t('slide1_desc') },
+      { title: t('slide2_title'), description: t('slide2_desc') },
+      { title: t('slide3_title'), description: t('slide3_desc') },
+      { title: t('slide4_title'), description: t('slide4_desc') },
+    ];
+
     const [mediaItems, setMediaItems] = useState<PromotionalMedia[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -118,7 +108,7 @@ export function HeroOnboarding() {
                 mediaType: media?.type,
             };
         });
-    }, [isLoading, mediaItems]);
+    }, [isLoading, mediaItems, onboardingSlidesData]);
 
     // Function to handle slide transition with fade effect
     const goToSlide = (index: number) => {

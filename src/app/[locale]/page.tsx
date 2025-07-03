@@ -8,6 +8,7 @@ import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 import { PersonalizedContent } from '@/components/personalized-content';
 import admin from '@/lib/firebaseAdmin';
+import { getTranslations } from 'next-intl/server';
 
 
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -31,6 +32,7 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 // This page is now fully static on the server.
 // The dynamic, personalized parts are loaded on the client in PersonalizedContent.
 export default async function HomePage() {
+  const t = await getTranslations('HomePage');
   const db = admin?.firestore();
 
   // Fetch data that does not depend on the user
@@ -65,7 +67,7 @@ export default async function HomePage() {
       <HeroOnboarding />
 
       <section className="py-4 md:py-8">
-        <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">Explorer par Catégorie</h2>
+        <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">{t('exploreByCategory')}</h2>
         <CategoryCarousel categories={categoriesWithData} />
       </section>
 

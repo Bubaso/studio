@@ -14,5 +14,21 @@
       "signIn": "Sign In",
       "signOut": "Sign Out"
     }
+  },
+  "HomePage": {
+    "exploreByCategory": "Explore by Category",
+    "viewAllItems": "View All Items",
+    "onboarding": {
+      "slide1_title": "Your Secondhand Marketplace",
+      "slide1_desc": "Buy and sell unique items and give your belongings a second life.",
+      "slide2_title": "Discover",
+      "slide2_desc": "Explore thousands of items listed by sellers.",
+      "slide3_title": "Sell Easily",
+      "slide3_desc": "List your items in just a few clicks and set your price.",
+      "slide4_title": "Connect",
+      "slide4_desc": "Communicate directly with buyers and sellers through messaging."
+    },
+    "latestFindings": "Latest Finds on JëndJaay",
+    "forYou": "Especially for You"
   }
 }

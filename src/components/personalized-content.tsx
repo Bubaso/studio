@@ -10,6 +10,7 @@ import { FeaturedItemsGrid } from './featured-items-grid';
 import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
 import { Button } from './ui/button';
+import { useTranslations } from 'next-intl';
 
 interface PersonalizedContentProps {
   latestItems: Item[];
@@ -43,6 +44,7 @@ function CardSkeleton() {
 
 
 export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
+  const t = useTranslations('HomePage');
   const { firebaseUser } = useAuth();
   const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,12 +72,12 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
   return (
     <section className="py-4 md:py-6">
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-            Dernières trouvailles sur JëndJaay
+            {t('latestFindings')}
         </h2>
         <FeaturedItemsGrid initialItems={latestItems} />
         <div className="text-center mt-6 md:mt-8">
             <Link href="/browse">
-            <Button variant="secondary" size="lg">Voir tous les articles</Button>
+            <Button variant="secondary" size="lg">{t('viewAllItems')}</Button>
             </Link>
         </div>
     </section>
