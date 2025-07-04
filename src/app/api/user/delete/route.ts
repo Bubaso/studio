@@ -23,21 +23,21 @@ function getPathFromUrl(url: string): string | null {
 
 // Helper function to delete subcollections recursively.
 // NOTE: This does not delete sub-sub-collections. For this app's structure, it's sufficient.
-async function deleteCollectionInBatches(collectionRef: admin.firestore.CollectionReference, batchSize: number) {
+async function deleteCollectionInBatches(collectionRef: admin.firestore.CollectionReference, batch: admin.firestore.WriteBatch) {
     if (!adminDb) return;
-    const query = collectionRef.limit(batchSize);
+    const query = collectionRef.limit(100);
     let snapshot = await query.get();
 
     while (snapshot.size > 0) {
-        const batch = adminDb.batch();
         snapshot.docs.forEach(doc => {
             batch.delete(doc.ref);
         });
-        await batch.commit();
-        
+        // Important: We don't commit the batch here. It will be committed once at the end.
+        // We re-fetch the next batch.
         snapshot = await query.get();
     }
 }
+
 
 export async function POST(request: NextRequest) {
   if (!admin || !adminAuth || !adminDb) {
@@ -61,111 +61,97 @@ export async function POST(request: NextRequest) {
   const uid = decodedToken.uid;
   const storage = getStorage(admin.app());
   const bucket = storage.bucket();
-  const allPromises: Promise<any>[] = [];
 
   try {
-    // --- Step 1: Delete User's Listings and associated files/subcollections ---
+    // --- Step 1: Collect all user data references and media URLs ---
+    console.log(`[DELETE USER ${uid}] Step 1: Collecting all user data...`);
+    
+    // User's listings and associated media
     const itemsQuery = adminDb.collection('items').where('sellerId', '==', uid);
     const itemsSnapshot = await itemsQuery.get();
-    
-    if (!itemsSnapshot.empty) {
-      const itemBatch = adminDb.batch();
-      itemsSnapshot.forEach(doc => {
+    const itemMediaUrls: string[] = [];
+    const itemIds: string[] = [];
+    itemsSnapshot.forEach(doc => {
+        itemIds.push(doc.id);
         const itemData = doc.data();
-        // Delete item images from storage
         if (itemData.imageUrls && Array.isArray(itemData.imageUrls)) {
-          itemData.imageUrls.forEach((url: string) => {
-            const path = getPathFromUrl(url);
-            if (path) {
-              allPromises.push(bucket.file(path).delete().catch(e => console.error(`Failed to delete item image ${path}:`, e)));
-            }
-          });
+            itemMediaUrls.push(...itemData.imageUrls);
         }
-        // Delete item video from storage
         if (itemData.videoUrl) {
-           const path = getPathFromUrl(itemData.videoUrl);
-           if (path) {
-              allPromises.push(bucket.file(path).delete().catch(e => console.error(`Failed to delete item video ${path}:`, e)));
-           }
+            itemMediaUrls.push(itemData.videoUrl);
         }
-        // Delete item's 'views' subcollection
-        allPromises.push(deleteCollectionInBatches(doc.ref.collection('views'), 100));
-        
-        // Add item doc deletion to the batch
-        itemBatch.delete(doc.ref);
-      });
-      allPromises.push(itemBatch.commit());
-    }
+    });
 
-    // --- Step 2: Delete user-owned `collections` and their subcollections ---
-    const collectionsQuery = adminDb.collection('collections').where('userId', '==', uid);
-    const collectionsSnapshot = await collectionsQuery.get();
-    if (!collectionsSnapshot.empty) {
-        const collectionBatch = adminDb.batch();
-        collectionsSnapshot.forEach(doc => {
-            allPromises.push(deleteCollectionInBatches(doc.ref.collection('items'), 100));
-            collectionBatch.delete(doc.ref);
-        });
-        allPromises.push(collectionBatch.commit());
-    }
-    
-    // --- Step 3: Delete user-owned `userFavorites` (legacy) ---
-    const favoritesQuery = adminDb.collection('userFavorites').where('userId', '==', uid);
-    const favoritesSnapshot = await favoritesQuery.get();
-    if (!favoritesSnapshot.empty) {
-        const favoritesBatch = adminDb.batch();
-        favoritesSnapshot.forEach(doc => favoritesBatch.delete(doc.ref));
-        allPromises.push(favoritesBatch.commit());
-    }
-
-
-    // --- Step 4: Delete user-made `reviews` ---
-    const reviewsQuery = adminDb.collection('reviews').where('reviewerId', '==', uid);
-    const reviewsSnapshot = await reviewsQuery.get();
-    if(!reviewsSnapshot.empty) {
-        const reviewBatch = adminDb.batch();
-        reviewsSnapshot.forEach(doc => reviewBatch.delete(doc.ref));
-        allPromises.push(reviewBatch.commit());
-    }
-    
-    // --- Step 5: Delete User's Profile, Avatar, and Subcollections ---
+    // User's avatar
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      // Delete avatar from storage
-      if (userData?.avatarUrl) {
-        const path = getPathFromUrl(userData.avatarUrl);
-        if (path) {
-           allPromises.push(bucket.file(path).delete().catch(e => console.error(`Failed to delete avatar ${path}:`, e)));
-        }
-      }
-      // Delete user's subcollections
-      allPromises.push(deleteCollectionInBatches(userDocRef.collection('subscriptions'), 100));
-      allPromises.push(deleteCollectionInBatches(userDocRef.collection('subscribers'), 100));
-      allPromises.push(deleteCollectionInBatches(userDocRef.collection('notifications'), 100));
-      allPromises.push(deleteCollectionInBatches(userDocRef.collection('viewHistory'), 100));
+    if (userDoc.exists() && userDoc.data()?.avatarUrl) {
+        itemMediaUrls.push(userDoc.data()?.avatarUrl);
+    }
+    console.log(`[DELETE USER ${uid}]... found ${itemIds.length} items and ${itemMediaUrls.length} total media files.`);
 
-      // Finally, schedule the main user doc for deletion
-      allPromises.push(userDocRef.delete());
+    // --- Step 2: Delete all media from Storage ---
+    console.log(`[DELETE USER ${uid}] Step 2: Deleting media files from Storage...`);
+    const mediaDeletionPromises = itemMediaUrls.map(url => {
+        const path = getPathFromUrl(url);
+        if (path) {
+            return bucket.file(path).delete().catch(e => console.error(`Failed to delete media file ${path}:`, e.message));
+        }
+        return Promise.resolve();
+    });
+    await Promise.allSettled(mediaDeletionPromises);
+    console.log(`[DELETE USER ${uid}] Media deletion process completed.`);
+
+    // --- Step 3: Delete all Firestore documents in a single large transaction ---
+    console.log(`[DELETE USER ${uid}] Step 3: Preparing and running Firestore deletion transaction...`);
+    const batch = adminDb.batch();
+
+    // Delete items and their 'views' subcollections
+    for (const itemId of itemIds) {
+        const itemRef = adminDb.collection('items').doc(itemId);
+        await deleteCollectionInBatches(itemRef.collection('views'), batch);
+        batch.delete(itemRef);
     }
 
-    // TODO: Handle user's presence in other users' `subscribers` list. This is more complex and can be a phase 2.
-    // TODO: Handle `productReports` made by the user.
-
-    // Execute all deletion promises
-    await Promise.all(allPromises);
+    // Delete user's 'collections' and their 'items' subcollections
+    const collectionsQuery = adminDb.collection('collections').where('userId', '==', uid);
+    const collectionsSnapshot = await collectionsQuery.get();
+    for (const docSnap of collectionsSnapshot.docs) {
+        await deleteCollectionInBatches(docSnap.ref.collection('items'), batch);
+        batch.delete(docSnap.ref);
+    }
     
+    // Delete legacy 'userFavorites'
+    const favoritesQuery = adminDb.collection('userFavorites').where('userId', '==', uid);
+    const favoritesSnapshot = await favoritesQuery.get();
+    favoritesSnapshot.forEach(doc => batch.delete(doc.ref));
+
+    // Delete user-made 'reviews'
+    const reviewsQuery = adminDb.collection('reviews').where('reviewerId', '==', uid);
+    const reviewsSnapshot = await reviewsQuery.get();
+    reviewsSnapshot.forEach(doc => batch.delete(doc.ref));
+    
+    // Delete user's subcollections ('subscriptions', 'subscribers', etc.)
+    await deleteCollectionInBatches(userDocRef.collection('subscriptions'), batch);
+    await deleteCollectionInBatches(userDocRef.collection('subscribers'), batch);
+    await deleteCollectionInBatches(userDocRef.collection('notifications'), batch);
+    await deleteCollectionInBatches(userDocRef.collection('viewHistory'), batch);
+
+    // Finally, delete the main user document itself
+    batch.delete(userDocRef);
+
+    await batch.commit();
+    console.log(`[DELETE USER ${uid}] Firestore data deletion committed successfully.`);
+
     // --- Final Step: Delete the user from Firebase Auth ---
-    // This should be the very last step.
+    console.log(`[DELETE USER ${uid}] Step 4: Deleting user from Firebase Auth...`);
     await adminAuth.deleteUser(uid);
+    console.log(`[DELETE USER ${uid}] Successfully deleted user from Auth.`);
 
     return NextResponse.json({ success: true, message: 'Compte supprimé avec succès.' });
 
   } catch (error: any) {
-    console.error(`API DELETE USER: Error deleting user ${uid}:`, error);
-    return NextResponse.json({ error: "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
+    console.error(`API DELETE USER: Error during account deletion for ${uid}:`, error);
+    return NextResponse.json({ error: error.message || "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
   }
 }
-
-    
