@@ -6,6 +6,7 @@ import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection,
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { sendWelcomeEmail } from './emailService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
@@ -81,6 +82,20 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
     await setDoc(userRef, newUserDocData);
     console.log(`Successfully created user document for ${firebaseUser.uid}`);
+
+    // --- NEW: Send Welcome Email ---
+    if (finalName && email) {
+      try {
+        console.log(`Attempting to send welcome email to ${email} for user ${finalName}`);
+        await sendWelcomeEmail({ to: email, name: finalName });
+        console.log(`Welcome email process initiated for ${email}.`);
+      } catch (emailError) {
+        // Log the email error but don't fail the entire user creation process.
+        // The user account is more critical than the welcome email.
+        console.error(`Failed to send welcome email for user ${firebaseUser.uid}:`, emailError);
+      }
+    }
+    // --- END: Send Welcome Email ---
 
   } catch (error) {
     console.error("Error creating user document: ", error);
