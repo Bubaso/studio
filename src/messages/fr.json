@@ -35,6 +35,92 @@
     "title": "Vendez votre article",
     "subtitle": "Listez facilement vos articles d'occasion et touchez des milliers d'acheteurs potentiels."
   },
+  "SignInPage": {
+    "title": "Connexion",
+    "description": "Bienvenue ! Veuillez vous connecter à votre compte.",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "signInButton": "Se connecter",
+    "orSeparator": "OU",
+    "googleSignIn": "Continuer avec Google",
+    "facebookSignIn": "Continuer avec Facebook",
+    "appleSignIn": "Continuer avec Apple",
+    "forgotPasswordPrompt": "Mot de passe oublié ?",
+    "resetLink": "Réinitialiser",
+    "noAccountPrompt": "Pas encore de compte ?",
+    "signUpLink": "S'inscrire",
+    "verifyingSession": "Vérification de la session...",
+    "alreadyLoggedIn": "Vous êtes déjà connecté. Redirection...",
+    "toast": {
+      "successTitle": "Succès",
+      "welcome": "Bienvenue, {name} !",
+      "redirecting": "Redirection en cours...",
+      "oauthErrorTitle": "Échec de la connexion",
+      "oauthAccountExists": "Un compte existe déjà avec cette adresse e-mail. Veuillez vous connecter avec la méthode d'origine.",
+      "popupClosed": "Connexion annulée. La fenêtre a été fermée.",
+      "providerNotEnabled": "Cette méthode de connexion n'est pas activée. Veuillez contacter le support.",
+      "networkError": "Une erreur réseau est survenue. Veuillez vérifier votre connexion et réessayer.",
+      "unauthorizedDomain": "Ce domaine n'est pas autorisé pour cette méthode de connexion.",
+      "errorTitle": "Erreur de connexion",
+      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
+      "invalidCredentials": "E-mail ou mot de passe invalide. Veuillez réessayer.",
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+      "tooManyRequests": "Trop de tentatives de connexion. Veuillez réessayer plus tard."
+    }
+  },
+  "SignUpPage": {
+    "title": "Créer un Compte",
+    "description": "Rejoignez-nous et commencez à découvrir et vendre des articles uniques.",
+    "nameLabel": "Nom complet",
+    "namePlaceholder": "John Doe",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Au moins 6 caractères",
+    "createAccountButton": "Créer le compte",
+    "orSeparator": "OU",
+    "googleSignUp": "S'inscrire avec Google",
+    "facebookSignUp": "S'inscrire avec Facebook",
+    "appleSignUp": "S'inscrire avec Apple",
+    "alreadyHaveAccountPrompt": "Vous avez déjà un compte ?",
+    "signInLink": "Se connecter",
+    "toast": {
+      "successTitle": "Compte créé !",
+      "welcome": "Bienvenue ! Votre compte a été créé avec succès.",
+      "emailInUseTitle": "E-mail déjà utilisé",
+      "emailInUseDesc": "Cet e-mail est déjà associé à un compte.",
+      "errorTitle": "Erreur d'inscription",
+      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
+      "weakPassword": "Votre mot de passe doit contenir au moins 6 caractères.",
+      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support."
+    }
+  },
+  "ForgotPasswordPage": {
+    "title": "Mot de passe oublié",
+    "checkInbox": "Vérifiez votre boîte de réception",
+    "enterEmail": "Saisissez votre e-mail pour recevoir un lien de réinitialisation.",
+    "emailSentConfirmation": "Si un compte existe pour {email}, un lien de réinitialisation a été envoyé.",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "sendLinkButton": "Envoyer le lien de réinitialisation",
+    "backToLogin": "Retour à la connexion",
+    "toast": {
+      "emailSentTitle": "E-mail envoyé",
+      "emailSentDesc": "Si un compte existe pour {email}, un lien de réinitialisation a été envoyé.",
+      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+      "errorTitle": "Erreur"
+    }
+  },
+  "ItemCard": {
+    "sold": "VENDU",
+    "unconfirmedSold": "Non confirmé : peut être vendu",
+    "lowActivity": "Peu d’activité récente",
+    "viewSoldListing": "Voir l'annonce vendue",
+    "viewDetails": "Voir les détails"
+  },
   "ListingForm": {
     "labels": {
       "description": "Description",
@@ -229,13 +315,6 @@
   "MapItemPreviewCard": {
     "viewDetails": "Voir les détails"
   },
-  "ItemCard": {
-    "sold": "VENDU",
-    "unconfirmedSold": "Non confirmé : peut être vendu",
-    "lowActivity": "Peu d’activité récente",
-    "viewSoldListing": "Voir l'annonce vendue",
-    "viewDetails": "Voir les détails"
-  },
   "ItemDetailPage": {
     "missingItemId": "ID d'article manquant.",
     "itemNotFound": "Article non trouvé",
@@ -401,85 +480,6 @@
       "userBlockedTitle": "Utilisateur bloqué",
       "userBlockedDesc": "La conversation est maintenant bloquée.",
       "toggleBlockErrorDesc": "L'opération de blocage/déblocage a échoué."
-    }
-  },
-  "SignInPage": {
-    "title": "Connexion",
-    "description": "Bienvenue ! Veuillez vous connecter à votre compte.",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "vous@exemple.com",
-    "passwordLabel": "Mot de passe",
-    "passwordPlaceholder": "••••••••",
-    "signInButton": "Se connecter",
-    "orSeparator": "OU",
-    "googleSignIn": "Continuer avec Google",
-    "facebookSignIn": "Continuer avec Facebook",
-    "appleSignIn": "Continuer avec Apple",
-    "forgotPasswordPrompt": "Mot de passe oublié ?",
-    "resetLink": "Réinitialiser",
-    "noAccountPrompt": "Pas encore de compte ?",
-    "signUpLink": "S'inscrire",
-    "verifyingSession": "Vérification de la session...",
-    "alreadyLoggedIn": "Vous êtes déjà connecté. Redirection...",
-    "toast": {
-      "successTitle": "Succès",
-      "welcome": "Bienvenue, {name} !",
-      "redirecting": "Redirection en cours...",
-      "oauthErrorTitle": "Échec de la connexion",
-      "oauthAccountExists": "Un compte existe déjà avec cette adresse e-mail. Veuillez vous connecter avec la méthode d'origine.",
-      "popupClosed": "Connexion annulée. La fenêtre a été fermée.",
-      "providerNotEnabled": "Cette méthode de connexion n'est pas activée. Veuillez contacter le support.",
-      "networkError": "Une erreur réseau est survenue. Veuillez vérifier votre connexion et réessayer.",
-      "unauthorizedDomain": "Ce domaine n'est pas autorisé pour cette méthode de connexion.",
-      "errorTitle": "Erreur de connexion",
-      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
-      "invalidCredentials": "E-mail ou mot de passe invalide. Veuillez réessayer.",
-      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
-      "tooManyRequests": "Trop de tentatives de connexion. Veuillez réessayer plus tard."
-    }
-  },
-  "SignUpPage": {
-    "title": "Créer un Compte",
-    "description": "Rejoignez-nous et commencez à découvrir et vendre des articles uniques.",
-    "nameLabel": "Nom complet",
-    "namePlaceholder": "John Doe",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "vous@exemple.com",
-    "passwordLabel": "Mot de passe",
-    "passwordPlaceholder": "Au moins 6 caractères",
-    "createAccountButton": "Créer le compte",
-    "orSeparator": "OU",
-    "googleSignUp": "S'inscrire avec Google",
-    "facebookSignUp": "S'inscrire avec Facebook",
-    "appleSignUp": "S'inscrire avec Apple",
-    "alreadyHaveAccountPrompt": "Vous avez déjà un compte ?",
-    "signInLink": "Se connecter",
-    "toast": {
-      "successTitle": "Compte créé !",
-      "welcome": "Bienvenue ! Votre compte a été créé avec succès.",
-      "emailInUseTitle": "E-mail déjà utilisé",
-      "emailInUseDesc": "Cet e-mail est déjà associé à un compte.",
-      "errorTitle": "Erreur d'inscription",
-      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
-      "weakPassword": "Votre mot de passe doit contenir au moins 6 caractères.",
-      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support."
-    }
-  },
-  "ForgotPasswordPage": {
-    "title": "Mot de passe oublié",
-    "checkInbox": "Vérifiez votre boîte de réception",
-    "enterEmail": "Saisissez votre e-mail pour recevoir un lien de réinitialisation.",
-    "emailSentConfirmation": "Si un compte existe pour {email}, un lien de réinitialisation a été envoyé.",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "vous@exemple.com",
-    "sendLinkButton": "Envoyer le lien de réinitialisation",
-    "backToLogin": "Retour à la connexion",
-    "toast": {
-      "emailSentTitle": "E-mail envoyé",
-      "emailSentDesc": "Si un compte existe pour {email}, un lien de réinitialisation a été envoyé.",
-      "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
-      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
-      "errorTitle": "Erreur"
     }
   }
 }
