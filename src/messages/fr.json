@@ -1,3 +1,4 @@
+
 {
   "Header": {
     "searchPlaceholder": "Rechercher des articles...",
@@ -331,6 +332,77 @@
       "listingReactivated": "Annonce réactivée",
       "reportsCleared": "Les signalements ont été effacés et votre annonce est de nouveau marquée comme disponible.",
       "updateError": "Impossible de mettre à jour l'annonce."
+    }
+  },
+  "MessagesPage": {
+    "title": "Vos Messages",
+    "loadingAuth": "Chargement de l'authentification...",
+    "accessDeniedTitle": "Accès refusé",
+    "accessDeniedDesc": "Veuillez ",
+    "loginLink": "vous connecter",
+    "accessDeniedDescCont": " pour voir vos messages.",
+    "loadingThreads": "Chargement des fils de discussion...",
+    "noMessagesYet": "Pas encore de messages.",
+    "youPrefix": "Vous : ",
+    "unknownUser": "Utilisateur Inconnu",
+    "deleteConfirmTitle": "Supprimer cette conversation ?",
+    "deleteConfirmDesc": "Cette action est irréversible. La conversation sera retirée de votre liste, mais l'autre participant la verra toujours.",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "noThreadsTitle": "Aucun message pour le moment",
+    "noThreadsDesc": "Commencez une conversation en contactant un vendeur ou un utilisateur depuis leur profil ou une annonce.",
+    "toast": {
+      "threadDeletedTitle": "Conversation supprimée",
+      "threadDeletedDesc": "La conversation a été retirée de votre liste.",
+      "errorTitle": "Erreur",
+      "deleteError": "Impossible de supprimer la conversation."
+    }
+  },
+  "MessageThreadPage": {
+    "discussedItems": "Articles Concernés",
+    "deleteItemConvTitle": "Supprimer cette conversation ?",
+    "deleteItemConvDesc": "La conversation concernant l'article \"{itemName}\" sera supprimée de votre vue. L'autre participant la verra toujours. Cette action est irréversible.",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "backToMessages": "Retour aux messages",
+    "youBlockedUser": "Vous avez bloqué cet utilisateur.",
+    "userBlockedYou": "Cet utilisateur vous a bloqué.",
+    "unblock": "Débloquer",
+    "block": "Bloquer",
+    "you": "Vous",
+    "fullscreenImage": "Image en plein écran",
+    "attachment": "Pièce jointe",
+    "writeMessagePlaceholder": "Écrivez votre message...",
+    "blockedPlaceholderYou": "Vous avez bloqué cet utilisateur. Débloquez pour envoyer un message.",
+    "blockedPlaceholderThem": "Cet utilisateur vous a bloqué. Vous ne pouvez pas répondre.",
+    "recording": "Enregistrement... {time}",
+    "attachImage": "Joindre une image",
+    "sendMessage": "Envoyer le message",
+    "sendVoiceMessage": "Envoyer un message vocal",
+    "selectAnItem": "Sélectionnez un article",
+    "selectAnItemDesc": "Veuillez sélectionner un article ci-dessus pour voir la conversation.",
+    "toast": {
+      "notFoundTitle": "Non trouvé",
+      "notFoundDesc": "Ce fil de discussion est introuvable.",
+      "fileTooLargeTitle": "Fichier trop volumineux",
+      "imageTooLargeDesc": "La taille maximale de l'image est de 5MB.",
+      "uploadErrorTitle": "Erreur de téléversement",
+      "imageUploadErrorDesc": "L'image n'a pas pu être envoyée.",
+      "sendErrorTitle": "Erreur d'envoi",
+      "messageSendErrorDesc": "Le message n'a pas pu être envoyé.",
+      "audioSendErrorDesc": "Le message vocal n'a pas pu être envoyé.",
+      "micDeniedTitle": "Accès au microphone refusé",
+      "micDeniedDesc": "Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.",
+      "itemConvDeletedTitle": "Conversation supprimée",
+      "itemConvDeletedDesc": "La conversation pour cet article a été retirée.",
+      "itemConvDeleteErrorDesc": "Impossible de supprimer la conversation de cet article.",
+      "unauthorizedActionTitle": "Action non autorisée",
+      "unblockerOnly": "Seul l'utilisateur qui a bloqué peut débloquer.",
+      "userUnblockedTitle": "Utilisateur débloqué",
+      "userUnblockedDesc": "Vous pouvez à nouveau échanger des messages.",
+      "userBlockedTitle": "Utilisateur bloqué",
+      "userBlockedDesc": "La conversation est maintenant bloquée.",
+      "toggleBlockErrorDesc": "L'opération de blocage/déblocage a échoué."
     }
   }
 }

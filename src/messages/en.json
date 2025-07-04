@@ -1,3 +1,4 @@
+
 {
   "Header": {
     "searchPlaceholder": "Search for items...",
@@ -331,6 +332,77 @@
       "listingReactivated": "Listing Reactivated",
       "reportsCleared": "Reports have been cleared and your listing is marked as available again.",
       "updateError": "Could not update the listing."
+    }
+  },
+  "MessagesPage": {
+    "title": "Your Messages",
+    "loadingAuth": "Loading authentication...",
+    "accessDeniedTitle": "Access Denied",
+    "accessDeniedDesc": "Please",
+    "loginLink": "log in",
+    "accessDeniedDescCont": "to see your messages.",
+    "loadingThreads": "Loading threads...",
+    "noMessagesYet": "No messages yet.",
+    "youPrefix": "You: ",
+    "unknownUser": "Unknown User",
+    "deleteConfirmTitle": "Delete this conversation?",
+    "deleteConfirmDesc": "This action is irreversible. The conversation will be removed from your list, but the other participant will still see it.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "noThreadsTitle": "No messages yet",
+    "noThreadsDesc": "Start a conversation by contacting a seller or user from their profile or a listing.",
+    "toast": {
+      "threadDeletedTitle": "Conversation Deleted",
+      "threadDeletedDesc": "The conversation has been removed from your list.",
+      "errorTitle": "Error",
+      "deleteError": "Could not delete the conversation."
+    }
+  },
+  "MessageThreadPage": {
+    "discussedItems": "Discussed Items",
+    "deleteItemConvTitle": "Delete this item's conversation?",
+    "deleteItemConvDesc": "The conversation about \"{itemName}\" will be removed from your view. The other participant will still see it. This action is irreversible.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "backToMessages": "Back to messages",
+    "youBlockedUser": "You blocked this user.",
+    "userBlockedYou": "This user blocked you.",
+    "unblock": "Unblock",
+    "block": "Block",
+    "you": "You",
+    "fullscreenImage": "Fullscreen image",
+    "attachment": "Attachment",
+    "writeMessagePlaceholder": "Write your message...",
+    "blockedPlaceholderYou": "You have blocked this user. Unblock to send a message.",
+    "blockedPlaceholderThem": "This user blocked you. You cannot reply.",
+    "recording": "Recording... {time}",
+    "attachImage": "Attach image",
+    "sendMessage": "Send message",
+    "sendVoiceMessage": "Send voice message",
+    "selectAnItem": "Select an Item",
+    "selectAnItemDesc": "Please select an item above to view the conversation.",
+    "toast": {
+      "notFoundTitle": "Not Found",
+      "notFoundDesc": "This message thread could not be found.",
+      "fileTooLargeTitle": "File too large",
+      "imageTooLargeDesc": "The maximum image size is 5MB.",
+      "uploadErrorTitle": "Upload Error",
+      "imageUploadErrorDesc": "The image could not be sent.",
+      "sendErrorTitle": "Send Error",
+      "messageSendErrorDesc": "The message could not be sent.",
+      "audioSendErrorDesc": "The voice message could not be sent.",
+      "micDeniedTitle": "Microphone Access Denied",
+      "micDeniedDesc": "Please allow microphone access in your browser settings.",
+      "itemConvDeletedTitle": "Conversation Deleted",
+      "itemConvDeletedDesc": "The conversation for this item has been removed.",
+      "itemConvDeleteErrorDesc": "Could not delete this item's conversation.",
+      "unauthorizedActionTitle": "Unauthorized Action",
+      "unblockerOnly": "Only the user who blocked can unblock.",
+      "userUnblockedTitle": "User Unblocked",
+      "userUnblockedDesc": "You can exchange messages again.",
+      "userBlockedTitle": "User Blocked",
+      "userBlockedDesc": "The conversation is now blocked.",
+      "toggleBlockErrorDesc": "The block/unblock operation failed."
     }
   }
 }

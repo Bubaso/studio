@@ -1,3 +1,4 @@
+
 {
   "Header": {
     "searchPlaceholder": "Ürünleri ara...",
@@ -331,6 +332,77 @@
       "listingReactivated": "İlan Yeniden Etkinleştirildi",
       "reportsCleared": "Raporlar temizlendi ve ilanınız tekrar mevcut olarak işaretlendi.",
       "updateError": "İlan güncellenemedi."
+    }
+  },
+  "MessagesPage": {
+    "title": "Mesajlarınız",
+    "loadingAuth": "Kimlik doğrulaması yükleniyor...",
+    "accessDeniedTitle": "Erişim Reddedildi",
+    "accessDeniedDesc": "Mesajlarınızı görmek için lütfen",
+    "loginLink": "giriş yapın",
+    "accessDeniedDescCont": ".",
+    "loadingThreads": "Konu başlıkları yükleniyor...",
+    "noMessagesYet": "Henüz mesaj yok.",
+    "youPrefix": "Siz: ",
+    "unknownUser": "Bilinmeyen Kullanıcı",
+    "deleteConfirmTitle": "Bu konuşmayı silmek istiyor musunuz?",
+    "deleteConfirmDesc": "Bu işlem geri alınamaz. Konuşma listenizden kaldırılacak, ancak diğer katılımcı hala görecek.",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "noThreadsTitle": "Henüz mesaj yok",
+    "noThreadsDesc": "Bir satıcıyla veya kullanıcıyla profillerinden veya bir ilandan iletişime geçerek bir konuşma başlatın.",
+    "toast": {
+      "threadDeletedTitle": "Konuşma Silindi",
+      "threadDeletedDesc": "Konuşma listenizden kaldırıldı.",
+      "errorTitle": "Hata",
+      "deleteError": "Konuşma silinemedi."
+    }
+  },
+  "MessageThreadPage": {
+    "discussedItems": "İlgili Ürünler",
+    "deleteItemConvTitle": "Bu ürünün konuşmasını silmek istiyor musunuz?",
+    "deleteItemConvDesc": "\"{itemName}\" hakkındaki konuşma görünümünüzden kaldırılacak. Diğer katılımcı hala görecek. Bu işlem geri alınamaz.",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "backToMessages": "Mesajlara geri dön",
+    "youBlockedUser": "Bu kullanıcıyı engellediniz.",
+    "userBlockedYou": "Bu kullanıcı sizi engelledi.",
+    "unblock": "Engeli Kaldır",
+    "block": "Engelle",
+    "you": "Siz",
+    "fullscreenImage": "Tam ekran resim",
+    "attachment": "Ek",
+    "writeMessagePlaceholder": "Mesajınızı yazın...",
+    "blockedPlaceholderYou": "Bu kullanıcıyı engellediniz. Mesaj göndermek için engeli kaldırın.",
+    "blockedPlaceholderThem": "Bu kullanıcı sizi engelledi. Yanıt veremezsiniz.",
+    "recording": "Kaydediliyor... {time}",
+    "attachImage": "Resim ekle",
+    "sendMessage": "Mesaj gönder",
+    "sendVoiceMessage": "Sesli mesaj gönder",
+    "selectAnItem": "Bir Ürün Seçin",
+    "selectAnItemDesc": "Lütfen konuşmayı görüntülemek için yukarıdan bir ürün seçin.",
+    "toast": {
+      "notFoundTitle": "Bulunamadı",
+      "notFoundDesc": "Bu mesaj dizisi bulunamadı.",
+      "fileTooLargeTitle": "Dosya çok büyük",
+      "imageTooLargeDesc": "Maksimum resim boyutu 5MB'dir.",
+      "uploadErrorTitle": "Yükleme Hatası",
+      "imageUploadErrorDesc": "Resim gönderilemedi.",
+      "sendErrorTitle": "Gönderme Hatası",
+      "messageSendErrorDesc": "Mesaj gönderilemedi.",
+      "audioSendErrorDesc": "Sesli mesaj gönderilemedi.",
+      "micDeniedTitle": "Mikrofon Erişimi Reddedildi",
+      "micDeniedDesc": "Lütfen tarayıcı ayarlarınızdan mikrofon erişimine izin verin.",
+      "itemConvDeletedTitle": "Konuşma Silindi",
+      "itemConvDeletedDesc": "Bu ürünün konuşması kaldırıldı.",
+      "itemConvDeleteErrorDesc": "Bu ürünün konuşması silinemedi.",
+      "unauthorizedActionTitle": "Yetkisiz İşlem",
+      "unblockerOnly": "Yalnızca engelleyen kullanıcı engeli kaldırabilir.",
+      "userUnblockedTitle": "Kullanıcının Engeli Kaldırıldı",
+      "userUnblockedDesc": "Tekrar mesaj alışverişi yapabilirsiniz.",
+      "userBlockedTitle": "Kullanıcı Engellendi",
+      "userBlockedDesc": "Konuşma şimdi engellendi.",
+      "toggleBlockErrorDesc": "Engelleme/engeli kaldırma işlemi başarısız oldu."
     }
   }
 }

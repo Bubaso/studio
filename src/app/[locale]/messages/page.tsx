@@ -102,8 +102,9 @@ export default function MessagesPage() {
           <Info className="h-4 w-4" />
           <AlertTitle>{t('accessDeniedTitle')}</AlertTitle>
           <AlertDescription>
-            {t('accessDeniedDesc')}
-            <Link href="/auth/signin" className="underline hover:text-primary ml-1">{t('loginLink')}</Link>
+            {t.rich('accessDeniedDesc', {
+                loginLink: (chunks) => <Link href="/auth/signin" className="underline hover:text-primary font-semibold ml-1">{chunks}</Link>
+            })}
           </AlertDescription>
         </Alert>
       </div>
