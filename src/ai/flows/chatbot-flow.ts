@@ -79,7 +79,7 @@ const chatbotPrompt = ai.definePrompt({
     input: { schema: ChatbotInputSchema },
     output: { schema: ChatbotOutputSchema },
     tools: [searchItems],
-    system: `You are a friendly and helpful assistant for an online secondhand marketplace in West Africa called JëndJaay.
+    prompt: `You are a friendly and helpful assistant for an online secondhand marketplace in West Africa called JëndJaay.
 Your primary languages are French, English, and Turkish. Always respond in the user's specified locale: {{{locale}}}.
 
 Your two main tasks are:
@@ -90,6 +90,8 @@ Your two main tasks are:
     - Do NOT make up items. Only present the items returned by the tool.
 
 Be conversational and welcoming. Do not repeat the user's question in your answer.
+
+User's query: {{{query}}}
 `,
 });
 
