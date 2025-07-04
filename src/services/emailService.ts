@@ -16,41 +16,25 @@ interface WelcomeEmailParams {
 }
 
 /**
- * "Sends" a welcome email to a new user in their chosen language.
+ * Generates the content for a welcome email in the user's chosen language.
  * @param {WelcomeEmailParams} params - The email parameters.
- * @returns {Promise<{success: boolean}>} A promise that resolves when the email is "sent".
+ * @returns {Promise<{ subject: string; body: string; }>} A promise that resolves with the email's subject and body.
  */
-export async function sendWelcomeEmail({ to, name, locale }: WelcomeEmailParams): Promise<{ success: boolean }> {
-  const t = await getTranslations({ locale, namespace: 'WelcomeEmail'});
+export async function sendWelcomeEmail({ to, name, locale }: WelcomeEmailParams): Promise<{ subject: string; body: string; }> {
+  try {
+    const t = await getTranslations({ locale, namespace: 'WelcomeEmail'});
 
-  const subject = t('subject');
-  const body = t('body', { name });
+    const subject = t('subject');
+    const body = t('body', { name });
 
-  console.log('--- SIMULATING EMAIL SEND ---');
-  console.log(`To: ${to}`);
-  console.log(`Locale: ${locale}`);
-  console.log(`Subject: ${subject}`);
-  console.log('Body:');
-  console.log(body);
-  console.log('-----------------------------');
-  
-  // In a real implementation, you would use an email SDK here.
-  // For example, using a fictional `emailProvider.send()`:
-  //
-  // try {
-  //   await emailProvider.send({
-  //     to: to,
-  //     from: 'welcome@jendjaay.app',
-  //     subject: subject,
-  //     html: `<p>... a formatted HTML version of the body ...</p>`,
-  //     text: body
-  //   });
-  //   return { success: true };
-  // } catch (error) {
-  //   console.error("Failed to send welcome email:", error);
-  //   return { success: false };
-  // }
+    // In a real implementation, you would send the email here using a provider.
+    // For now, we return the content to be displayed/logged on the client.
+    console.log(`--- SIMULATING EMAIL SEND on Server for: ${to} ---`);
+    return { subject, body };
 
-  // Since this is a simulation, we'll always return success.
-  return Promise.resolve({ success: true });
+  } catch (error) {
+    console.error("Error generating welcome email content:", error);
+    // Re-throw to be caught by the calling function
+    throw new Error("Could not generate welcome email content.");
+  }
 }

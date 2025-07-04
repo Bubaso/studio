@@ -94,7 +94,9 @@
       "errorTitle": "Sign-up Error",
       "genericError": "An unexpected error occurred. Please try again.",
       "weakPassword": "Your password must be at least 6 characters long.",
-      "configError": "A configuration error occurred. Please try again later or contact support."
+      "configError": "A configuration error occurred. Please try again later or contact support.",
+      "welcomeEmailGeneratedTitle": "Welcome Email Generated!",
+      "welcomeEmailGeneratedDesc": "Check the browser console to see the simulated email content."
     }
   },
   "ForgotPasswordPage": {

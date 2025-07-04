@@ -94,7 +94,9 @@
       "errorTitle": "Erreur d'inscription",
       "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
       "weakPassword": "Votre mot de passe doit contenir au moins 6 caractères.",
-      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support."
+      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support.",
+      "welcomeEmailGeneratedTitle": "E-mail de bienvenue généré !",
+      "welcomeEmailGeneratedDesc": "Vérifiez la console du navigateur pour voir le contenu de l'e-mail simulé."
     }
   },
   "ForgotPasswordPage": {

@@ -27,29 +27,25 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 };
 
 
-export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<void> => {
+export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<{ subject: string; body: string; } | null> => {
   if (!db) {
       console.error("Firestore (db) is not initialized. Cannot create user document.");
       throw new Error("Database service is not available.");
   }
-  if (!firebaseUser) return;
+  if (!firebaseUser) throw new Error("Firebase user object is required.");
 
   const userRef = doc(db, 'users', firebaseUser.uid);
 
-  // Check if the document already exists to avoid overwriting
   const userSnapshot = await getDoc(userRef);
 
   if (userSnapshot.exists()) {
-    // User document already exists, maybe from a previous failed attempt or OAuth.
     console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-    return;
+    return null;
   }
 
-  // If document does not exist, create it.
   try {
     const { email, displayName, photoURL } = firebaseUser;
 
-    // Determine the user's name with clear precedence
     let finalName: string;
     if (additionalData.name && additionalData.name.trim() !== '') {
       finalName = additionalData.name;
@@ -61,8 +57,6 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
       finalName = 'Utilisateur Anonyme';
     }
     
-    // All new users get the default number of free listings.
-    // The founding member logic was unstable and has been removed for reliability.
     const freeListings = 5;
 
     const newUserDocData = {
@@ -83,23 +77,21 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
     await setDoc(userRef, newUserDocData);
     console.log(`Successfully created user document for ${firebaseUser.uid}`);
 
-    // --- NEW: Send Welcome Email ---
     if (finalName && email) {
       try {
-        console.log(`Attempting to send welcome email to ${email} for user ${finalName} in locale ${locale}`);
-        await sendWelcomeEmail({ to: email, name: finalName, locale: locale });
-        console.log(`Welcome email process initiated for ${email}.`);
+        console.log(`userService: Attempting to generate welcome email for ${email} in locale ${locale}`);
+        const emailContent = await sendWelcomeEmail({ to: email, name: finalName, locale: locale });
+        console.log(`userService: Welcome email content generated successfully.`);
+        return emailContent;
       } catch (emailError) {
-        // Log the email error but don't fail the entire user creation process.
-        // The user account is more critical than the welcome email.
-        console.error(`Failed to send welcome email for user ${firebaseUser.uid}:`, emailError);
+        console.error(`userService: Failed to generate welcome email for user ${firebaseUser.uid}:`, emailError);
+        return null; // Don't block user creation for email failure
       }
     }
-    // --- END: Send Welcome Email ---
+    return null;
 
   } catch (error) {
     console.error("Error creating user document: ", error);
-    // Re-throw the error so the calling function's catch block can handle it.
     throw error;
   }
 };
@@ -212,8 +204,6 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
   }
   const userDocRef = doc(db, 'users', uid);
   try {
-    // Check if the document exists before trying to update it.
-    // This prevents errors on new user sign-up where the doc may not exist yet.
     const userDocSnap = await getDoc(userDocRef);
     if (userDocSnap.exists()) {
         await updateDoc(userDocRef, {
@@ -221,7 +211,6 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
         });
     }
   } catch (error: any) {
-    // Log any errors that are not related to the document not being found.
     console.error(`Error updating lastActiveAt for user ${uid}:`, error);
   }
 };
@@ -266,12 +255,10 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error?: s
     });
 
     if (!response.ok) {
-      // Try to parse the error from the server, but handle cases where it's not valid JSON
       try {
         const data = await response.json();
         return { success: false, error: data.error || "Une erreur interne s'est produite lors de la suppression du compte." };
       } catch (jsonError) {
-        // This happens if the server returns a non-JSON error page (e.g., HTML for a 500 error)
         return { success: false, error: "Erreur de communication avec le serveur. La réponse n'est pas valide." };
       }
     }
@@ -279,7 +266,6 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error?: s
     return { success: true };
 
   } catch (networkError: any) {
-    // This catches errors from fetch() itself, like network-down issues.
     console.error("Error calling delete user account API (network/fetch failed):", networkError);
     return { success: false, error: networkError.message };
   }

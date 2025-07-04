@@ -94,7 +94,9 @@
       "errorTitle": "Kayıt Hatası",
       "genericError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
       "weakPassword": "Şifreniz en az 6 karakter uzunluğunda olmalıdır.",
-      "configError": "Bir yapılandırma hatası oluştu. Lütfen daha sonra tekrar deneyin veya destekle iletişime geçin."
+      "configError": "Bir yapılandırma hatası oluştu. Lütfen daha sonra tekrar deneyin veya destekle iletişime geçin.",
+      "welcomeEmailGeneratedTitle": "Hoş Geldin E-postası Oluşturuldu!",
+      "welcomeEmailGeneratedDesc": "Simüle edilen e-posta içeriğini görmek için tarayıcı konsolunu kontrol edin."
     }
   },
   "ForgotPasswordPage": {

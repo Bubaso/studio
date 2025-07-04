@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ function SignUpPageContent() {
           // User has successfully signed in via redirect.
           // Now create their user document in Firestore.
           const user = result.user;
-          await createUserDocument(user, {
+          const emailResult = await createUserDocument(user, {
             name: user.displayName,
             avatarUrl: user.photoURL,
           }, locale);
@@ -72,6 +73,15 @@ function SignUpPageContent() {
             title: t('toast.successTitle'),
             description: t('toast.welcome'),
           });
+          if (emailResult) {
+              console.log("--- SIMULATED WELCOME EMAIL ---");
+              console.log(`Subject: ${emailResult.subject}`);
+              console.log(`Body: ${emailResult.body}`);
+              toast({
+                  title: t('toast.welcomeEmailGeneratedTitle'),
+                  description: t('toast.welcomeEmailGeneratedDesc')
+              });
+          }
           // The onAuthStateChanged listener will handle the final redirect.
         }
       })
@@ -104,12 +114,23 @@ function SignUpPageContent() {
       const fbUser = userCredential.user;
 
       await updateProfile(fbUser, { displayName: name });
-      await createUserDocument(fbUser, { name }, locale); 
+      const emailResult = await createUserDocument(fbUser, { name }, locale); 
       
       toast({ 
         title: t('toast.successTitle'), 
         description: t('toast.welcome')
       });
+      
+      if (emailResult) {
+          console.log("--- SIMULATED WELCOME EMAIL ---");
+          console.log(`Subject: ${emailResult.subject}`);
+          console.log(`Body: ${emailResult.body}`);
+          toast({
+              title: t('toast.welcomeEmailGeneratedTitle'),
+              description: t('toast.welcomeEmailGeneratedDesc')
+          });
+      }
+
       router.push(redirectTo); 
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
@@ -151,7 +172,7 @@ function SignUpPageContent() {
       } else {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
-        await createUserDocument(user, {
+        const emailResult = await createUserDocument(user, {
           name: user.displayName,
           avatarUrl: user.photoURL,
         }, locale);
@@ -160,6 +181,16 @@ function SignUpPageContent() {
           title: t('toast.successTitle'),
           description: t('toast.welcome'),
         });
+        
+        if (emailResult) {
+            console.log("--- SIMULATED WELCOME EMAIL ---");
+            console.log(`Subject: ${emailResult.subject}`);
+            console.log(`Body: ${emailResult.body}`);
+            toast({
+                title: t('toast.welcomeEmailGeneratedTitle'),
+                description: t('toast.welcomeEmailGeneratedDesc')
+            });
+        }
       }
     } catch (error: any) {
       console.error("OAuth Sign-up Error:", error);
