@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { createUserDocument } from "@/services/userService"; 
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from 'next/link';
@@ -26,8 +25,6 @@ import { useLocale, useTranslations } from "next-intl";
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
-const facebookProvider = new FacebookAuthProvider();
-const appleProvider = new OAuthProvider('apple.com');
 
 function SignUpPageContent() {
   const t = useTranslations('SignUpPage');
@@ -146,7 +143,7 @@ function SignUpPageContent() {
     }
   };
 
-  const handleOAuthSignUp = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
+  const handleOAuthSignUp = async (provider: GoogleAuthProvider) => {
     setIsLoading(true);
     try {
       if (isMobile) {
@@ -270,16 +267,6 @@ function SignUpPageContent() {
             {/* TODO: Add Google Icon */}
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignUp')}
-          </Button>
-          <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignUp(facebookProvider)} disabled={isLoading}>
-            {/* TODO: Add Facebook Icon */}
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('facebookSignUp')}
-          </Button>
-          <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignUp(appleProvider)} disabled={isLoading}>
-            {/* TODO: Add Apple Icon */}
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('appleSignUp')}
           </Button>
         </div>
 

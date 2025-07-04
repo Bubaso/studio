@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ShoppingBag, LogIn, Mail, Lock, Loader2 } from "lucide-react";
@@ -17,20 +16,19 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { createUserDocument } from "@/services/userService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from 'next/link';
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
-const facebookProvider = new FacebookAuthProvider();
-const appleProvider = new OAuthProvider('apple.com');
 
 function SignInPageContent() {
   const t = useTranslations('SignInPage');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -68,7 +66,7 @@ function SignInPageContent() {
           await createUserDocument(user, {
             name: user.displayName,
             avatarUrl: user.photoURL,
-          });
+          }, locale);
           toast({
             title: t('toast.successTitle'),
             description: t('toast.welcome', { name: user.displayName || user.email }),
@@ -93,7 +91,7 @@ function SignInPageContent() {
         // Whether there was a result or not, the check is complete.
         setIsProcessingRedirect(false);
       });
-  }, [toast, router, redirectTo, t]);
+  }, [toast, router, redirectTo, t, locale]);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +117,7 @@ function SignInPageContent() {
     }
   };
 
-  const handleOAuthSignIn = async (provider: GoogleAuthProvider | FacebookAuthProvider | OAuthProvider) => {
+  const handleOAuthSignIn = async (provider: GoogleAuthProvider) => {
     setIsLoading(true);
     try {
       if (isMobile) {
@@ -131,7 +129,7 @@ function SignInPageContent() {
         await createUserDocument(user, {
           name: user.displayName,
           avatarUrl: user.photoURL,
-        });
+        }, locale);
 
         toast({
           title: t('toast.successTitle'),
@@ -239,16 +237,6 @@ function SignInPageContent() {
             {/* TODO: Add Google Icon */}
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignIn')}
-          </Button>
-          <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleOAuthSignIn(facebookProvider)} disabled={isLoading}>
-            {/* TODO: Add Facebook Icon */}
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('facebookSignIn')}
-          </Button>
-          <Button variant="outline" className="w-full bg-black hover:bg-gray-800 text-white" onClick={() => handleOAuthSignIn(appleProvider)} disabled={isLoading}>
-            {/* TODO: Add Apple Icon */}
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {t('appleSignIn')}
           </Button>
         </div>
 
