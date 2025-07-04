@@ -12,7 +12,7 @@ export interface ViewHistoryItem {
 export const DeliveryOptions = ['Moto', 'Voiture', 'Pickup', 'Taxi Baggage', 'Camion', 'Remise en main propre'] as const;
 export type DeliveryOption = typeof DeliveryOptions[number];
 
-export const ShippingPayers = ['Vendeur', 'Acheteur', 'Partagé'] as const;
+export const ShippingPayers = ['Seller', 'Buyer', 'Shared'] as const;
 export type ShippingPayer = typeof ShippingPayers[number];
 
 

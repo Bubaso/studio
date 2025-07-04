@@ -249,7 +249,12 @@
     "unconfirmedSold": "Onaylanmadı: satılmış olabilir",
     "condition": "Durum:",
     "deliveryDetails": "Teslimat Detayları",
-    "paidBy": "Ödeyen:",
+    "paidByLabel": "Ödeyen:",
+    "shippingPayers": {
+      "seller": "Satıcı",
+      "buyer": "Alıcı",
+      "shared": "Paylaşımlı"
+    },
     "noDeliveryDetails": "Teslimat detayı belirtilmemiş.",
     "itemDescription": "Ürün Açıklaması",
     "contactSeller": "Satıcıyla İletişime Geç",

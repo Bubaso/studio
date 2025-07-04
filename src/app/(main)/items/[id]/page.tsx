@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
@@ -22,6 +23,7 @@ import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
 import { SubscribeButton } from '@/components/SubscribeButton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +48,7 @@ const WhatsAppIcon = () => (
 );
 
 export default async function ItemPage({ params }: ItemPageProps) {
+  const t = await getTranslations('ItemDetailPage');
   const { id: itemId } = params; 
   
   if (!itemId) {
@@ -213,7 +216,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 {item.shippingPayer && (
                     <Badge variant="outline" className="text-sm py-1 px-3">
                         <Wallet className="h-4 w-4 mr-2" />
-                        <span>Payé par: <strong>{item.shippingPayer}</strong></span>
+                        <span>{t('paidByLabel')} <strong>{t(`shippingPayers.${item.shippingPayer.toLowerCase() as 'seller' | 'buyer' | 'shared'}`)}</strong></span>
                     </Badge>
                 )}
                 {(!item.deliveryOptions || item.deliveryOptions.length === 0) && !item.shippingPayer && (

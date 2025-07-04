@@ -249,7 +249,12 @@
     "unconfirmedSold": "Non confirmé : peut être vendu",
     "condition": "État :",
     "deliveryDetails": "Détails de la livraison",
-    "paidBy": "Payé par :",
+    "paidByLabel": "Payé par :",
+    "shippingPayers": {
+      "seller": "Vendeur",
+      "buyer": "Acheteur",
+      "shared": "Partagé"
+    },
     "noDeliveryDetails": "Aucun détail de livraison n'a été spécifié.",
     "itemDescription": "Description de l'article",
     "contactSeller": "Contacter le vendeur",

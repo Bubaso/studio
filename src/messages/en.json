@@ -249,7 +249,12 @@
     "unconfirmedSold": "Unconfirmed: may be sold",
     "condition": "Condition:",
     "deliveryDetails": "Delivery Details",
-    "paidBy": "Paid by:",
+    "paidByLabel": "Paid by:",
+    "shippingPayers": {
+      "seller": "Seller",
+      "buyer": "Buyer",
+      "shared": "Shared"
+    },
     "noDeliveryDetails": "No delivery details specified.",
     "itemDescription": "Item Description",
     "contactSeller": "Contact Seller",
