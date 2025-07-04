@@ -27,7 +27,7 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 };
 
 
-export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<{ subject: string; body: string; } | null> => {
+export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<void> => {
   if (!db) {
       console.error("Firestore (db) is not initialized. Cannot create user document.");
       throw new Error("Database service is not available.");
@@ -40,7 +40,7 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
   if (userSnapshot.exists()) {
     console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-    return null;
+    return;
   }
 
   try {
@@ -78,17 +78,11 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
     console.log(`Successfully created user document for ${firebaseUser.uid}`);
 
     if (finalName && email) {
-      try {
-        console.log(`userService: Attempting to generate welcome email for ${email} in locale ${locale}`);
-        const emailContent = await sendWelcomeEmail({ to: email, name: finalName, locale: locale });
-        console.log(`userService: Welcome email content generated successfully.`);
-        return emailContent;
-      } catch (emailError) {
-        console.error(`userService: Failed to generate welcome email for user ${firebaseUser.uid}:`, emailError);
-        return null; // Don't block user creation for email failure
-      }
+      // Asynchronously send the welcome email. We don't await it here,
+      // as the user's creation process should not block on email sending.
+      // Errors are handled and logged within the sendWelcomeEmail service itself.
+      sendWelcomeEmail({ to: email, name: finalName, locale: locale });
     }
-    return null;
 
   } catch (error) {
     console.error("Error creating user document: ", error);
