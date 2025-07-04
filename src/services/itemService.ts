@@ -485,6 +485,21 @@ export async function logItemView(itemId: string, userId: string, item: Partial<
   }
 }
 
+export async function getViewCount(itemId: string): Promise<number> {
+  if (!db || !itemId) {
+    console.error("Firestore (db) is not initialized or itemId is missing.");
+    return 0;
+  }
+  try {
+    const viewsCollectionRef = collection(db, 'items', itemId, 'views');
+    const snapshot = await getDocs(viewsCollectionRef);
+    return snapshot.size;
+  } catch (error) {
+    console.error(`Error fetching view count for item ${itemId}:`, error);
+    return 0; // Return 0 on error
+  }
+}
+
 
 export async function markItemAsSold(itemId: string): Promise<void> {
   if (!db) {

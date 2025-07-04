@@ -502,5 +502,22 @@
     "noCollectionsTitle": "No collections yet",
     "noCollectionsDesc": "Create your first collection to organize the items you love.",
     "createFirstCollection": "Create First Collection"
+  },
+  "Dashboard": {
+    "title": "Seller Dashboard",
+    "subtitle": "Manage your listings, view stats, and see what's sold.",
+    "loadingListings": "Loading your listings...",
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredDesc": "You must be <loginLink>logged in</loginLink> to view your dashboard.",
+    "noListingsTitle": "You haven't listed any items yet",
+    "noListingsDesc": "Ready to make your first sale? It's quick and easy.",
+    "createFirstListing": "Create Your First Listing",
+    "activeTab": "Active",
+    "soldTab": "Sold",
+    "noActiveListings": "You have no active listings.",
+    "noSoldListings": "You haven't sold any items yet.",
+    "views": "Views",
+    "view": "View",
+    "edit": "Edit"
   }
 }

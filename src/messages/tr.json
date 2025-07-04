@@ -502,5 +502,22 @@
     "noCollectionsTitle": "Henüz koleksiyon yok",
     "noCollectionsDesc": "Sevdiğiniz ürünleri düzenlemek için ilk koleksiyonunuzu oluşturun.",
     "createFirstCollection": "İlk Koleksiyonu Oluştur"
+  },
+  "Dashboard": {
+    "title": "Satıcı Paneli",
+    "subtitle": "İlanlarınızı yönetin, istatistikleri görüntüleyin ve satılanları görün.",
+    "loadingListings": "İlanlarınız yükleniyor...",
+    "loginRequiredTitle": "Giriş Gerekli",
+    "loginRequiredDesc": "Panelinizi görüntülemek için <loginLink>giriş yapmalısınız</loginLink>.",
+    "noListingsTitle": "Henüz hiç ürün listelemediniz",
+    "noListingsDesc": "İlk satışınızı yapmaya hazır mısınız? Hızlı ve kolay.",
+    "createFirstListing": "İlk İlanınızı Oluşturun",
+    "activeTab": "Aktif",
+    "soldTab": "Satılanlar",
+    "noActiveListings": "Aktif ilanınız bulunmuyor.",
+    "noSoldListings": "Henüz hiç ürün satmadınız.",
+    "views": "Görüntülenme",
+    "view": "Görüntüle",
+    "edit": "Düzenle"
   }
 }

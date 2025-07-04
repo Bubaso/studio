@@ -454,7 +454,7 @@
     "youBlockedUser": "Vous avez bloqué cet utilisateur.",
     "userBlockedYou": "Cet utilisateur vous a bloqué.",
     "unblock": "Débloquer",
-    "block": "Bloquer",
+    "block": "Engelle",
     "you": "Vous",
     "fullscreenImage": "Image en plein écran",
     "attachment": "Pièce jointe",
@@ -502,5 +502,22 @@
     "noCollectionsTitle": "Aucune collection pour le moment",
     "noCollectionsDesc": "Créez votre première collection pour organiser les articles que vous aimez.",
     "createFirstCollection": "Créer la première collection"
+  },
+  "Dashboard": {
+    "title": "Tableau de bord Vendeur",
+    "subtitle": "Gérez vos annonces, consultez les statistiques et voyez ce qui est vendu.",
+    "loadingListings": "Chargement de vos annonces...",
+    "loginRequiredTitle": "Connexion requise",
+    "loginRequiredDesc": "Vous devez être <loginLink>connecté</loginLink> pour voir votre tableau de bord.",
+    "noListingsTitle": "Vous n'avez encore mis aucun article en vente",
+    "noListingsDesc": "Prêt à faire votre première vente ? C'est rapide et facile.",
+    "createFirstListing": "Créez votre première annonce",
+    "activeTab": "Actives",
+    "soldTab": "Vendus",
+    "noActiveListings": "Vous n'avez aucune annonce active.",
+    "noSoldListings": "Vous n'avez encore vendu aucun article.",
+    "views": "Vues",
+    "view": "Voir",
+    "edit": "Modifier"
   }
 }

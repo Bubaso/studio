@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
-import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2 } from 'lucide-react';
+import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2, LayoutDashboard } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
@@ -137,14 +137,21 @@ export default function ProfilePageClient() {
                 <MapPin className="h-4 w-4 mr-2" /> {userProfile.location}
               </div>
             )}
-            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2">
+            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(userProfile.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            <Link href="/profile/edit">
-              <Button variant="outline">
-                <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
-              </Button>
-            </Link>
+            <div className="flex items-center justify-center md:justify-start gap-2">
+              <Link href="/profile/edit">
+                <Button variant="outline">
+                  <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
+                </Button>
+              </Link>
+               <Link href="/dashboard">
+                <Button>
+                  <LayoutDashboard className="mr-2 h-4 w-4" /> Gérer mes annonces
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>
