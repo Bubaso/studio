@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect, useTransition } from 'react';
@@ -10,7 +9,7 @@ import { Loader2, MessageCircle, Send, Sparkles } from 'lucide-react';
 import { askChatbot } from '@/ai/flows/chatbot-flow';
 import type { Item } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ItemCard } from './item-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -24,7 +23,7 @@ interface ChatMessage {
 
 export function Chatbot() {
   const t = useTranslations('Chatbot');
-  const locale = useTranslations.locale();
+  const locale = useLocale();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
