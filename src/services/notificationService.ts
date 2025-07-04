@@ -71,16 +71,22 @@ export async function getNotificationsForUser(userId: string, count: number = 10
 export async function markAllNotificationsAsRead(userId: string): Promise<{ success: boolean }> {
   if (!userId) return { success: false };
   const notificationsRef = collection(db, 'users', userId, 'notifications');
-  const q = query(notificationsRef, where('isRead', '==', false));
+  // We query without a 'where' clause to avoid needing a custom index.
+  // We will filter for unread notifications in the code.
+  const q = query(notificationsRef);
   
   try {
     const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-      return { success: true }; // No unread notifications to mark
+    
+    // Filter for unread documents in code.
+    const unreadDocs = querySnapshot.docs.filter(doc => doc.data().isRead === false);
+
+    if (unreadDocs.length === 0) {
+      return { success: true }; // No unread notifications to mark.
     }
     
     const batch = writeBatch(db);
-    querySnapshot.docs.forEach(doc => {
+    unreadDocs.forEach(doc => {
       batch.update(doc.ref, { isRead: true });
     });
     
