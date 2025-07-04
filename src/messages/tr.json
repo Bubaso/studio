@@ -518,7 +518,15 @@
     "noSoldListings": "Henüz hiç ürün satmadınız.",
     "views": "Görüntülenme",
     "view": "Görüntüle",
-    "edit": "Düzenle"
+    "edit": "Düzenle",
+    "statuses": {
+      "active": "Aktif",
+      "pending_review": "Beklemede",
+      "under_review": "İncelemede",
+      "rejected": "Reddedildi",
+      "unknown": "Bilinmiyor",
+      "tooltip": "Durum: {status}"
+    }
   },
   "Chatbot": {
     "title": "Asistan",

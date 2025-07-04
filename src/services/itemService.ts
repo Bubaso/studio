@@ -8,6 +8,7 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject }
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
 import { deleteReportsForItem } from './reportService';
 import { createNotification } from './notificationService';
+import { moderateListing } from '@/ai/flows/moderate-listing-flow';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -76,6 +77,8 @@ const mapDocToItem = (document: any): Item => {
     whatsappNumber: data.whatsappNumber || undefined,
     deliveryOptions: data.deliveryOptions || [],
     shippingPayer: data.shippingPayer,
+    status: data.status || 'active', // Default to active for older items
+    moderation: data.moderation,
   };
 };
 
@@ -99,6 +102,10 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
+    // Only show active, non-sold items to the public
+    queryConstraints.push(where('status', '==', 'active'));
+    queryConstraints.push(where('isSold', '==', false));
+
     if (filters?.categories && filters.categories.length > 0) {
       queryConstraints.push(where('category', 'in', filters.categories));
     }
@@ -329,6 +336,7 @@ export async function createItemInFirestore(
 
   const batch = writeBatch(db);
   const userRef = doc(db, 'users', userId);
+  
   let newItemRef: any;
 
   try {
@@ -361,35 +369,76 @@ export async function createItemInFirestore(
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
-      isSold: false, // Ensure new items are marked as not sold
+      status: 'pending_review',
+      isSold: false,
     });
 
     await batch.commit();
 
-    // Notify subscribers after the item is successfully created
-    const sellerProfile = userSnap.data();
-    const sellerName = sellerProfile?.name || 'Un vendeur';
-    const sellerAvatar = sellerProfile?.avatarUrl;
-
-    const subscribersQuery = query(collection(db, `users/${userId}/subscribers`));
-    const subscribersSnapshot = await getDocs(subscribersQuery);
-
-    if (!subscribersSnapshot.empty) {
-        console.log(`Notifying ${subscribersSnapshot.size} subscribers about new item.`);
-        const notificationPromises = subscribersSnapshot.docs.map(subscriberDoc => {
-            const subscriberId = subscriberDoc.id;
-            return createNotification(subscriberId, {
-                type: 'new_item',
-                relatedUserId: userId,
-                relatedUserName: sellerName,
-                relatedUserAvatar: sellerAvatar,
-                itemId: newItemRef.id,
-                itemName: itemData.name,
-                itemImageUrl: itemData.imageUrls?.[0],
-            });
+    // Asynchronously moderate the item after it's been created
+    // We don't await this, so the user gets a fast response.
+    // The moderation happens in the background.
+    (async () => {
+      try {
+        const moderationResult = await moderateListing({
+          name: itemData.name,
+          description: itemData.description,
+          imageUrls: itemData.imageUrls,
         });
-        await Promise.all(notificationPromises);
-    }
+
+        const newStatus = moderationResult.isSuspicious ? 'under_review' : 'active';
+        await updateDoc(newItemRef, {
+          status: newStatus,
+          moderation: {
+            isSuspicious: moderationResult.isSuspicious,
+            reason: moderationResult.reasoning,
+            category: moderationResult.category,
+            checked: false,
+            checkedAt: serverTimestamp(),
+          }
+        });
+
+        if(newStatus === 'active') {
+             // Notify subscribers only if the item becomes active immediately
+            const sellerProfile = userSnap.data();
+            const sellerName = sellerProfile?.name || 'Un vendeur';
+            const sellerAvatar = sellerProfile?.avatarUrl;
+
+            const subscribersQuery = query(collection(db, `users/${userId}/subscribers`));
+            const subscribersSnapshot = await getDocs(subscribersQuery);
+
+            if (!subscribersSnapshot.empty) {
+                console.log(`Notifying ${subscribersSnapshot.size} subscribers about new item.`);
+                const notificationPromises = subscribersSnapshot.docs.map(subscriberDoc => {
+                    const subscriberId = subscriberDoc.id;
+                    return createNotification(subscriberId, {
+                        type: 'new_item',
+                        relatedUserId: userId,
+                        relatedUserName: sellerName,
+                        relatedUserAvatar: sellerAvatar,
+                        itemId: newItemRef.id,
+                        itemName: itemData.name,
+                        itemImageUrl: itemData.imageUrls?.[0],
+                    });
+                });
+                await Promise.all(notificationPromises);
+            }
+        }
+      } catch (moderationError) {
+        console.error(`AI Moderation failed for item ${newItemRef.id}:`, moderationError);
+        // Flag for manual review if AI fails
+        await updateDoc(newItemRef, {
+          status: 'under_review',
+          moderation: {
+            isSuspicious: true,
+            reason: "AI moderation process failed.",
+            category: 'other',
+            checked: false,
+            checkedAt: serverTimestamp(),
+          }
+        });
+      }
+    })();
     
     return newItemRef.id;
 
@@ -573,5 +622,3 @@ export async function deleteItem(itemId: string): Promise<void> {
   const itemDocRef = doc(db, 'items', itemId);
   await deleteDoc(itemDocRef);
 }
-
-    

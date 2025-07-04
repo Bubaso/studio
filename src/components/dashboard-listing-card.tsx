@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -5,12 +6,20 @@ import type { Item } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Eye, Heart, Edit, ArrowUpRight } from 'lucide-react';
+import { Eye, Heart, Edit, ArrowUpRight, ShieldAlert, ShieldCheck, Clock, ShieldQuestion } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import { getViewCount } from '@/services/itemService';
 import { Badge } from './ui/badge';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 interface DashboardListingCardProps {
   item: Item;
@@ -24,6 +33,36 @@ function StatDisplay({ icon: Icon, value, label, isLoading }: { icon: React.Elem
     </div>
   );
 }
+
+function StatusBadge({ status }: { status: Item['status'] }) {
+    const t = useTranslations('Dashboard.statuses');
+    
+    const statusMap = {
+        active: { text: t('active'), icon: ShieldCheck, className: 'bg-green-100 text-green-800 border-green-200' },
+        pending_review: { text: t('pending_review'), icon: Clock, className: 'bg-blue-100 text-blue-800 border-blue-200' },
+        under_review: { text: t('under_review'), icon: ShieldAlert, className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+        rejected: { text: t('rejected'), icon: ShieldAlert, className: 'bg-red-100 text-red-800 border-red-200' },
+    };
+
+    const currentStatus = status && status in statusMap ? statusMap[status] : { text: t('unknown'), icon: ShieldQuestion, className: 'bg-gray-100 text-gray-800 border-gray-200' };
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="outline" className={cn("text-xs font-medium", currentStatus.className)}>
+              <currentStatus.icon className="mr-1.5 h-3 w-3" />
+              {currentStatus.text}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('tooltip', { status: currentStatus.text })}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+}
+
 
 export function DashboardListingCard({ item }: DashboardListingCardProps) {
   const t = useTranslations('Dashboard');
@@ -50,7 +89,10 @@ export function DashboardListingCard({ item }: DashboardListingCardProps) {
           <Image src={imageUrl} alt={item.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, 128px" />
         </div>
         <div className="flex-grow">
-          <h3 className="font-semibold text-lg">{item.name}</h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
+            <StatusBadge status={item.status} />
+          </div>
           <p className="text-primary font-bold">{item.price.toLocaleString('fr-FR')} XOF</p>
           <div className="flex items-center gap-4 mt-2">
             <StatDisplay icon={Eye} value={viewCount} label={t('views')} isLoading={isLoadingStats} />

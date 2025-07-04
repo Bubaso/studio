@@ -518,7 +518,15 @@
     "noSoldListings": "You haven't sold any items yet.",
     "views": "Views",
     "view": "View",
-    "edit": "Edit"
+    "edit": "Edit",
+    "statuses": {
+      "active": "Active",
+      "pending_review": "Pending",
+      "under_review": "Under Review",
+      "rejected": "Rejected",
+      "unknown": "Unknown",
+      "tooltip": "Status: {status}"
+    }
   },
   "Chatbot": {
     "title": "Assistant",
