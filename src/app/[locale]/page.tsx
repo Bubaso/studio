@@ -8,7 +8,7 @@ import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 import { PersonalizedContent } from '@/components/personalized-content';
 import admin from '@/lib/firebaseAdmin';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -31,7 +31,8 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 
 // This page is now fully static on the server.
 // The dynamic, personalized parts are loaded on the client in PersonalizedContent.
-export default async function HomePage() {
+export default async function HomePage({ params: { locale } }: { params: { locale: string } }) {
+  setRequestLocale(locale);
   const t = await getTranslations('HomePage');
   const db = admin?.firestore();
 

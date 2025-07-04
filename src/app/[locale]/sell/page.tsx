@@ -1,8 +1,9 @@
 
 import { ListingForm } from '@/components/listing-form';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-export default async function SellPage() {
+export default async function SellPage({ params: { locale } }: { params: { locale: string } }) {
+  setRequestLocale(locale);
   const t = await getTranslations('SellPage');
   return (
     <div className="space-y-8">

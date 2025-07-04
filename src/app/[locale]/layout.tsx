@@ -9,18 +9,17 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ScrollToTop } from '@/components/scroll-to-top';
 import { FoundingMemberNotifier } from '@/components/FoundingMemberNotifier';
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
+import {getMessages, setRequestLocale} from 'next-intl/server';
 
-export const dynamic = 'force-dynamic';
-
-export default async function MainLayout({
+export default async function LocaleLayout({
   children,
   params: {locale}
 }: {
   children: React.ReactNode;
   params: {locale: string};
 }) {
-  const messages = await getMessages({locale});
+  setRequestLocale(locale);
+  const messages = await getMessages();
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

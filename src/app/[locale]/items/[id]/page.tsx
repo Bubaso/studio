@@ -23,12 +23,12 @@ import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
 import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client';
 import { SubscribeButton } from '@/components/SubscribeButton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
 interface ItemPageProps {
-  params: { id: string };
+  params: { id: string; locale: string };
 }
 
 const deliveryOptionIcons: Record<DeliveryOption, React.ElementType> = {
@@ -48,6 +48,7 @@ const WhatsAppIcon = () => (
 );
 
 export default async function ItemPage({ params }: ItemPageProps) {
+  setRequestLocale(params.locale);
   const t = await getTranslations('ItemDetailPage');
   const { id: itemId } = params; 
   

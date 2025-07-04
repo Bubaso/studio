@@ -1,5 +1,5 @@
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
+import {getMessages, setRequestLocale} from 'next-intl/server';
 
 export default async function AuthLayout({
   children,
@@ -8,6 +8,7 @@ export default async function AuthLayout({
   children: React.ReactNode;
   params: {locale: string};
 }) {
+  setRequestLocale(locale);
   const messages = await getMessages();
   
   return (
