@@ -13,11 +13,12 @@ import {getMessages, setRequestLocale} from 'next-intl/server';
 
 export default async function LocaleLayout({
   children,
-  params: {locale}
+  params
 }: {
   children: React.ReactNode;
   params: {locale: string};
 }) {
+  const locale = params.locale;
   setRequestLocale(locale);
   const messages = await getMessages();
 
