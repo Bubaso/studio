@@ -114,6 +114,10 @@
       "errorTitle": "Error"
     }
   },
+  "WelcomeEmail": {
+    "subject": "Welcome to JëndJaay! Your adventure begins now.",
+    "body": "Hello {name},\n\nWe are delighted to welcome you to JëndJaay, your new marketplace for buying and selling unique second-hand items!\n\nTo help you get started, here's what you can do right now:\n\n- **Sell easily:** Have a gem to sell? Post your first ad in just a few clicks. You get **5 free listings** to start!\n- **Discover treasures:** Browse thousands of items and find the rare pearl near you.\n- **Create your collections:** Save your favorite items in personalized collections to find them later.\n\nSee you soon on JëndJaay!\n\nThe JëndJaay Team"
+  },
   "ItemCard": {
     "sold": "SOLD",
     "unconfirmedSold": "Unconfirmed: may be sold",
@@ -483,5 +487,3 @@
     }
   }
 }
-
-    

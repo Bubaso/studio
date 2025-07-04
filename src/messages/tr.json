@@ -114,6 +114,10 @@
       "errorTitle": "Hata"
     }
   },
+  "WelcomeEmail": {
+    "subject": "JëndJaay'a hoş geldiniz! Maceranız şimdi başlıyor.",
+    "body": "Merhaba {name},\n\nBenzersiz ikinci el ürünleri alıp satabileceğiniz yeni pazar yeriniz JëndJaay'a hoş geldiniz demekten büyük mutluluk duyuyoruz!\n\nBaşlamanıza yardımcı olmak için hemen yapabilecekleriniz:\n\n- **Kolayca satın:** Satacak bir hazineniz mi var? Sadece birkaç tıklamayla ilk ilanınızı yayınlayın. Başlamak için **5 ücretsiz ilan hakkınız** var!\n- **Hazineleri keşfedin:** Binlerce ürüne göz atın ve yakınınızdaki nadir bulunan parçayı bulun.\n- **Koleksiyonlarınızı oluşturun:** Favori ürünlerinizi daha sonra bulmak için kişiselleştirilmiş koleksiyonlara kaydedin.\n\nYakında JëndJaay'da görüşmek üzere!\n\nJëndJaay Ekibi"
+  },
   "ItemCard": {
     "sold": "SATILDI",
     "unconfirmedSold": "Onaylanmadı: satılmış olabilir",
@@ -483,5 +487,3 @@
     }
   }
 }
-
-    

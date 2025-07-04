@@ -27,7 +27,7 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 };
 
 
-export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}): Promise<void> => {
+export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<void> => {
   if (!db) {
       console.error("Firestore (db) is not initialized. Cannot create user document.");
       throw new Error("Database service is not available.");
@@ -86,8 +86,8 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
     // --- NEW: Send Welcome Email ---
     if (finalName && email) {
       try {
-        console.log(`Attempting to send welcome email to ${email} for user ${finalName}`);
-        await sendWelcomeEmail({ to: email, name: finalName });
+        console.log(`Attempting to send welcome email to ${email} for user ${finalName} in locale ${locale}`);
+        await sendWelcomeEmail({ to: email, name: finalName, locale: locale });
         console.log(`Welcome email process initiated for ${email}.`);
       } catch (emailError) {
         // Log the email error but don't fail the entire user creation process.

@@ -114,6 +114,10 @@
       "errorTitle": "Erreur"
     }
   },
+  "WelcomeEmail": {
+    "subject": "Bienvenue sur JëndJaay ! Votre aventure commence maintenant.",
+    "body": "Bonjour {name},\n\nNous sommes ravis de vous accueillir sur JëndJaay, votre nouvelle place de marché pour acheter et vendre des articles d'occasion uniques !\n\nPour vous aider à démarrer, voici ce que vous pouvez faire dès maintenant :\n\n- **Vendre facilement :** Vous avez une pépite à vendre ? Postez votre première annonce en quelques clics. Vous disposez de **5 annonces gratuites** pour commencer !\n- **Découvrir des trésors :** Parcourez des milliers d'articles et trouvez la perle rare près de chez vous.\n- **Créer vos collections :** Sauvegardez vos articles préférés dans des collections personnalisées pour les retrouver plus tard.\n\nÀ très bientôt sur JëndJaay !\n\nL'équipe JëndJaay"
+  },
   "ItemCard": {
     "sold": "VENDU",
     "unconfirmedSold": "Non confirmé : peut être vendu",
@@ -483,5 +487,3 @@
     }
   }
 }
-
-    

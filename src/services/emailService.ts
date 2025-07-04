@@ -1,6 +1,8 @@
 
 'use server';
 
+import { getTranslations } from 'next-intl/server';
+
 /**
  * @fileOverview A service for sending emails.
  * In a real application, this would integrate with an email provider like SendGrid, Mailgun, or AWS SES.
@@ -10,36 +12,23 @@
 interface WelcomeEmailParams {
   to: string;
   name: string;
+  locale: string;
 }
 
 /**
- * "Sends" a welcome email to a new user.
+ * "Sends" a welcome email to a new user in their chosen language.
  * @param {WelcomeEmailParams} params - The email parameters.
  * @returns {Promise<{success: boolean}>} A promise that resolves when the email is "sent".
  */
-export async function sendWelcomeEmail({ to, name }: WelcomeEmailParams): Promise<{ success: boolean }> {
-  const subject = "Bienvenue sur JëndJaay ! Votre aventure commence maintenant.";
+export async function sendWelcomeEmail({ to, name, locale }: WelcomeEmailParams): Promise<{ success: boolean }> {
+  const t = await getTranslations({ locale, namespace: 'WelcomeEmail'});
 
-  const body = `
-Bonjour ${name},
-
-Nous sommes ravis de vous accueillir sur JëndJaay, votre nouvelle place de marché pour acheter et vendre des articles d'occasion uniques !
-
-Pour vous aider à démarrer, voici ce que vous pouvez faire dès maintenant :
-
-*   **Vendre facilement :** Vous avez une pépite à vendre ? Postez votre première annonce en quelques clics. Vous disposez de **5 annonces gratuites** pour commencer !
-*   **Découvrir des trésors :** Parcourez des milliers d'articles et trouvez la perle rare près de chez vous.
-*   **Créer vos collections :** Sauvegardez vos articles préférés dans des collections personnalisées pour les retrouver plus tard.
-
-Nous sommes une communauté construite sur la confiance. N'hésitez pas à échanger avec les autres membres et à construire votre réputation.
-
-À très bientôt sur JëndJaay !
-
-L'équipe JëndJaay
-`;
+  const subject = t('subject');
+  const body = t('body', { name });
 
   console.log('--- SIMULATING EMAIL SEND ---');
   console.log(`To: ${to}`);
+  console.log(`Locale: ${locale}`);
   console.log(`Subject: ${subject}`);
   console.log('Body:');
   console.log(body);
