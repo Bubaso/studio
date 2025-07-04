@@ -201,15 +201,19 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
   }
   const userDocRef = doc(db, 'users', uid);
   try {
-    // Use setDoc with merge: true instead of updateDoc.
-    // This will create the document if it doesn't exist, or update it if it does.
-    // This gracefully handles the race condition where this function might run
-    // before the user's document has been created on first login.
-    await setDoc(userDocRef, {
+    // Use updateDoc which fails if the document does not exist.
+    // This prevents a race condition with createUserDocument.
+    await updateDoc(userDocRef, {
       lastActiveAt: serverTimestamp(),
-    }, { merge: true });
-  } catch (error) {
-    // This is a background task, so we'll log the error but not disrupt the user experience.
+    });
+  } catch (error: any) {
+    // It's normal for this to fail if the user document hasn't been created yet
+    // during the signup process. We can safely ignore the 'not-found' error.
+    if (error.code === 'not-found') {
+      // Silently ignore, as createUserDocument will handle creation.
+      return;
+    }
+    // Log other types of errors.
     console.error(`Error updating lastActiveAt for user ${uid}:`, error);
   }
 };
