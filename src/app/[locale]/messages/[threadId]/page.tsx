@@ -664,7 +664,7 @@ export default function MessageThreadPage() {
                                                 <Image src={msg.imageUrl} alt={t('attachment')} fill className="object-contain" data-ai-hint="message image" />
                                             </div>
                                         </DialogTrigger>
-                                        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-background flex items-center justify-center">
+                                        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-1 bg-transparent flex items-center justify-center border-none">
                                             <DialogHeader><DialogTitle className="sr-only">{t('fullscreenImage')}</DialogTitle></DialogHeader>
                                             <div className="relative w-full h-full">
                                             <Image src={msg.imageUrl} alt={t('attachment')} fill className="object-contain rounded-md" data-ai-hint="message image" />
