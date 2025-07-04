@@ -53,22 +53,33 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
       // Prepare new user data
       const { email, displayName, photoURL } = firebaseUser;
       const joinedDate = new Date().toISOString();
-      const userName = displayName || additionalData.name || email?.split('@')[0] || 'Utilisateur Anonyme';
+      
+      // Determine the user's name with clear precedence
+      let finalName: string;
+      if (additionalData.name) {
+        finalName = additionalData.name; // Highest priority: name passed from signup form
+      } else if (displayName) {
+        finalName = displayName; // Second priority: name from OAuth provider
+      } else if (email) {
+        finalName = email.split('@')[0]; // Third priority: derive from email
+      } else {
+        finalName = 'Utilisateur Anonyme'; // Fallback
+      }
 
       const newUserDocData = {
         uid: firebaseUser.uid,
         email,
-        name: userName,
-        avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${userName.substring(0,2).toUpperCase()}`,
+        name: finalName,
+        avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
         dataAiHint: additionalData.dataAiHint || "profil personne",
         joinedDate,
         location: additionalData.location || '',
         lastActiveAt: serverTimestamp(),
         credits: 0,
-        freeListingsRemaining: freeListings, // Set based on founding member status
+        freeListingsRemaining: freeListings,
         subscriberCount: 0,
         subscriptionCount: 0,
-        isFoundingMember: isFoundingMember, // Add the new flag
+        isFoundingMember: isFoundingMember,
       };
 
       // Set the new user document
