@@ -1,5 +1,4 @@
 
-
 {
   "Header": {
     "searchPlaceholder": "Search for items...",
@@ -95,9 +94,7 @@
       "errorTitle": "Sign-up Error",
       "genericError": "An unexpected error occurred. Please try again.",
       "weakPassword": "Your password must be at least 6 characters long.",
-      "configError": "A configuration error occurred. Please try again later or contact support.",
-      "welcomeEmailGeneratedTitle": "Welcome Email Generated!",
-      "welcomeEmailGeneratedDesc": "Check the browser console to see the simulated email content."
+      "configError": "A configuration error occurred. Please try again later or contact support."
     }
   },
   "ForgotPasswordPage": {
@@ -185,7 +182,9 @@
       "saveErrorTitle": "Save Error",
       "createError": "Failed to create listing. {errorDetails}",
       "updateError": "Failed to update listing. {errorDetails}",
-      "tryAgain": "Please try again."
+      "tryAgain": "Please try again.",
+      "welcomeEmailGeneratedTitle": "Welcome Email Generated!",
+      "welcomeEmailGeneratedDesc": "Check the browser console to see the simulated email content."
     },
     "locationInfo": {
       "title": "Why is a precise location important?",
@@ -290,6 +289,7 @@
     "map": "Map",
     "filtersTitle": "Filters",
     "searchFilters": "Search Filters",
+    "resetFilters": "Reset Filters",
     "filters": {
       "proximity": "Proximity",
       "category": "Category",
@@ -436,6 +436,7 @@
     "delete": "Delete",
     "noThreadsTitle": "No messages yet",
     "noThreadsDesc": "Start a conversation by contacting a seller or user from their profile or a listing.",
+    "browseItems": "Browse Items",
     "toast": {
       "threadDeletedTitle": "Conversation Deleted",
       "threadDeletedDesc": "The conversation has been removed from your list.",
@@ -496,5 +497,10 @@
     "date_desc": "Most recent",
     "price_asc": "Price: Low to high",
     "price_desc": "Price: High to low"
+  },
+  "FavoritesPage": {
+    "noCollectionsTitle": "No collections yet",
+    "noCollectionsDesc": "Create your first collection to organize the items you love.",
+    "createFirstCollection": "Create First Collection"
   }
 }

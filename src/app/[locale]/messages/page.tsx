@@ -195,10 +195,13 @@ export default function MessagesPage() {
       
       {!isLoadingThreads && threads.length === 0 && (
         <Card>
-          <CardContent className="p-10 text-center">
+          <CardContent className="p-10 text-center flex flex-col items-center">
             <MessageSquarePlus className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold">{t('noThreadsTitle')}</h3>
-            <p className="text-muted-foreground">{t('noThreadsDesc')}</p>
+            <p className="text-muted-foreground mb-6">{t('noThreadsDesc')}</p>
+            <Button asChild>
+                <Link href="/browse">{t('browseItems')}</Link>
+            </Button>
           </CardContent>
         </Card>
       )}

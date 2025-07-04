@@ -1,5 +1,4 @@
 
-
 {
   "Header": {
     "searchPlaceholder": "Ürünleri ara...",
@@ -95,9 +94,7 @@
       "errorTitle": "Kayıt Hatası",
       "genericError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
       "weakPassword": "Şifreniz en az 6 karakter uzunluğunda olmalıdır.",
-      "configError": "Bir yapılandırma hatası oluştu. Lütfen daha sonra tekrar deneyin veya destekle iletişime geçin.",
-      "welcomeEmailGeneratedTitle": "Hoş Geldin E-postası Oluşturuldu!",
-      "welcomeEmailGeneratedDesc": "Simüle edilen e-posta içeriğini görmek için tarayıcı konsolunu kontrol edin."
+      "configError": "Bir yapılandırma hatası oluştu. Lütfen daha sonra tekrar deneyin veya destekle iletişime geçin."
     }
   },
   "ForgotPasswordPage": {
@@ -185,7 +182,9 @@
       "saveErrorTitle": "Kaydetme Hatası",
       "createError": "İlan oluşturulamadı. {errorDetails}",
       "updateError": "İlan güncellenemedi. {errorDetails}",
-      "tryAgain": "Lütfen tekrar deneyin."
+      "tryAgain": "Lütfen tekrar deneyin.",
+      "welcomeEmailGeneratedTitle": "Hoş Geldin E-postası Oluşturuldu!",
+      "welcomeEmailGeneratedDesc": "Simüle edilen e-posta içeriğini görmek için tarayıcı konsolunu kontrol edin."
     },
     "locationInfo": {
       "title": "Doğru bir konum neden önemlidir?",
@@ -290,6 +289,7 @@
     "map": "Harita",
     "filtersTitle": "Filtreler",
     "searchFilters": "Arama Filtreleri",
+    "resetFilters": "Filtreleri Sıfırla",
     "filters": {
       "proximity": "Yakınlık",
       "category": "Kategori",
@@ -436,6 +436,7 @@
     "delete": "Sil",
     "noThreadsTitle": "Henüz mesaj yok",
     "noThreadsDesc": "Bir satıcıyla veya kullanıcıyla profillerinden veya bir ilandan iletişime geçerek bir konuşma başlatın.",
+    "browseItems": "Ürünlere Göz At",
     "toast": {
       "threadDeletedTitle": "Konuşma Silindi",
       "threadDeletedDesc": "Konuşma listenizden kaldırıldı.",
@@ -496,5 +497,10 @@
     "date_desc": "En yeni",
     "price_asc": "Fiyat: Düşükten yükseğe",
     "price_desc": "Fiyat: Yüksekten düşüğe"
+  },
+  "FavoritesPage": {
+    "noCollectionsTitle": "Henüz koleksiyon yok",
+    "noCollectionsDesc": "Sevdiğiniz ürünleri düzenlemek için ilk koleksiyonunuzu oluşturun.",
+    "createFirstCollection": "İlk Koleksiyonu Oluştur"
   }
 }

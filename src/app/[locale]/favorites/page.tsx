@@ -23,8 +23,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
 export default function FavoritesPage() {
+  const t = useTranslations('FavoritesPage');
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [isLoadingCollections, setIsLoadingCollections] = useState(true);
@@ -155,12 +157,17 @@ export default function FavoritesPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg shadow-sm bg-card/50 p-6">
+        <div className="text-center py-10 border-2 border-dashed rounded-lg shadow-sm bg-card/50 p-6 flex flex-col items-center">
           <FolderPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Aucune collection pour le moment</h2>
+          <h2 className="text-2xl font-semibold mb-2">{t('noCollectionsTitle')}</h2>
           <p className="text-muted-foreground mb-6">
-            Créez votre première collection pour organiser les articles que vous aimez.
+            {t('noCollectionsDesc')}
           </p>
+          <DialogTrigger asChild>
+             <Button>
+                <Plus className="mr-2 h-4 w-4" /> {t('createFirstCollection')}
+            </Button>
+          </DialogTrigger>
         </div>
       )}
     </div>

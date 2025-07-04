@@ -148,6 +148,8 @@ function ActiveFilters() {
 // ItemGrid component - now driven by searchParams string
 function ItemGrid() {
   const t = useTranslations('BrowsePage');
+  const router = useRouter();
+  const pathname = usePathname();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [pageData, setPageData] = useState<{ items: Item[]; lastItemId: string | null; hasMore: boolean }>({ items: [], lastItemId: null, hasMore: false });
   const [isLoading, setIsLoading] = useState(true);
@@ -258,6 +260,17 @@ function ItemGrid() {
 
   const { items, hasMore } = pageData;
 
+  const handleClearFilters = () => {
+    const query = searchParams.get('q');
+    const view = searchParams.get('view');
+    const sort = searchParams.get('sort');
+    const newParams = new URLSearchParams();
+    if (query) newParams.set('q', query);
+    if (view) newParams.set('view', view);
+    if (sort) newParams.set('sort', sort);
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
   if (isLoading && items.length === 0) {
     return <ItemGridSkeleton />;
   }
@@ -305,9 +318,13 @@ function ItemGrid() {
           )}
         </>
       ) : (
-        <div className="text-center py-10">
+        <div className="text-center py-10 flex flex-col items-center">
           <h2 className="text-2xl font-semibold mb-2">{t('noItemsFound')}</h2>
-          <p className="text-muted-foreground">{t('tryAdjustingFilters')}</p>
+          <p className="text-muted-foreground mb-6">{t('tryAdjustingFilters')}</p>
+          <Button onClick={handleClearFilters}>
+            <X className="mr-2 h-4 w-4" />
+            {t('resetFilters')}
+          </Button>
         </div>
       )}
     </div>

@@ -1,5 +1,4 @@
 
-
 {
   "Header": {
     "searchPlaceholder": "Rechercher des articles...",
@@ -95,9 +94,7 @@
       "errorTitle": "Erreur d'inscription",
       "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
       "weakPassword": "Votre mot de passe doit contenir au moins 6 caractères.",
-      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support.",
-      "welcomeEmailGeneratedTitle": "E-mail de bienvenue généré !",
-      "welcomeEmailGeneratedDesc": "Vérifiez la console du navigateur pour voir le contenu de l'e-mail simulé."
+      "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support."
     }
   },
   "ForgotPasswordPage": {
@@ -185,7 +182,9 @@
       "saveErrorTitle": "Erreur de sauvegarde",
       "createError": "Échec de la création de l'annonce. {errorDetails}",
       "updateError": "Échec de la mise à jour de l'annonce. {errorDetails}",
-      "tryAgain": "Veuillez réessayer."
+      "tryAgain": "Veuillez réessayer.",
+      "welcomeEmailGeneratedTitle": "E-mail de bienvenue généré !",
+      "welcomeEmailGeneratedDesc": "Vérifiez la console du navigateur pour voir le contenu de l'e-mail simulé."
     },
     "locationInfo": {
       "title": "Pourquoi un lieu précis est-il important ?",
@@ -290,6 +289,7 @@
     "map": "Carte",
     "filtersTitle": "Filtres",
     "searchFilters": "Filtres de recherche",
+    "resetFilters": "Réinitialiser les filtres",
     "filters": {
       "proximity": "Proximité",
       "category": "Catégorie",
@@ -436,6 +436,7 @@
     "delete": "Supprimer",
     "noThreadsTitle": "Aucun message pour le moment",
     "noThreadsDesc": "Commencez une conversation en contactant un vendeur ou un utilisateur depuis leur profil ou une annonce.",
+    "browseItems": "Parcourir les articles",
     "toast": {
       "threadDeletedTitle": "Conversation supprimée",
       "threadDeletedDesc": "La conversation a été retirée de votre liste.",
@@ -496,5 +497,10 @@
     "date_desc": "Le plus récent",
     "price_asc": "Prix : Croissant",
     "price_desc": "Prix : Décroissant"
+  },
+  "FavoritesPage": {
+    "noCollectionsTitle": "Aucune collection pour le moment",
+    "noCollectionsDesc": "Créez votre première collection pour organiser les articles que vous aimez.",
+    "createFirstCollection": "Créer la première collection"
   }
 }
