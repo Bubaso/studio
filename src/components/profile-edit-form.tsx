@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +25,9 @@ import { uploadAvatarAndGetURL, updateUserProfile } from "@/services/userService
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import imageCompression from 'browser-image-compression';
 
-const MAX_AVATAR_SIZE_MB = 10; // Updated from 2 to 10
+const MAX_AVATAR_SIZE_MB = 10;
 const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
 const profileEditFormSchema = z.object({
@@ -35,7 +37,7 @@ const profileEditFormSchema = z.object({
     .instanceof(File, { message: "Veuillez sélectionner un fichier image." })
     .refine(
       (file) => file.size <= MAX_AVATAR_SIZE_MB * 1024 * 1024,
-      `La taille maximale de l'avatar est de ${MAX_AVATAR_SIZE_MB}MB.` // Updated message
+      `La taille maximale de l'avatar est de ${MAX_AVATAR_SIZE_MB}MB.`
     )
     .refine(
       (file) => ACCEPTED_AVATAR_TYPES.includes(file.type),
@@ -65,15 +67,57 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
     },
   });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      form.setValue("avatarFile", file, { shouldValidate: true });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
+      if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "Fichier trop volumineux",
+          description: `La taille maximale de l'avatar est de ${MAX_AVATAR_SIZE_MB}MB.`,
+        });
+        form.setValue("avatarFile", file, { shouldValidate: true });
+        return;
+      }
+      if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
+        toast({
+          variant: "destructive",
+          title: "Format de fichier non valide",
+          description: "Formats acceptés : .jpg, .jpeg, .png, .webp, .gif.",
+        });
+        form.setValue("avatarFile", file, { shouldValidate: true });
+        return;
+      }
+      
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
       };
-      reader.readAsDataURL(file);
+
+      try {
+        setIsSubmitting(true);
+        toast({ description: "Optimisation de l'avatar..." });
+        const compressedFile = await imageCompression(file, options);
+        form.setValue("avatarFile", compressedFile, { shouldValidate: true });
+        
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAvatarPreview(reader.result as string);
+        };
+        reader.readAsDataURL(compressedFile);
+
+      } catch (error) {
+        console.error("Erreur de compression d'avatar:", error);
+        toast({
+            variant: "destructive",
+            title: "Erreur de compression",
+            description: "L'avatar n'a pas pu être optimisé.",
+        });
+        form.setValue("avatarFile", file, { shouldValidate: true });
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -83,7 +127,6 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
   };
 
   useEffect(() => {
-    // Clean up Object URL
     return () => {
       if (avatarPreview && avatarPreview.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
@@ -102,12 +145,15 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
       let newAvatarUrl: string | undefined = undefined;
       if (values.avatarFile) {
         newAvatarUrl = await uploadAvatarAndGetURL(values.avatarFile, currentUserProfile.uid);
+      } else if (avatarPreview === null) {
+        // If preview is null, it means user wants to remove the avatar
+        newAvatarUrl = ''; // Use an empty string to signify removal
       }
 
       const updateData: { name?: string; location?: string; avatarUrl?: string } = {};
       if (values.name !== currentUserProfile.name) updateData.name = values.name;
       if (values.location !== currentUserProfile.location) updateData.location = values.location;
-      if (newAvatarUrl) updateData.avatarUrl = newAvatarUrl;
+      if (newAvatarUrl !== undefined) updateData.avatarUrl = newAvatarUrl;
       
       await updateUserProfile(currentUserProfile.uid, updateData);
 
@@ -145,7 +191,7 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
                             {currentUserProfile.name ? currentUserProfile.name.substring(0,2).toUpperCase() : <UserCircle className="w-16 h-16" />}
                         </AvatarFallback>
                       </Avatar>
-                      {avatarPreview && avatarPreview !== currentUserProfile.avatarUrl && (
+                      {avatarPreview && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -154,7 +200,7 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
                           onClick={removeAvatar}
                         >
                           <XCircle className="h-5 w-5" />
-                          <span className="sr-only">Supprimer le nouvel avatar</span>
+                          <span className="sr-only">Supprimer l'avatar</span>
                         </Button>
                       )}
                     </div>
