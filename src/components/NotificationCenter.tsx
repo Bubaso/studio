@@ -85,11 +85,23 @@ export function NotificationCenter() {
       const newNotifications: Notification[] = [];
       snapshot.forEach(doc => {
           const data = doc.data();
-          newNotifications.push({
-              id: doc.id,
-              createdAt: data.createdAt?.toDate().toISOString(),
-              ...data
-          } as Notification)
+          // This ensures we only process notifications that have a server-confirmed timestamp.
+          if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+             const notification: Notification = {
+                id: doc.id,
+                type: data.type,
+                userId: data.userId,
+                relatedUserId: data.relatedUserId,
+                relatedUserName: data.relatedUserName,
+                relatedUserAvatar: data.relatedUserAvatar,
+                itemId: data.itemId,
+                itemName: data.itemName,
+                itemImageUrl: data.itemImageUrl,
+                createdAt: data.createdAt.toDate().toISOString(),
+                isRead: data.isRead,
+             };
+             newNotifications.push(notification);
+          }
       });
       
       setNotifications(newNotifications);
