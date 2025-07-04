@@ -52,7 +52,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
   const { id: itemId } = params; 
   
   if (!itemId) {
-    return <div className="text-center py-10">ID d'article manquant.</div>;
+    return <div className="text-center py-10">{t('missingItemId')}</div>;
   }
 
   // First, fetch the main item. The other fetches depend on this data.
@@ -62,13 +62,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
     return (
         <Card className="max-w-xl mx-auto my-10">
             <CardHeader>
-                <CardTitle className="text-destructive text-center">Article non trouvé</CardTitle>
+                <CardTitle className="text-destructive text-center">{t('itemNotFound')}</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
                 <p className="text-muted-foreground mb-2">
-                    L'article avec l'ID "{itemId}" n'existe pas ou a été supprimé.
+                    {t('itemNotFoundDesc', { itemId })}
                 </p>
-                <Link href="/browse"><Button variant="outline">Retourner aux annonces</Button></Link>
+                <Link href="/browse"><Button variant="outline">{t('backToListings')}</Button></Link>
             </CardContent>
         </Card>
     );
@@ -102,7 +102,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
     <Link href={`/profile/${seller.uid}`} className="block group">
       <Card className="transition-shadow duration-200 group-hover:shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+          <CardTitle className="font-headline text-xl">{t('sellerInfo')}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center space-x-4">
           <Avatar className="h-16 w-16">
@@ -111,9 +111,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </Avatar>
           <div>
             <div className="font-semibold text-lg group-hover:text-primary transition-colors break-words">
-              {seller.name || 'Vendeur Anonyme'}
+              {seller.name || t('anonymousSeller')}
             </div>
-             <p className="text-sm text-muted-foreground">Inscrit le : {new Date(seller.joinedDate).toLocaleDateString('fr-FR')}</p>
+             <p className="text-sm text-muted-foreground">{t('joinedOn', { date: new Date(seller.joinedDate).toLocaleDateString('fr-FR') })}</p>
           </div>
         </CardContent>
       </Card>
@@ -121,13 +121,34 @@ export default async function ItemPage({ params }: ItemPageProps) {
   ) : (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-xl">Informations sur le vendeur</CardTitle>
+        <CardTitle className="font-headline text-xl">{t('sellerInfo')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground">Informations sur le vendeur non disponibles ou le vendeur n'a pas été trouvé.</p>
+        <p className="text-muted-foreground">{t('sellerInfoUnavailable')}</p>
       </CardContent>
     </Card>
   );
+
+  // Helper mapping for shippingPayer to handle potential legacy data
+  const getShippingPayerTranslation = (payerValue?: string): string => {
+    if (!payerValue) return '';
+    const lowerPayer = payerValue.toLowerCase();
+
+    // Map potential legacy (French) and current (English) values to the correct translation key
+    const keyMap: { [key: string]: 'seller' | 'buyer' | 'shared' } = {
+      'vendeur': 'seller',
+      'acheteur': 'buyer',
+      'partagé': 'shared',
+      'seller': 'seller',
+      'buyer': 'buyer',
+      'shared': 'shared'
+    };
+
+    const translationKey = keyMap[lowerPayer];
+    
+    // If a valid key is found, translate it. Otherwise, return the original value as a fallback.
+    return translationKey ? t(`shippingPayers.${translationKey}`) : payerValue;
+  }
 
 
   return (
@@ -158,7 +179,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="font-semibold text-md hover:text-primary transition-colors truncate">
-                  {seller.name || 'Vendeur Anonyme'}
+                  {seller.name || t('anonymousSeller')}
                 </span>
               </Link>
               <SubscribeButton targetUserId={seller.uid} />
@@ -168,14 +189,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
           {item.isSold && (
              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Cet article a été vendu
+                  {t('itemSold')}
               </Badge>
           )}
 
           {item.suspectedSold && !item.isSold && (
               <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
                   <Flag className="h-4 w-4 mr-2" />
-                  Non confirmé : peut être vendu
+                  {t('unconfirmedSold')}
               </Badge>
           )}
           
@@ -186,7 +207,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </Badge>
             {item.condition && (
                  <Badge variant="outline" className="text-sm py-1 px-3 capitalize">
-                    État : {item.condition.charAt(0).toUpperCase() + item.condition.slice(1)}
+                    {t('condition')} {item.condition.charAt(0).toUpperCase() + item.condition.slice(1)}
                 </Badge>
             )}
             {item.location && (
@@ -199,7 +220,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Détails de la livraison</CardTitle>
+              <CardTitle className="font-headline text-xl">{t('deliveryDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
                 {(item.deliveryOptions && item.deliveryOptions.length > 0) ? (
@@ -216,11 +237,11 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 {item.shippingPayer && (
                     <Badge variant="outline" className="text-sm py-1 px-3">
                         <Wallet className="h-4 w-4 mr-2" />
-                        <span>{t('paidByLabel')} <strong>{t(`shippingPayers.${item.shippingPayer.toLowerCase()}`)}</strong></span>
+                        <span>{t('paidByLabel')} <strong>{getShippingPayerTranslation(item.shippingPayer)}</strong></span>
                     </Badge>
                 )}
                 {(!item.deliveryOptions || item.deliveryOptions.length === 0) && !item.shippingPayer && (
-                    <p className="text-sm text-muted-foreground">Aucun détail de livraison n'a été spécifié.</p>
+                    <p className="text-sm text-muted-foreground">{t('noDeliveryDetails')}</p>
                 )}
             </CardContent>
           </Card>
@@ -234,7 +255,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline text-xl">Description de l'article</CardTitle>
+              <CardTitle className="font-headline text-xl">{t('itemDescription')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
@@ -248,14 +269,14 @@ export default async function ItemPage({ params }: ItemPageProps) {
             {item.phoneNumber && !item.isSold && (
                 <Button asChild variant="default" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base bg-green-600 hover:bg-green-700">
                     <a href={`tel:${item.phoneNumber}`}>
-                        <Phone className="mr-2 h-5 w-5" /> Appeler le vendeur
+                        <Phone className="mr-2 h-5 w-5" /> {t('callSeller')}
                     </a>
                 </Button>
             )}
             {item.whatsappNumber && !item.isSold && (
                 <Button asChild variant="default" className="w-full flex-1 h-16 text-lg md:h-12 md:text-base bg-green-500 hover:bg-green-600">
                     <a href={`https://wa.me/${item.whatsappNumber.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                       <WhatsAppIcon /> <span className="ml-2">Contacter sur WhatsApp</span>
+                       <WhatsAppIcon /> <span className="ml-2">{t('contactOnWhatsApp')}</span>
                     </a>
                 </Button>
             )}
@@ -263,7 +284,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           {similarItems.length > 0 && (
             <section className="space-y-4 pt-4 border-t"> 
-              <h2 className="text-2xl font-bold font-headline text-primary">Articles similaires</h2>
+              <h2 className="text-2xl font-bold font-headline text-primary">{t('similarItems')}</h2>
               <SimilarListingsCarousel items={similarItems} currentItemId={itemId} />
             </section>
           )}
@@ -281,13 +302,13 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
           <Alert variant="default" className="mt-6 bg-yellow-50 border-yellow-300 text-yellow-900 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300">
             <ShieldCheck className="h-5 w-5 !text-yellow-800 dark:!text-yellow-300" />
-            <AlertTitle className="font-bold">Conseils de sécurité</AlertTitle>
+            <AlertTitle className="font-bold">{t('safetyTips')}</AlertTitle>
             <AlertDescription>
               <ul className="list-disc list-inside space-y-1 mt-1">
-                <li>Ne payez jamais d'avance un vendeur que vous ne connaissez pas.</li>
-                <li>Rencontrez le vendeur dans un lieu public et sûr.</li>
-                <li>Inspectez bien l'article avant de payer.</li>
-                <li>Assurez-vous que l'article correspond à la description avant de finaliser la transaction.</li>
+                <li>{t('safetyTip1')}</li>
+                <li>{t('safetyTip2')}</li>
+                <li>{t('safetyTip3')}</li>
+                <li>{t('safetyTip4')}</li>
               </ul>
             </AlertDescription>
           </Alert>
@@ -295,18 +316,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
            <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                <span>Publié le : {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
+                <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
             </div>
              {item.soldAt && (
                  <div className="flex items-center text-green-600">
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    <span>Vendu le : {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                    <span>{t('soldOn')} {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
                 </div>
             )}
             {item.lastUpdated && !item.soldAt && (
                  <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                    <span>Dernière modification : {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                    <span>{t('lastModified')} {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
                 </div>
             )}
           </div>
