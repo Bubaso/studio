@@ -61,13 +61,13 @@ const searchItems = ai.defineTool(
 
 
 // Define the main input and output schemas for the chatbot flow.
-export const ChatbotInputSchema = z.object({
+const ChatbotInputSchema = z.object({
   query: z.string(),
   locale: z.string().default('fr').describe("The user's language, e.g., 'fr', 'en', 'tr'"),
 });
 export type ChatbotInput = z.infer<typeof ChatbotInputSchema>;
 
-export const ChatbotOutputSchema = z.object({
+const ChatbotOutputSchema = z.object({
   answer: z.string().describe('A helpful, conversational response to the user\'s query.'),
   items: z.array(ItemResultSchema).optional().describe('A list of relevant items if the user was searching for products.'),
 });

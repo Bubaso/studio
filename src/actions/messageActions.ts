@@ -1,5 +1,5 @@
 
-'use server';
+// This file no longer uses 'use server' to prevent build errors, as it only contains comments.
 
 // This Server Action is being replaced by an API route using Firebase Admin SDK
 // for the "Contacter le vendeur" functionality.
@@ -32,4 +32,3 @@
 // For example, if you had an action to delete a message (though that's usually client-side with rules).
 // For now, this file can be mostly empty or just contain this comment.
 export {}; // Add this to make it a module if all content is removed/commented.
-

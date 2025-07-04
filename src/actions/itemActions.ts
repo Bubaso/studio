@@ -1,5 +1,5 @@
 
-'use server';
+// This file no longer uses 'use server' to prevent build errors, as it only contains comments.
 
 // NOTE: The logic previously in this file has been moved to the
 // `SellerActionsClient.tsx` component. This is because Server Actions
