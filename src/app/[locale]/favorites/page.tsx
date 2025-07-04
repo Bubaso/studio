@@ -109,67 +109,68 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold font-headline text-primary">Mes Collections</h1>
-         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold font-headline text-primary">Mes Collections</h1>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Nouvelle Collection
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Créer une nouvelle collection</DialogTitle>
-              <DialogDescription>
-                Donnez un nom à votre nouvelle collection pour commencer à y sauvegarder des articles.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Nom
-                </Label>
-                <Input
-                  id="name"
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  className="col-span-3"
-                  placeholder="ex: Idées de salon"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild><Button variant="ghost">Annuler</Button></DialogClose>
-              <Button type="submit" onClick={handleCreateCollection} disabled={isCreating}>
-                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                Créer
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Nouvelle Collection
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {collections.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {collections.map((collection) => (
-            <CollectionCard key={collection.id} collection={collection} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg shadow-sm bg-card/50 p-6 flex flex-col items-center">
-          <FolderPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">{t('noCollectionsTitle')}</h2>
-          <p className="text-muted-foreground mb-6">
-            {t('noCollectionsDesc')}
-          </p>
-          <DialogTrigger asChild>
-             <Button>
-                <Plus className="mr-2 h-4 w-4" /> {t('createFirstCollection')}
-            </Button>
           </DialogTrigger>
         </div>
-      )}
-    </div>
+        
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Créer une nouvelle collection</DialogTitle>
+            <DialogDescription>
+              Donnez un nom à votre nouvelle collection pour commencer à y sauvegarder des articles.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nom
+              </Label>
+              <Input
+                id="name"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                className="col-span-3"
+                placeholder="ex: Idées de salon"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="ghost">Annuler</Button></DialogClose>
+            <Button type="submit" onClick={handleCreateCollection} disabled={isCreating}>
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Créer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+        
+        {collections.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {collections.map((collection) => (
+              <CollectionCard key={collection.id} collection={collection} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10 border-2 border-dashed rounded-lg shadow-sm bg-card/50 p-6 flex flex-col items-center">
+            <FolderPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">{t('noCollectionsTitle')}</h2>
+            <p className="text-muted-foreground mb-6">
+              {t('noCollectionsDesc')}
+            </p>
+            <DialogTrigger asChild>
+               <Button>
+                  <Plus className="mr-2 h-4 w-4" /> {t('createFirstCollection')}
+              </Button>
+            </DialogTrigger>
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }
