@@ -108,8 +108,18 @@ export async function POST(request: NextRequest) {
         });
         allPromises.push(collectionBatch.commit());
     }
+    
+    // --- Step 3: Delete user-owned `userFavorites` (legacy) ---
+    const favoritesQuery = adminDb.collection('userFavorites').where('userId', '==', uid);
+    const favoritesSnapshot = await favoritesQuery.get();
+    if (!favoritesSnapshot.empty) {
+        const favoritesBatch = adminDb.batch();
+        favoritesSnapshot.forEach(doc => favoritesBatch.delete(doc.ref));
+        allPromises.push(favoritesBatch.commit());
+    }
 
-    // --- Step 3: Delete user-made `reviews` ---
+
+    // --- Step 4: Delete user-made `reviews` ---
     const reviewsQuery = adminDb.collection('reviews').where('reviewerId', '==', uid);
     const reviewsSnapshot = await reviewsQuery.get();
     if(!reviewsSnapshot.empty) {
@@ -118,7 +128,7 @@ export async function POST(request: NextRequest) {
         allPromises.push(reviewBatch.commit());
     }
     
-    // --- Step 4: Delete User's Profile, Avatar, and Subcollections ---
+    // --- Step 5: Delete User's Profile, Avatar, and Subcollections ---
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
     if (userDoc.exists()) {
@@ -157,3 +167,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
   }
 }
+
+    

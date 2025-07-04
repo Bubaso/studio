@@ -2,7 +2,7 @@
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction } from 'firebase/firestore'; // Added updateDoc and runTransaction
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment } from 'firebase/firestore'; // Added updateDoc and runTransaction
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -269,3 +269,5 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error?: s
     return { success: false, error: networkError.message };
   }
 }
+
+    
