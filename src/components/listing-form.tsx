@@ -40,6 +40,7 @@ import { useAuth } from "@/context/AuthContext";
 import { LISTING_COST_IN_CREDITS } from "@/lib/config";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Checkbox } from "./ui/checkbox";
+import { useTranslations } from "next-intl";
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -125,6 +126,7 @@ const WhatsAppIcon = () => (
 
 
 export function ListingForm({ initialItemData = null }: ListingFormProps) {
+  const t = useTranslations('ListingForm');
   const router = useRouter();
   const { toast } = useToast();
   const { firebaseUser, authLoading } = useAuth();
@@ -239,8 +241,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const handleTitleSuggested = (title: string) => {
     form.setValue("name", title, { shouldValidate: true });
     toast({
-      title: "Titre Appliqué",
-      description: `Le titre de l'annonce a été mis à jour.`,
+      title: t('TitleSuggestion.toastApplied'),
+      description: t('TitleSuggestion.toastAppliedDesc'),
     });
   };
   
@@ -276,10 +278,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     const filesToActuallyProcess = newFilesToAdd.slice(0, Math.max(0, slotsAvailableForNew));
 
     if (filesToActuallyProcess.length < newFilesToAdd.length) {
-        toast({ description: `Limite de ${MAX_FILES} images atteinte. Certaines images n'ont pas été ajoutées.`});
+        toast({ description: t('errors.imageLimit', {maxFiles: MAX_FILES})});
     }
     if (!filesToActuallyProcess.length && newFilesToAdd.length > 0) {
-        toast({ description: `Limite de ${MAX_FILES} images atteinte.`});
+        toast({ description: t('errors.imageLimit', {maxFiles: MAX_FILES})});
         return;
     }
     if (!filesToActuallyProcess.length) return;
@@ -335,7 +337,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     if (!isEditMode && (!values.imageFiles || values.imageFiles.length === 0)) {
       form.setError("imageFiles", {
         type: "manual",
-        message: "Veuillez télécharger au moins une image pour votre annonce.",
+        message: t('toasts.imageRequired'),
       });
       return;
     }
@@ -343,7 +345,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     setIsSubmitting(true);
     
     if (!firebaseUser || !userProfile) {
-      toast({ title: "Erreur", description: "Vous devez être connecté pour effectuer cette action.", variant: "destructive" });
+      toast({ title: t('toasts.error'), description: t('toasts.authRequired'), variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
@@ -372,7 +374,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       if (newFilesForUpload.length > 0) {
         for (let i = 0; i < newFilesForUpload.length; i++) {
           const file = newFilesForUpload[i];
-          setUploadStatusText(`Téléversement de l'image ${i + 1}/${newFilesForUpload.length}...`);
+          setUploadStatusText(t('toasts.uploadingImage', {current: i + 1, total: newFilesForUpload.length}));
           const url = await uploadImageAndGetURL(file, firebaseUser.uid, (progress) => {
             setUploadProgress(progress);
           });
@@ -383,7 +385,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       
       let finalVideoUrl: string | undefined = initialItemData?.videoUrl;
       if (values.videoFile) {
-        setUploadStatusText('Téléversement de la vidéo...');
+        setUploadStatusText(t('toasts.uploadingVideo'));
         setUploadProgress(0);
         finalVideoUrl = await uploadVideoAndGetURL(values.videoFile, firebaseUser.uid, (progress) => {
           setUploadProgress(progress);
@@ -393,7 +395,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         finalVideoUrl = undefined;
       }
       
-      setUploadStatusText("Sauvegarde de l'annonce...");
+      setUploadStatusText(t('toasts.savingListing'));
       setUploadProgress(null);
       
       const dataAiHintForImage = `${values.category} ${values.name.split(' ').slice(0,1).join('')}`.toLowerCase().replace(/[^a-z0-9\\s]/gi, '').substring(0,20);
@@ -419,8 +421,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       if (isEditMode && initialItemData?.id) {
         await updateItemInFirestore(initialItemData.id, commonItemData);
         toast({
-          title: "Annonce mise à jour !",
-          description: `Votre article "${values.name}" a été modifié avec succès.`,
+          title: t('toasts.updateSuccessTitle'),
+          description: t('toasts.updateSuccessDescription', {itemName: values.name}),
         });
         router.push(`/items/${initialItemData.id}`);
       } else {
@@ -432,16 +434,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
         };
         const newItemId = await createItemInFirestore(newItemFullData);
         toast({
-          title: "Annonce créée !",
-          description: `Votre article "${values.name}" a été mis en vente avec succès.`,
+          title: t('toasts.createSuccessTitle'),
+          description: t('toasts.createSuccessDescription', {itemName: values.name}),
         });
         router.push(`/items/${newItemId}`);
       }
     } catch (error: any) {
       console.error(`Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce:`, error);
       toast({
-        title: "Erreur de sauvegarde",
-        description: `Échec de ${isEditMode ? "la mise à jour" : "la création"} de l'annonce. ${error.message || 'Veuillez réessayer.'}`,
+        title: t('toasts.saveErrorTitle'),
+        description: isEditMode 
+            ? t('toasts.updateError', { errorDetails: error.message || t('toasts.tryAgain') })
+            : t('toasts.createError', { errorDetails: error.message || t('toasts.tryAgain') }),
         variant: "destructive",
       });
     } finally {
@@ -458,10 +462,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   if (!firebaseUser && !authLoading) {
      return (
         <div className="text-center py-10 p-6 border rounded-lg shadow-sm bg-card">
-            <h2 className="text-2xl font-semibold mb-2">Connexion requise</h2>
-            <p className="text-muted-foreground mb-4">Vous devez être connecté pour {isEditMode ? "modifier" : "lister"} un article.</p>
+            <h2 className="text-2xl font-semibold mb-2">{t('toasts.authRequired')}</h2>
+            <p className="text-muted-foreground mb-4">{t('toasts.authRequired')}</p>
             <Link href={`/auth/signin?redirect=${isEditMode ? `/items/${initialItemData?.id}/edit` : '/sell'}`}>
-                <Button>Se connecter</Button>
+                <Button>{t('Header.userMenu.signIn')}</Button>
             </Link>
         </div>
      )
@@ -472,15 +476,13 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
       <AlertDialog open={showCreditsDialog} onOpenChange={setShowCreditsDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <DialogTitle>Crédits Insuffisants</DialogTitle>
-            <DialogDescription>
-              Vous avez utilisé toutes vos annonces gratuites. Pour continuer, vous devez acheter des crédits.
-            </DialogDescription>
+            <DialogTitle>{t('dialogs.insufficientCreditsTitle')}</DialogTitle>
+            <DialogDescription>{t('dialogs.insufficientCreditsDescription')}</DialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Plus tard</AlertDialogCancel>
+            <AlertDialogCancel>{t('dialogs.later')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => router.push('/credits')}>
-              <Gem className="mr-2 h-4 w-4" /> Acheter des crédits
+              <Gem className="mr-2 h-4 w-4" /> {t('dialogs.buyCredits')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -494,10 +496,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>{t('labels.description')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Décrivez votre article en détail..."
+                    placeholder={t('placeholders.description')}
                     rows={5}
                     {...field}
                   />
@@ -517,9 +519,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nom de l'article</FormLabel>
+                <FormLabel>{t('labels.name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="ex: Veste en cuir vintage" {...field} />
+                  <Input placeholder={t('placeholders.name')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -536,10 +538,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 control={form.control} name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Catégorie</FormLabel>
+                    <FormLabel>{t('labels.category')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez une catégorie" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('placeholders.category')} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {ItemCategories.map((category) => ( <SelectItem key={category} value={category}> {category} </SelectItem> ))}
@@ -556,10 +558,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               />
               <FormField control={form.control} name="condition" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>État</FormLabel>
+                    <FormLabel>{t('labels.condition')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Sélectionnez l'état de l'article" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('placeholders.condition')} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {ItemConditions.map((conditionValue) => ( <SelectItem key={conditionValue} value={conditionValue} className="capitalize">{conditionValue.charAt(0).toUpperCase() + conditionValue.slice(1)}</SelectItem>))}
@@ -575,10 +577,10 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 name="price"
                 render={({ field: { onChange, onBlur, value, name, ref } }) => (
                   <FormItem>
-                    <FormLabel>Prix (FCFA)</FormLabel>
+                    <FormLabel>{t('labels.price')}</FormLabel>
                     <FormControl>
                       <Input
-                        type="number" step="1" placeholder="ex: 25000" name={name} ref={ref} onBlur={onBlur}
+                        type="number" step="1" placeholder={t('placeholders.price')} name={name} ref={ref} onBlur={onBlur}
                         value={value === undefined || isNaN(Number(value)) ? '' : value.toString()}
                         onChange={e => {
                           const stringValue = e.target.value;
@@ -606,10 +608,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             />
              <Alert className="!mt-4 border-primary/20 bg-primary/5">
                 <MapPin className="h-4 w-4 text-primary" />
-                <AlertTitle className="font-bold text-primary">Pourquoi un lieu précis est-il important ?</AlertTitle>
-                <AlertDescription>
-                Indiquer un lieu exact permet aux acheteurs proches de vous de trouver votre article plus facilement, notamment sur la carte. Cela augmente la confiance et facilite grandement l'organisation de la livraison.
-                </AlertDescription>
+                <AlertTitle className="font-bold text-primary">{t('locationInfo.title')}</AlertTitle>
+                <AlertDescription>{t('locationInfo.description')}</AlertDescription>
             </Alert>
             <FormField
               control={form.control}
@@ -625,10 +625,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             />
 
             <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
-                <FormLabel className="text-base">Méthodes de contact alternatives</FormLabel>
-                <FormDescription>
-                    Choisissez comment les acheteurs peuvent vous contacter, en plus de la messagerie interne.
-                </FormDescription>
+                <FormLabel className="text-base">{t('labels.contactMethods')}</FormLabel>
+                <FormDescription>{t('descriptions.contactMethods')}</FormDescription>
                 <div className="space-y-4 pt-2">
                     <FormField
                         control={form.control}
@@ -643,7 +641,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                     <FormLabel className="flex items-center gap-2 cursor-pointer">
-                                        <Phone className="h-4 w-4" /> Appel téléphonique
+                                        <Phone className="h-4 w-4" /> {t('contactOptions.phone')}
                                     </FormLabel>
                                 </div>
                             </FormItem>
@@ -656,9 +654,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                             name="phoneNumber"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Numéro de téléphone</FormLabel>
+                                    <FormLabel>{t('labels.phoneNumber')}</FormLabel>
                                     <FormControl>
-                                        <Input type="tel" placeholder="ex: 77 123 45 67" {...field} />
+                                        <Input type="tel" placeholder={t('placeholders.phone')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -679,7 +677,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                      <FormLabel className="flex items-center gap-2 cursor-pointer">
-                                       <WhatsAppIcon /> WhatsApp
+                                       <WhatsAppIcon /> {t('contactOptions.whatsapp')}
                                     </FormLabel>
                                 </div>
                             </FormItem>
@@ -692,9 +690,9 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                             name="whatsappNumber"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Numéro WhatsApp</FormLabel>
+                                    <FormLabel>{t('labels.whatsappNumber')}</FormLabel>
                                     <FormControl>
-                                        <Input type="tel" placeholder="ex: +221 77 123 45 67" {...field} />
+                                        <Input type="tel" placeholder={t('placeholders.whatsapp')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -711,7 +709,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
               render={() => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel className="text-base">Options de livraison</FormLabel>
+                    <FormLabel className="text-base">{t('labels.deliveryOptions')}</FormLabel>
                     <FormDescription>
                       Sélectionnez les moyens par lesquels cet article peut être transporté.
                     </FormDescription>
@@ -765,7 +763,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 name="shippingPayer"
                 render={({ field }) => (
                 <FormItem className="space-y-3 rounded-lg border p-4">
-                    <FormLabel className="text-base">Qui paie la livraison ?</FormLabel>
+                    <FormLabel className="text-base">{t('labels.shippingPayer')}</FormLabel>
                     <FormControl>
                     <RadioGroup
                         onValueChange={field.onChange}
@@ -778,7 +776,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                                     <RadioGroupItem value={payer} id={`payer-${payer}`} />
                                 </FormControl>
                                 <FormLabel htmlFor={`payer-${payer}`} className="font-normal cursor-pointer">
-                                    {payer}
+                                    {t(`deliveryPayers.${payer.toLowerCase() as 'seller' | 'buyer' | 'shared'}`)}
                                 </FormLabel>
                             </FormItem>
                         ))}
@@ -795,18 +793,18 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             name="imageFiles"
             render={({ fieldState }) => (
               <FormItem>
-                <FormLabel>Images de l'article (Max {MAX_FILES})</FormLabel>
+                <FormLabel>{t('labels.itemImages', {maxFiles: MAX_FILES})}</FormLabel>
                 
                 <Alert className="bg-primary/5 border-primary/20 text-foreground !mt-4">
                   <Lightbulb className="h-4 w-4 text-primary" />
-                  <AlertTitle className="font-bold text-primary">Conseils pour de superbes photos et vidéos</AlertTitle>
+                  <AlertTitle className="font-bold text-primary">{t('mediaTips.title')}</AlertTitle>
                   <AlertDescription>
                     <ul className="list-disc pl-5 space-y-1 mt-2 text-sm text-muted-foreground">
-                      <li><strong>Lumière Naturelle :</strong> Privilégiez la lumière du jour et évitez les ombres portées pour des couleurs fidèles.</li>
-                      <li><strong>Fond Neutre :</strong> Un arrière-plan simple (un mur blanc, un drap uni) mettra votre article en valeur.</li>
-                      <li><strong>Plusieurs Angles :</strong> Photographiez l'article sous tous ses angles (avant, arrière, côtés, intérieur).</li>
-                      <li><strong>Détails et Défauts :</strong> Montrez les gros plans des détails importants et n'hésitez pas à filmer les éventuels défauts pour plus de transparence.</li>
-                      <li><strong>Vidéo en Action :</strong> Si possible, montrez l'article en cours d'utilisation dans une courte vidéo.</li>
+                      <li>{t('mediaTips.tip1')}</li>
+                      <li>{t('mediaTips.tip2')}</li>
+                      <li>{t('mediaTips.tip3')}</li>
+                      <li>{t('mediaTips.tip4')}</li>
+                      <li>{t('mediaTips.tip5')}</li>
                     </ul>
                   </AlertDescription>
                 </Alert>
@@ -823,7 +821,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                 </FormControl>
                 {(imagePreviews.length >= MAX_FILES) && (
                     <FormDescription className="text-destructive">
-                        Vous avez atteint la limite de {MAX_FILES} images.
+                        {t('errors.imageLimit', {maxFiles: MAX_FILES})}
                     </FormDescription>
                 )}
                  {imagePreviews.length > 0 && (
@@ -857,8 +855,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                       </div>
                 )}
                 <FormDescription>
-                  Téléchargez jusqu'à {MAX_FILES} images (Max {MAX_FILE_SIZE_MB}MB chacune). Formats: PNG, JPG, GIF, WEBP.
-                  {isEditMode && " Les images existantes seront conservées si vous n'en téléchargez pas de nouvelles. Les nouvelles images s'ajouteront ou remplaceront selon votre sélection."}
+                  {t('descriptions.itemImages', {maxFiles: MAX_FILES, maxFileSize: MAX_FILE_SIZE_MB})}
+                  {isEditMode && t('descriptions.itemImagesEdit')}
                 </FormDescription>
                 <FormMessage>{fieldState.error?.message || (form.formState.errors.imageFiles as any)?.message}</FormMessage>
               </FormItem>
@@ -870,7 +868,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             name="videoFile"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Vidéo de l'article (Optionnel, Max {MAX_VIDEO_SIZE_MB}MB)</FormLabel>
+                    <FormLabel>{t('labels.video', {maxVideoSize: MAX_VIDEO_SIZE_MB})}</FormLabel>
                     <FormControl>
                         <Input
                             type="file"
@@ -907,7 +905,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
                     )}
                     
                     <FormDescription>
-                        Les annonces avec au moins une courte vidéo se vendent plus rapidement.
+                        {t('descriptions.video')}
                     </FormDescription>
                 </FormItem>
             )}
@@ -917,7 +915,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-center justify-center text-sm font-medium text-muted-foreground">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {uploadStatusText || "Soumission de l'annonce..."}
+                {uploadStatusText || t('buttons.submitting')}
               </div>
               {uploadProgress !== null && (
                 <div className="flex items-center gap-2">
@@ -932,7 +930,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
 
           <Button type="submit" size="lg" className="w-full font-bold" disabled={isSubmitting || authLoading || isLoadingProfile}>
             {isSubmitting || isLoadingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isEditMode ? <Save className="mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />) }
-            {isEditMode ? "Sauvegarder les modifications" : "Créer l'annonce"}
+            {isEditMode ? t('buttons.saveChanges') : t('buttons.createListing')}
           </Button>
         </form>
       </Form>
