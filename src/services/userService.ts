@@ -215,7 +215,7 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
     // Check if the document exists before trying to update it.
     // This prevents errors on new user sign-up where the doc may not exist yet.
     const userDocSnap = await getDoc(userDocRef);
-    if (userDocSnap.exists) {
+    if (userDocSnap.exists()) {
         await updateDoc(userDocRef, {
             lastActiveAt: serverTimestamp(),
         });
