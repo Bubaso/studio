@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { adminDb as db } from '@/lib/firebaseAdmin';
 import type { Notification } from '@/lib/types';
 import {
   collection,
@@ -16,7 +16,7 @@ import {
   doc,
   Timestamp,
   DocumentSnapshot,
-} from 'firebase/firestore';
+} from 'firebase-admin/firestore';
 
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
     if (!timestamp) return new Date().toISOString();

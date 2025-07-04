@@ -16,7 +16,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { deleteUserAccount } from '@/services/userService';
+import { deleteUserAccount, getSubscribersForUser, getSubscriptionsForUser } from '@/services/userService';
+import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
 
 export default function ProfilePageClient() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -26,6 +27,10 @@ export default function ProfilePageClient() {
   const [isDeleting, setIsDeleting] = useState(false);
   
   const { userProfile, listings, isLoading: isProfileLoading } = useUserProfile(firebaseUser?.uid || null);
+  
+  const [subscribers, setSubscribers] = useState<UserProfile[]>([]);
+  const [subscriptions, setSubscriptions] = useState<UserProfile[]>([]);
+  const [isLoadingSubs, setIsLoadingSubs] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -34,6 +39,23 @@ export default function ProfilePageClient() {
     });
     return () => unsubscribe();
   }, []);
+  
+  useEffect(() => {
+    if (firebaseUser) {
+        setIsLoadingSubs(true);
+        Promise.all([
+            getSubscribersForUser(firebaseUser.uid),
+            getSubscriptionsForUser(firebaseUser.uid)
+        ]).then(([subs, scrips]) => {
+            setSubscribers(subs);
+            setSubscriptions(scrips);
+        }).finally(() => {
+            setIsLoadingSubs(false);
+        });
+    } else if(!isAuthLoading) {
+        setIsLoadingSubs(false);
+    }
+  }, [firebaseUser, isAuthLoading]);
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -57,7 +79,7 @@ export default function ProfilePageClient() {
     }
   };
 
-  const isLoading = isAuthLoading || isProfileLoading;
+  const isLoading = isAuthLoading || isProfileLoading || isLoadingSubs;
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -88,6 +110,28 @@ export default function ProfilePageClient() {
           </Avatar>
           <div className="flex-1 text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{userProfile.name || 'Utilisateur'}</h1>
+            
+            <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
+                <SubscriptionListDialog
+                    title="Abonnés"
+                    users={subscribers}
+                    trigger={
+                        <button className="hover:text-primary transition-colors">
+                            <strong>{userProfile.subscriberCount || 0}</strong> Abonnés
+                        </button>
+                    }
+                />
+                <SubscriptionListDialog
+                    title="Abonnements"
+                    users={subscriptions}
+                    trigger={
+                        <button className="hover:text-primary transition-colors">
+                              <strong>{userProfile.subscriptionCount || 0}</strong> Abonnements
+                        </button>
+                    }
+                />
+            </div>
+
             {userProfile.location && (
               <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-1">
                 <MapPin className="h-4 w-4 mr-2" /> {userProfile.location}

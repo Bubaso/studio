@@ -200,7 +200,7 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
     // Check if the document exists before trying to update it.
     // This prevents errors on new user sign-up where the doc may not exist yet.
     const userDocSnap = await getDoc(userDocRef);
-    if (userDocSnap.exists()) {
+    if (userDocSnap.exists) {
         await updateDoc(userDocRef, {
             lastActiveAt: serverTimestamp(),
         });
@@ -270,4 +270,32 @@ export async function deleteUserAccount(): Promise<{ success: boolean; error?: s
   }
 }
 
-    
+export async function getSubscriptionsForUser(userId: string): Promise<UserProfile[]> {
+  if (!db || !userId) return [];
+  try {
+    const subscriptionsRef = collection(db, 'users', userId, 'subscriptions');
+    const q = query(subscriptionsRef, orderBy('subscribedAt', 'desc'), limit(100)); // Limit to 100 for now
+    const snapshot = await getDocs(q);
+    const userIds = snapshot.docs.map(doc => doc.id);
+    const userProfiles = await Promise.all(userIds.map(id => getUserDocument(id)));
+    return userProfiles.filter((p): p is UserProfile => p !== null);
+  } catch (error) {
+    console.error(`Error fetching subscriptions for user ${userId}:`, error);
+    return [];
+  }
+}
+
+export async function getSubscribersForUser(userId: string): Promise<UserProfile[]> {
+  if (!db || !userId) return [];
+  try {
+    const subscribersRef = collection(db, 'users', userId, 'subscribers');
+    const q = query(subscribersRef, orderBy('subscribedAt', 'desc'), limit(100)); // Limit to 100
+    const snapshot = await getDocs(q);
+    const userIds = snapshot.docs.map(doc => doc.id);
+    const userProfiles = await Promise.all(userIds.map(id => getUserDocument(id)));
+    return userProfiles.filter((p): p is UserProfile => p !== null);
+  } catch (error) {
+    console.error(`Error fetching subscribers for user ${userId}:`, error);
+    return [];
+  }
+}

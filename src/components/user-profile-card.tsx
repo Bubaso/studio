@@ -8,13 +8,16 @@ import { ItemCard } from '@/components/item-card';
 import { MapPin, CalendarDays } from 'lucide-react';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
 import { SubscribeButton } from '@/components/SubscribeButton';
+import { SubscriptionListDialog } from './subscription-list-dialog';
 
 interface UserProfileCardProps {
     user: UserProfile;
     listings: Item[];
+    subscriptions: UserProfile[];
+    subscribers: UserProfile[];
 }
 
-export function UserProfileCard({ user, listings }: UserProfileCardProps) {
+export function UserProfileCard({ user, listings, subscriptions, subscribers }: UserProfileCardProps) {
     const formattedJoinedDate = new Date(user.joinedDate).toLocaleDateString('fr-FR');
 
     return (
@@ -29,8 +32,24 @@ export function UserProfileCard({ user, listings }: UserProfileCardProps) {
                         <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{user.name || 'Utilisateur Anonyme'}</h1>
                         
                         <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
-                            <span><strong>{user.subscriberCount || 0}</strong> Abonnés</span>
-                            <span><strong>{user.subscriptionCount || 0}</strong> Abonnements</span>
+                            <SubscriptionListDialog
+                                title="Abonnés"
+                                users={subscribers}
+                                trigger={
+                                    <button className="hover:text-primary transition-colors">
+                                        <strong>{user.subscriberCount || 0}</strong> Abonnés
+                                    </button>
+                                }
+                            />
+                            <SubscriptionListDialog
+                                title="Abonnements"
+                                users={subscriptions}
+                                trigger={
+                                    <button className="hover:text-primary transition-colors">
+                                         <strong>{user.subscriptionCount || 0}</strong> Abonnements
+                                    </button>
+                                }
+                            />
                         </div>
 
                         {user.location && (
