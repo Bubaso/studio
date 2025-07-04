@@ -120,7 +120,11 @@ export function NotificationCenter() {
       startMarkingTransition(async () => {
           const result = await markAllNotificationsAsRead(firebaseUser.uid);
           if(!result.success) {
-              toast({title: "Erreur", description: "Impossible de marquer les notifications comme lues.", variant: "destructive"});
+              toast({
+                  title: "Erreur", 
+                  description: result.error || "Impossible de marquer les notifications comme lues.", 
+                  variant: "destructive"
+              });
           }
       });
   }
