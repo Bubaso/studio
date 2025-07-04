@@ -1,7 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
-import { createNotification } from '@/services/notificationService';
 import type { UserProfile } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
@@ -35,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const currentUserSnap = await currentUserRef.get();
-    if (!currentUserSnap.exists()) {
+    if (!currentUserSnap.exists) {
         return NextResponse.json({ success: false, error: "Current user profile not found." }, { status: 404 });
     }
     const currentUserProfile = currentUserSnap.data() as UserProfile;
@@ -64,12 +63,22 @@ export async function POST(request: NextRequest) {
     });
 
     if (isSubscribed) {
-        await createNotification(targetUserId, {
-            type: 'new_subscriber',
-            relatedUserId: currentUserId,
-            relatedUserName: currentUserProfile.name || 'Un utilisateur',
-            relatedUserAvatar: currentUserProfile.avatarUrl || undefined,
-        });
+        // Inlined notification logic using adminDb
+        try {
+            const notificationsRef = adminDb.collection(`users/${targetUserId}/notifications`);
+            await notificationsRef.add({
+                type: 'new_subscriber',
+                userId: targetUserId,
+                relatedUserId: currentUserId,
+                relatedUserName: currentUserProfile.name || 'Un utilisateur',
+                relatedUserAvatar: currentUserProfile.avatarUrl || undefined,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                isRead: false,
+            });
+        } catch (notificationError) {
+            // If notification fails, don't fail the whole request. Just log it.
+            console.error(`Failed to create notification for user ${targetUserId} after subscription by ${currentUserId}:`, notificationError);
+        }
     }
 
     return NextResponse.json({ success: true, isSubscribed });
