@@ -1,4 +1,5 @@
 
+
 {
   "Header": {
     "searchPlaceholder": "Rechercher des articles...",
@@ -488,5 +489,12 @@
       "userBlockedDesc": "La conversation est maintenant bloquée.",
       "toggleBlockErrorDesc": "L'opération de blocage/déblocage a échoué."
     }
+  },
+  "SortControl": {
+    "label": "Trier par",
+    "placeholder": "Trier par...",
+    "date_desc": "Le plus récent",
+    "price_asc": "Prix : Croissant",
+    "price_desc": "Prix : Décroissant"
   }
 }

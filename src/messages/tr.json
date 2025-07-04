@@ -1,4 +1,5 @@
 
+
 {
   "Header": {
     "searchPlaceholder": "Ürünleri ara...",
@@ -488,5 +489,12 @@
       "userBlockedDesc": "Konuşma şimdi engellendi.",
       "toggleBlockErrorDesc": "Engelleme/engeli kaldırma işlemi başarısız oldu."
     }
+  },
+  "SortControl": {
+    "label": "Sırala",
+    "placeholder": "Sırala...",
+    "date_desc": "En yeni",
+    "price_asc": "Fiyat: Düşükten yükseğe",
+    "price_desc": "Fiyat: Yüksekten düşüğe"
   }
 }

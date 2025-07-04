@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ItemCard } from '@/components/item-card';
-import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
+import type { Item, ItemCategory, ItemCondition, SortByOption } from '@/lib/types';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Skeleton } from '@/components/ui/skeleton';
 import { FilterControls } from '@/components/filter-controls';
@@ -15,16 +16,58 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X, MapPin, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { Filter, X, MapPin, LayoutGrid, Map as MapIcon, ArrowUpDown } from 'lucide-react';
 import { getDistance } from 'geolib';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ItemsMapView } from '@/components/items-map-view';
 import { useTranslations } from 'next-intl';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 
 export const dynamic = 'force-dynamic';
 
 const ITEMS_PER_PAGE = 50;
+
+function SortControl() {
+    const t = useTranslations('SortControl');
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const sortOptions = [
+        { value: 'date_desc', label: t('date_desc') },
+        { value: 'price_asc', label: t('price_asc') },
+        { value: 'price_desc', label: t('price_desc') },
+    ];
+
+    const currentSort = searchParams.get('sort') || 'date_desc';
+
+    const handleSortChange = (newSortValue: string) => {
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.set('sort', newSortValue);
+        router.replace(`${pathname}?${newParams.toString()}`);
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <Label htmlFor="sort-by" className="text-sm font-medium text-muted-foreground hidden sm:block">{t('label')}:</Label>
+            <Select value={currentSort} onValueChange={handleSortChange}>
+                <SelectTrigger id="sort-by" className="w-[180px] h-10">
+                    <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder={t('placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                    {sortOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
+}
 
 // ActiveFilters component displays current filters as removable badges
 function ActiveFilters() {
@@ -75,13 +118,11 @@ function ActiveFilters() {
     const clearAllFilters = () => {
          const query = searchParams.get('q');
          const view = searchParams.get('view'); // Preserve view on clear
+         const sort = searchParams.get('sort'); // Preserve sort on clear
          const newParams = new URLSearchParams();
-         if (query) {
-            newParams.set('q', query);
-         }
-         if (view) {
-            newParams.set('view', view);
-         }
+         if (query) newParams.set('q', query);
+         if (view) newParams.set('view', view);
+         if (sort) newParams.set('sort', sort);
          router.replace(`${pathname}?${newParams.toString()}`);
     }
 
@@ -117,6 +158,7 @@ function ItemGrid() {
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
   const queryParam = searchParams.get('q');
+  const sortParam = searchParams.get('sort') as SortByOption | null;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -156,6 +198,7 @@ function ItemGrid() {
             priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
             location: locationParam || undefined,
             condition: conditionParam || undefined,
+            sortBy: sortParam || 'date_desc',
             pageSize: latParam ? 200 : ITEMS_PER_PAGE, // Fetch more if location filtering client-side
             lastVisibleItemId: cursor ?? undefined,
         });
@@ -347,8 +390,9 @@ export default function BrowsePageContent() {
                 </div>
             </div>
             
-            <div className="mt-4">
+            <div className="flex justify-between items-center mt-4">
               <ActiveFilters />
+              <SortControl />
             </div>
 
             <TabsContent value="grid">

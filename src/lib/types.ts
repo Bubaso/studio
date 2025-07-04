@@ -166,3 +166,5 @@ export interface Notification {
   createdAt: string;
   isRead: boolean;
 }
+
+export type SortByOption = 'date_desc' | 'price_asc' | 'price_desc';

@@ -1,6 +1,7 @@
 
+
 import { db, storage, auth } from '@/lib/firebase';
-import type { Item, ItemCategory, ItemCondition } from '@/lib/types';
+import type { Item, ItemCategory, ItemCondition, SortByOption } from '@/lib/types';
 import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, writeBatch, increment } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
@@ -79,12 +80,13 @@ const mapDocToItem = (document: any): Item => {
 };
 
 export const getItemsFromFirestore = async (filters?: {
-  categories?: string[]; // Changed to support multiple categories
+  categories?: string[];
   priceMin?: number;
   priceMax?: number;
   location?: string;
   query?: string;
   condition?: ItemCondition;
+  sortBy?: SortByOption;
   pageSize?: number;
   lastVisibleItemId?: string;
 }): Promise<{ items: Item[]; lastItemId: string | null; hasMore: boolean; }> => {
@@ -103,15 +105,23 @@ export const getItemsFromFirestore = async (filters?: {
     if (filters?.condition) {
       queryConstraints.push(where('condition', '==', filters.condition));
     }
-    
-    // --- Sorting & Price Filtering ---
-    if (filters?.priceMin !== undefined && filters?.priceMax !== undefined) {
-        queryConstraints.push(where('price', '>=', filters.priceMin));
-        queryConstraints.push(where('price', '<=', filters.priceMax));
-        queryConstraints.push(orderBy('price', 'asc'));
-    } else {
-        queryConstraints.push(orderBy('postedDate', 'desc')); // Default sort
+    if (filters?.priceMin !== undefined) {
+      queryConstraints.push(where('price', '>=', filters.priceMin));
     }
+    if (filters?.priceMax !== undefined) {
+      queryConstraints.push(where('price', '<=', filters.priceMax));
+    }
+    
+    // --- Sorting ---
+    const sortBy = filters?.sortBy || 'date_desc';
+    if (sortBy === 'price_asc') {
+      queryConstraints.push(orderBy('price', 'asc'));
+    } else if (sortBy === 'price_desc') {
+      queryConstraints.push(orderBy('price', 'desc'));
+    } else { // default to date descending
+      queryConstraints.push(orderBy('postedDate', 'desc'));
+    }
+
 
     // --- Pagination ---
     if (filters?.lastVisibleItemId) {
