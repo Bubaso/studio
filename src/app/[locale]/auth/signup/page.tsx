@@ -130,8 +130,8 @@ function SignUpPageContent() {
               description: t('toast.welcomeEmailGeneratedDesc')
           });
       }
-
-      router.push(redirectTo); 
+      // The onAuthStateChanged listener will handle the redirect.
+      // No router.push() needed here.
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
       
@@ -295,7 +295,6 @@ function SignUpPageContent() {
 
         <div className="space-y-3">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
-            {/* TODO: Add Google Icon */}
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignUp')}
           </Button>
