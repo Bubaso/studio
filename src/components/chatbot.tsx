@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect, useTransition } from 'react';
@@ -81,7 +80,7 @@ export function Chatbot() {
                 <SheetTrigger asChild>
                     <Button
                     variant="default"
-                    className="fixed right-6 bottom-24 md:bottom-6 h-16 w-16 rounded-full shadow-lg z-50 flex items-center justify-center"
+                    className="fixed right-6 bottom-28 md:bottom-6 h-16 w-16 rounded-full shadow-lg z-50 flex items-center justify-center"
                     aria-label={t('triggerTooltip')}
                     >
                     <MessageCircle className="h-8 w-8" />
