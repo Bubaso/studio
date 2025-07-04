@@ -52,13 +52,12 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
       // Prepare new user data
       const { email, displayName, photoURL } = firebaseUser;
-      const joinedDate = new Date().toISOString();
       
       // Determine the user's name with clear precedence
       let finalName: string;
-      if (additionalData.name) {
+      if (additionalData.name && additionalData.name.trim() !== '') {
         finalName = additionalData.name; // Highest priority: name passed from signup form
-      } else if (displayName) {
+      } else if (displayName && displayName.trim() !== '') {
         finalName = displayName; // Second priority: name from OAuth provider
       } else if (email) {
         finalName = email.split('@')[0]; // Third priority: derive from email
@@ -67,12 +66,11 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
       }
 
       const newUserDocData = {
-        uid: firebaseUser.uid,
         email,
         name: finalName,
         avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
         dataAiHint: additionalData.dataAiHint || "profil personne",
-        joinedDate,
+        joinedDate: serverTimestamp(),
         location: additionalData.location || '',
         lastActiveAt: serverTimestamp(),
         credits: 0,
@@ -111,7 +109,7 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
       const lastActiveAtISO = data.lastActiveAt ? convertTimestampToISO(data.lastActiveAt) : undefined;
 
       return {
-        uid: data.uid,
+        uid: userDocSnap.id,
         email: data.email || null,
         name: data.name || null,
         avatarUrl: data.avatarUrl || null,
