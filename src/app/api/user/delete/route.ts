@@ -9,7 +9,10 @@ function getPathFromUrl(url: string): string | null {
     return null;
   }
   const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-  if (!bucketName) return null;
+  if (!bucketName) {
+      console.error("Deletion Error: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set in environment variables.");
+      return null;
+  };
   
   const pathPrefix = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/`;
   const encodedPath = url.substring(pathPrefix.length).split('?')[0];
@@ -21,21 +24,14 @@ function getPathFromUrl(url: string): string | null {
   }
 }
 
-// Helper function to delete subcollections recursively.
-// NOTE: This does not delete sub-sub-collections. For this app's structure, it's sufficient.
-async function deleteCollectionInBatches(collectionRef: admin.firestore.CollectionReference, batch: admin.firestore.WriteBatch) {
+// Helper to add all documents in a collection to a write batch for deletion.
+async function addCollectionDeletionsToBatch(collectionRef: admin.firestore.CollectionReference, batch: admin.firestore.WriteBatch) {
     if (!adminDb) return;
-    const query = collectionRef.limit(100);
-    let snapshot = await query.get();
-
-    while (snapshot.size > 0) {
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        // Important: We don't commit the batch here. It will be committed once at the end.
-        // We re-fetch the next batch.
-        snapshot = await query.get();
-    }
+    const snapshot = await collectionRef.get();
+    if (snapshot.empty) return;
+    snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+    });
 }
 
 
@@ -64,15 +60,12 @@ export async function POST(request: NextRequest) {
 
   try {
     // --- Step 1: Collect all user data references and media URLs ---
-    console.log(`[DELETE USER ${uid}] Step 1: Collecting all user data...`);
-    
-    // User's listings and associated media
+    console.log(`[DELETE USER ${uid}] Step 1: Collecting user's items and media URLs...`);
     const itemsQuery = adminDb.collection('items').where('sellerId', '==', uid);
     const itemsSnapshot = await itemsQuery.get();
     const itemMediaUrls: string[] = [];
-    const itemIds: string[] = [];
+    
     itemsSnapshot.forEach(doc => {
-        itemIds.push(doc.id);
         const itemData = doc.data();
         if (itemData.imageUrls && Array.isArray(itemData.imageUrls)) {
             itemMediaUrls.push(...itemData.imageUrls);
@@ -82,13 +75,12 @@ export async function POST(request: NextRequest) {
         }
     });
 
-    // User's avatar
     const userDocRef = adminDb.collection('users').doc(uid);
-    const userDoc = await userDocRef.get();
-    if (userDoc.exists && userDoc.data()?.avatarUrl) {
-        itemMediaUrls.push(userDoc.data()?.avatarUrl);
+    const userDocSnap = await userDocRef.get();
+    if (userDocSnap.exists && userDocSnap.data()?.avatarUrl) {
+        itemMediaUrls.push(userDocSnap.data()?.avatarUrl);
     }
-    console.log(`[DELETE USER ${uid}]... found ${itemIds.length} items and ${itemMediaUrls.length} total media files.`);
+    console.log(`[DELETE USER ${uid}] ... found ${itemsSnapshot.docs.length} items and ${itemMediaUrls.length} total media files.`);
 
     // --- Step 2: Delete all media from Storage ---
     console.log(`[DELETE USER ${uid}] Step 2: Deleting media files from Storage...`);
@@ -102,49 +94,58 @@ export async function POST(request: NextRequest) {
     await Promise.allSettled(mediaDeletionPromises);
     console.log(`[DELETE USER ${uid}] Media deletion process completed.`);
 
-    // --- Step 3: Delete all Firestore documents in a single large transaction ---
-    console.log(`[DELETE USER ${uid}] Step 3: Preparing and running Firestore deletion transaction...`);
+    // --- Step 3: Concurrently prepare all Firestore deletions ---
+    console.log(`[DELETE USER ${uid}] Step 3: Preparing Firestore deletions...`);
     const batch = adminDb.batch();
 
-    // Delete items and their 'views' subcollections
-    for (const itemId of itemIds) {
-        const itemRef = adminDb.collection('items').doc(itemId);
-        await deleteCollectionInBatches(itemRef.collection('views'), batch);
-        batch.delete(itemRef);
-    }
+    // Concurrently get all subcollections to delete for items
+    const itemSubcollectionPromises = itemsSnapshot.docs.map(itemDoc => 
+        addCollectionDeletionsToBatch(itemDoc.ref.collection('views'), batch)
+    );
+    // Add items themselves to the batch
+    itemsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
 
-    // Delete user's 'collections' and their 'items' subcollections
+    // Get user's 'collections'
     const collectionsQuery = adminDb.collection('collections').where('userId', '==', uid);
     const collectionsSnapshot = await collectionsQuery.get();
-    for (const docSnap of collectionsSnapshot.docs) {
-        await deleteCollectionInBatches(docSnap.ref.collection('items'), batch);
-        batch.delete(docSnap.ref);
-    }
     
-    // Delete legacy 'userFavorites'
-    const favoritesQuery = adminDb.collection('userFavorites').where('userId', '==', uid);
-    const favoritesSnapshot = await favoritesQuery.get();
-    favoritesSnapshot.forEach(doc => batch.delete(doc.ref));
-
-    // Delete user-made 'reviews'
+    // Concurrently get all subcollections to delete for user's collections
+    const collectionSubItemsPromises = collectionsSnapshot.docs.map(collectionDoc =>
+        addCollectionDeletionsToBatch(collectionDoc.ref.collection('items'), batch)
+    );
+    // Add the user's collections themselves to the batch
+    collectionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+    
+    // Concurrently get other collections to delete
     const reviewsQuery = adminDb.collection('reviews').where('reviewerId', '==', uid);
-    const reviewsSnapshot = await reviewsQuery.get();
+    const reviewsSnapshotPromise = reviewsQuery.get();
+
+    // Await all concurrent read operations
+    const [reviewsSnapshot, ..._] = await Promise.all([
+        reviewsSnapshotPromise,
+        ...itemSubcollectionPromises,
+        ...collectionSubItemsPromises
+    ]);
+    
+    // Add results to the batch
     reviewsSnapshot.forEach(doc => batch.delete(doc.ref));
     
-    // Delete user's subcollections ('subscriptions', 'subscribers', etc.)
-    await deleteCollectionInBatches(userDocRef.collection('subscriptions'), batch);
-    await deleteCollectionInBatches(userDocRef.collection('subscribers'), batch);
-    await deleteCollectionInBatches(userDocRef.collection('notifications'), batch);
-    await deleteCollectionInBatches(userDocRef.collection('viewHistory'), batch);
+    // Handle user's direct subcollections
+    await addCollectionDeletionsToBatch(userDocRef.collection('subscriptions'), batch);
+    await addCollectionDeletionsToBatch(userDocRef.collection('subscribers'), batch);
+    await addCollectionDeletionsToBatch(userDocRef.collection('notifications'), batch);
+    await addCollectionDeletionsToBatch(userDocRef.collection('viewHistory'), batch);
 
-    // Finally, delete the main user document itself
+    // Finally, add the main user document itself to the batch
     batch.delete(userDocRef);
-
+    
+    // --- Step 4: Commit the master Firestore batch deletion ---
+    console.log(`[DELETE USER ${uid}] Committing Firestore batch deletion...`);
     await batch.commit();
     console.log(`[DELETE USER ${uid}] Firestore data deletion committed successfully.`);
 
     // --- Final Step: Delete the user from Firebase Auth ---
-    console.log(`[DELETE USER ${uid}] Step 4: Deleting user from Firebase Auth...`);
+    console.log(`[DELETE USER ${uid}] Step 5: Deleting user from Firebase Auth...`);
     await adminAuth.deleteUser(uid);
     console.log(`[DELETE USER ${uid}] Successfully deleted user from Auth.`);
 
@@ -152,7 +153,6 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error(`API DELETE USER: Error during account deletion for ${uid}:`, error);
-    // Correct the typo in the French error message
     return NextResponse.json({ error: error.message || "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
   }
 }
