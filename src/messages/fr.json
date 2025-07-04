@@ -1,4 +1,3 @@
-
 {
   "Header": {
     "searchPlaceholder": "Rechercher des articles...",
@@ -250,18 +249,10 @@
     "condition": "État :",
     "deliveryDetails": "Détails de la livraison",
     "paidByLabel": "Payé par :",
-    "shippingPayers": {
-      "seller": "Vendeur",
-      "buyer": "Acheteur",
-      "shared": "Partagé"
-    },
     "noDeliveryDetails": "Aucun détail de livraison n'a été spécifié.",
     "itemDescription": "Description de l'article",
-    "contactSeller": "Contacter le vendeur",
     "callSeller": "Appeler le vendeur",
     "contactOnWhatsApp": "Contacter sur WhatsApp",
-    "contactSellerLoginRequired": "Contacter le vendeur (Connexion requise)",
-    "sending": "Envoi...",
     "similarItems": "Articles similaires",
     "safetyTips": "Conseils de sécurité",
     "safetyTip1": "Ne payez jamais d'avance un vendeur que vous ne connaissez pas.",
@@ -271,32 +262,15 @@
     "publishedOn": "Publié le :",
     "soldOn": "Vendu le :",
     "lastModified": "Dernière modification :",
+    "contactSeller": "Contacter le vendeur",
+    "contactSellerLoginRequired": "Contacter le vendeur (Connexion requise)",
+    "sending": "Envoi...",
     "toasts": {
       "discussionStarted": "Discussion initiée",
       "redirectingToDiscussion": "Redirection vers la discussion...",
       "error": "Erreur",
       "contactError": "Impossible de contacter le vendeur. Veuillez réessayer.",
       "communicationError": "Erreur de communication"
-    }
-  },
-  "ItemStats": {
-    "viewsToday": "{count, plural, one {# personne a vu cet article aujourd'hui} other {# personnes ont vu cet article aujourd'hui}}",
-    "saves": "{count, plural, one {# personne a sauvegardé cet article} other {# personnes ont sauvegardé cet article}}",
-    "activeListings": "{count, plural, one {# annonce active par ce vendeur} other {# annonces actives par ce vendeur}}"
-  },
-  "ConfirmSoldStatus": {
-    "title": "Action requise : Confirmer le statut de l'article",
-    "description": "Des utilisateurs ont signalé que cet article a été vendu. Veuillez confirmer son statut pour maintenir la fiabilité de la plateforme.",
-    "yesSold": "Oui, il est vendu",
-    "noAvailable": "Non, toujours disponible",
-    "toast": {
-      "statusUpdated": "Statut mis à jour",
-      "markedAsSold": "Votre annonce est maintenant marquée comme vendue.",
-      "error": "Erreur",
-      "confirmError": "Impossible de confirmer la vente.",
-      "listingReactivated": "Annonce réactivée",
-      "reportsCleared": "Les signalements ont été effacés et votre annonce est de nouveau marquée comme disponible.",
-      "updateError": "Impossible de mettre à jour l'annonce."
     }
   },
   "SellerActions": {
@@ -320,6 +294,11 @@
       "deleteError": "Impossible de supprimer l'annonce."
     }
   },
+  "ItemStats": {
+    "viewsToday": "{count, plural, one {# personne a vu cet article aujourd'hui} other {# personnes ont vu cet article aujourd'hui}}",
+    "saves": "{count, plural, one {# personne a sauvegardé cet article} other {# personnes ont sauvegardé cet article}}",
+    "activeListings": "{count, plural, one {# annonce active par ce vendeur} other {# annonces actives par ce vendeur}}"
+  },
   "ReportItemButton": {
     "reported": "Signalé",
     "alreadyReported": "Vous avez déjà signalé cet article.",
@@ -334,174 +313,19 @@
       "errorDesc": "Impossible de signaler l'article."
     }
   },
-  "ReviewForm": {
-    "loading": "Chargement du formulaire d'avis...",
-    "loginToReview": "Connectez-vous pour laisser un avis",
-    "pleaseLoginToReview": "Veuillez vous connecter pour évaluer cet article.",
-    "youAreTheSeller": "Vous êtes le vendeur",
-    "cannotReviewOwnItem": "Vous ne pouvez pas laisser d'avis sur votre propre article.",
-    "reviewAlreadySubmitted": "Avis déjà soumis",
-    "youHaveReviewed": "Vous avez déjà laissé un avis pour cet article.",
-    "thanksForReview": "Merci pour votre avis !",
-    "yourRating": "Votre note (sur 5)",
-    "chooseRating": "Choisissez une note...",
-    "yourComment": "Votre commentaire",
-    "shareYourExperience": "Partagez votre expérience avec cet article et le vendeur...",
-    "submitting": "Envoi en cours...",
-    "submitReview": "Soumettre mon avis",
+  "ConfirmSoldStatus": {
+    "title": "Action requise : Confirmer le statut de l'article",
+    "description": "Des utilisateurs ont signalé que cet article a été vendu. Veuillez confirmer son statut pour maintenir la fiabilité de la plateforme.",
+    "yesSold": "Oui, il est vendu",
+    "noAvailable": "Non, toujours disponible",
     "toast": {
-      "reviewSubmitted": "Avis soumis !",
-      "reviewSaved": "Votre avis a été enregistré.",
-      "submissionError": "Erreur de soumission"
-    }
-  },
-  "ForgotPasswordPage": {
-    "title": "Mot de passe oublié ?",
-    "checkInbox": "Vérifiez votre boîte de réception pour les instructions.",
-    "enterEmail": "Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.",
-    "emailSentConfirmation": "Si un compte associé à {email} existe, un e-mail a été envoyé. Le lien expirera bientôt.",
-    "emailLabel": "Email",
-    "emailPlaceholder": "vous@example.com",
-    "sendLinkButton": "Envoyer le lien",
-    "backToLogin": "Retour à la connexion",
-    "toast": {
-      "emailSentTitle": "E-mail envoyé !",
-      "emailSentDesc": "Un lien de réinitialisation de mot de passe a été envoyé à {email}.",
-      "genericError": "Une erreur s'est produite. Veuillez réessayer.",
-      "invalidEmail": "Format d'email invalide.",
-      "errorTitle": "Erreur"
-    }
-  },
-  "SignInPage": {
-    "title": "Connectez-vous à JëndJaay",
-    "description": "Accédez à votre compte pour acheter et vendre.",
-    "emailLabel": "Email",
-    "emailPlaceholder": "vous@example.com",
-    "passwordLabel": "Mot de passe",
-    "passwordPlaceholder": "Votre mot de passe",
-    "signInButton": "Se connecter",
-    "orSeparator": "OU",
-    "googleSignIn": "Se connecter avec Google",
-    "facebookSignIn": "Se connecter avec Facebook",
-    "appleSignIn": "Se connecter avec Apple",
-    "forgotPasswordPrompt": "Mot de passe oublié ?",
-    "resetLink": "Réinitialiser",
-    "noAccountPrompt": "Pas encore de compte ?",
-    "signUpLink": "S'inscrire",
-    "verifyingSession": "Vérification de la session...",
-    "alreadyLoggedIn": "Vous êtes déjà connecté. Redirection...",
-    "toast": {
-      "successTitle": "Connexion réussie !",
-      "redirecting": "Redirection en cours...",
-      "welcome": "Bienvenue, {name} !",
-      "genericError": "Échec de la connexion. Vérifiez vos identifiants.",
-      "invalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
-      "invalidEmail": "Format d'email invalide.",
-      "tooManyRequests": "Trop de tentatives de connexion. Veuillez réessayer plus tard.",
-      "networkError": "Erreur de réseau. Vérifiez votre connexion internet.",
-      "errorTitle": "Erreur de connexion",
-      "oauthErrorTitle": "Erreur de connexion OAuth",
-      "oauthAccountExists": "Un compte existe déjà avec cette adresse e-mail. Essayez de vous connecter différemment.",
-      "popupClosed": "La fenêtre de connexion a été fermée avant la fin de l'opération.",
-      "providerNotEnabled": "La connexion avec ce fournisseur n'est pas activée. Veuillez vérifier la configuration Firebase.",
-      "unauthorizedDomain": "Ce domaine n'est pas autorisé pour les opérations OAuth. Vérifiez votre configuration Firebase."
-    }
-  },
-  "SignUpPage": {
-    "title": "Rejoignez JëndJaay Aujourd'hui",
-    "description": "Créez votre compte pour commencer à acheter et vendre des articles uniques.",
-    "nameLabel": "Nom complet",
-    "namePlaceholder": "Votre Nom",
-    "emailLabel": "Email",
-    "emailPlaceholder": "vous@example.com",
-    "passwordLabel": "Mot de passe",
-    "passwordPlaceholder": "Créez un mot de passe fort",
-    "createAccountButton": "Créer un compte",
-    "orSeparator": "OU",
-    "googleSignUp": "S'inscrire avec Google",
-    "facebookSignUp": "S'inscrire avec Facebook",
-    "appleSignUp": "S'inscrire avec Apple",
-    "alreadyHaveAccountPrompt": "Vous avez déjà un compte ?",
-    "signInLink": "Se connecter",
-    "toast": {
-      "successTitle": "Compte créé avec succès !",
-      "welcome": "Bienvenue ! Votre compte est maintenant actif.",
-      "emailInUseTitle": "Adresse e-mail déjà utilisée",
-      "emailInUseDesc": "Un compte existe déjà avec cette adresse. Veuillez vous connecter.",
-      "genericError": "Échec de la création du compte. Veuillez réessayer.",
-      "weakPassword": "Le mot de passe doit comporter au moins 6 caractères.",
-      "configError": "Erreur de configuration ou requête invalide.",
-      "errorTitle": "Erreur d'inscription"
-    }
-  },
-  "MessagesPage": {
-    "title": "Vos Messages",
-    "loadingAuth": "Chargement de l'authentification...",
-    "accessDeniedTitle": "Accès refusé",
-    "accessDeniedDesc": "Veuillez vous connecter pour voir vos messages.",
-    "loginLink": "Se connecter",
-    "loadingThreads": "Chargement des fils de discussion...",
-    "youPrefix": "Vous : ",
-    "noMessagesYet": "Pas encore de messages.",
-    "unknownUser": "Utilisateur Inconnu",
-    "deleteConfirmTitle": "Supprimer cette conversation ?",
-    "deleteConfirmDesc": "Cette action est irréversible. La conversation sera retirée de votre liste, mais l'autre participant la verra toujours.",
-    "cancel": "Annuler",
-    "delete": "Supprimer",
-    "noThreadsTitle": "Aucun message pour le moment",
-    "noThreadsDesc": "Commencez une conversation en contactant un vendeur ou un utilisateur depuis leur profil ou une annonce.",
-    "toast": {
-      "threadDeletedTitle": "Conversation supprimée",
-      "threadDeletedDesc": "La conversation a été retirée de votre liste.",
-      "errorTitle": "Erreur",
-      "deleteError": "Impossible de supprimer la conversation."
-    }
-  },
-  "MessageThreadPage": {
-    "discussedItems": "Articles Concernés",
-    "deleteItemConvTitle": "Supprimer cette conversation ?",
-    "deleteItemConvDesc": "La conversation concernant l'article \"{itemName}\" sera supprimée de votre vue. L'autre participant la verra toujours. Cette action est irréversible.",
-    "cancel": "Annuler",
-    "delete": "Supprimer",
-    "backToMessages": "Retour aux messages",
-    "youBlockedUser": "Vous avez bloqué cet utilisateur.",
-    "userBlockedYou": "Cet utilisateur vous a bloqué.",
-    "unblock": "Débloquer",
-    "block": "Bloquer",
-    "fullscreenImage": "Image en plein écran",
-    "attachment": "Pièce jointe",
-    "you": "Vous",
-    "recording": "Enregistrement... {time}",
-    "attachImage": "Joindre une image",
-    "writeMessagePlaceholder": "Écrivez votre message...",
-    "blockedPlaceholderYou": "Vous avez bloqué cet utilisateur. Débloquez pour envoyer un message.",
-    "blockedPlaceholderThem": "Cet utilisateur vous a bloqué. Vous ne pouvez pas répondre.",
-    "sendMessage": "Envoyer le message",
-    "sendVoiceMessage": "Envoyer un message vocal",
-    "selectAnItem": "Sélectionnez un article",
-    "selectAnItemDesc": "Veuillez sélectionner un article ci-dessus pour voir la conversation.",
-    "toast": {
-      "notFoundTitle": "Non trouvé",
-      "notFoundDesc": "Ce fil de discussion est introuvable.",
-      "fileTooLargeTitle": "Fichier trop volumineux",
-      "imageTooLargeDesc": "La taille maximale de l'image est de 5Mo.",
-      "uploadErrorTitle": "Erreur de téléversement",
-      "imageUploadErrorDesc": "L'image n'a pas pu être envoyée.",
-      "sendErrorTitle": "Erreur d'envoi",
-      "messageSendErrorDesc": "Le message n'a pas pu être envoyé.",
-      "audioSendErrorDesc": "Le message vocal n'a pas pu être envoyé.",
-      "micDeniedTitle": "Accès au microphone refusé",
-      "micDeniedDesc": "Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.",
-      "itemConvDeletedTitle": "Conversation supprimée",
-      "itemConvDeletedDesc": "La conversation pour cet article a été retirée.",
-      "itemConvDeleteErrorDesc": "Impossible de supprimer la conversation de cet article.",
-      "unauthorizedActionTitle": "Action non autorisée",
-      "unblockerOnly": "Seul l'utilisateur qui a bloqué peut débloquer.",
-      "userUnblockedTitle": "Utilisateur débloqué",
-      "userUnblockedDesc": "Vous pouvez à nouveau échanger des messages.",
-      "userBlockedTitle": "Utilisateur bloqué",
-      "userBlockedDesc": "La conversation est maintenant bloquée.",
-      "toggleBlockErrorDesc": "L'opération de blocage/déblocage a échoué."
+      "statusUpdated": "Statut mis à jour",
+      "markedAsSold": "Votre annonce est maintenant marquée comme vendue.",
+      "error": "Erreur",
+      "confirmError": "Impossible de confirmer la vente.",
+      "listingReactivated": "Annonce réactivée",
+      "reportsCleared": "Les signalements ont été effacés et votre annonce est de nouveau marquée comme disponible.",
+      "updateError": "Impossible de mettre à jour l'annonce."
     }
   }
 }
