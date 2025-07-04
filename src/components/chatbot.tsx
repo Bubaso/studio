@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useTransition } from 'react';
@@ -29,13 +30,12 @@ export function Chatbot() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isPending, startTransition] = useTransition();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
+    // Scroll to the bottom every time messages or pending state changes
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isPending]);
   
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,10 +47,12 @@ export function Chatbot() {
       text: input,
     };
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input;
+    setInput(''); // Clear input immediately for better UX
 
     startTransition(async () => {
       try {
-        const response = await askChatbot({ query: input, locale });
+        const response = await askChatbot({ query: currentInput, locale });
         const botMessage: ChatMessage = {
           id: Date.now() + 1,
           role: 'bot',
@@ -68,8 +70,6 @@ export function Chatbot() {
         setMessages(prev => [...prev, errorMessage]);
       }
     });
-
-    setInput('');
   };
 
   return (
@@ -81,7 +81,7 @@ export function Chatbot() {
                 <SheetTrigger asChild>
                     <Button
                     variant="default"
-                    className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-50 flex items-center justify-center"
+                    className="fixed right-6 bottom-24 md:bottom-6 h-16 w-16 rounded-full shadow-lg z-50 flex items-center justify-center"
                     aria-label={t('triggerTooltip')}
                     >
                     <MessageCircle className="h-8 w-8" />
@@ -95,7 +95,7 @@ export function Chatbot() {
                     </SheetTitle>
                     </SheetHeader>
                     <div className="flex-1 overflow-hidden">
-                        <ScrollArea className="h-full" ref={scrollAreaRef}>
+                        <ScrollArea className="h-full">
                             <div className="p-4 space-y-4">
                             {messages.map(message => (
                                 <div
@@ -135,6 +135,7 @@ export function Chatbot() {
                                 </div>
                                 </div>
                             )}
+                             <div ref={messagesEndRef} />
                             </div>
                         </ScrollArea>
                     </div>
