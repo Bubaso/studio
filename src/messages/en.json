@@ -249,6 +249,11 @@
     "condition": "Condition:",
     "deliveryDetails": "Delivery Details",
     "paidByLabel": "Paid by:",
+    "shippingPayers": {
+      "seller": "Seller",
+      "buyer": "Buyer",
+      "shared": "Shared"
+    },
     "noDeliveryDetails": "No delivery details specified.",
     "itemDescription": "Item Description",
     "callSeller": "Call Seller",
