@@ -519,5 +519,14 @@
     "views": "Görüntülenme",
     "view": "Görüntüle",
     "edit": "Düzenle"
+  },
+  "Chatbot": {
+    "title": "Asistan",
+    "placeholder": "Bir soru sorun veya bir ürün tanımlayın...",
+    "send": "Gönder",
+    "triggerTooltip": "Asistanla İletişime Geç",
+    "searchResultIntro": "İlginizi çekebilecek bazı ürünler şunlardır:",
+    "searchResultEmpty": "Üzgünüm, aramanıza uygun herhangi bir ürün bulamadım.",
+    "generalError": "Üzgünüm, şu anda sorunuza cevap veremiyorum. Lütfen tekrar deneyin."
   }
 }

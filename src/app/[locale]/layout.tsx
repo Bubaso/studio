@@ -8,10 +8,11 @@ import { UserActivityLogger } from '@/components/user-activity-logger';
 import { AuthProvider } from '@/context/AuthContext';
 import { ScrollToTop } from '@/components/scroll-to-top';
 import { FoundingMemberNotifier } from '@/components/FoundingMemberNotifier';
-import {NextIntlClientProvider} from 'next-intl';
-import {getMessages, setRequestLocale} from 'next-intl/server';
+import {NextIntlClientProvider, useMessages} from 'next-intl';
+import { unstable_setRequestLocale } from 'next-intl/server';
+import { Chatbot } from '@/components/chatbot';
 
-export default async function LocaleLayout({
+export default function LocaleLayout({
   children,
   params
 }: {
@@ -19,8 +20,8 @@ export default async function LocaleLayout({
   params: {locale: string};
 }) {
   const locale = params.locale;
-  setRequestLocale(locale);
-  const messages = await getMessages();
+  unstable_setRequestLocale(locale);
+  const messages = useMessages();
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
@@ -36,6 +37,7 @@ export default async function LocaleLayout({
           <Footer />
           <BottomTabNavigator />
           <Toaster />
+          <Chatbot />
         </div>
       </AuthProvider>
     </NextIntlClientProvider>

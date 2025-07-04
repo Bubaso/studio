@@ -519,5 +519,14 @@
     "views": "Views",
     "view": "View",
     "edit": "Edit"
+  },
+  "Chatbot": {
+    "title": "Assistant",
+    "placeholder": "Ask a question or describe an item...",
+    "send": "Send",
+    "triggerTooltip": "Contact Assistant",
+    "searchResultIntro": "Here are some items that might interest you:",
+    "searchResultEmpty": "Sorry, I couldn't find any items matching your search.",
+    "generalError": "Sorry, I couldn't answer your question right now. Please try again."
   }
 }

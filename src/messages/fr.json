@@ -519,5 +519,14 @@
     "views": "Vues",
     "view": "Voir",
     "edit": "Modifier"
+  },
+  "Chatbot": {
+    "title": "Assistant",
+    "placeholder": "Posez une question ou décrivez un article...",
+    "send": "Envoyer",
+    "triggerTooltip": "Contacter l'assistant",
+    "searchResultIntro": "Voici quelques articles qui pourraient vous intéresser :",
+    "searchResultEmpty": "Désolé, je n'ai trouvé aucun article correspondant à votre recherche.",
+    "generalError": "Désolé, je n'ai pas pu répondre à votre question pour le moment. Veuillez réessayer."
   }
 }
