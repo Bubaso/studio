@@ -27,68 +27,64 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
 
 
 export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}): Promise<void> => {
+  if (!db) {
+      console.error("Firestore (db) is not initialized. Cannot create user document.");
+      throw new Error("Database service is not available.");
+  }
   if (!firebaseUser) return;
 
   const userRef = doc(db, 'users', firebaseUser.uid);
-  const counterRef = doc(db, 'counters', 'userCounter');
 
+  // Check if the document already exists to avoid overwriting
+  const userSnapshot = await getDoc(userRef);
+
+  if (userSnapshot.exists()) {
+    // User document already exists, maybe from a previous failed attempt or OAuth.
+    console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
+    return;
+  }
+
+  // If document does not exist, create it.
   try {
-    await runTransaction(db, async (transaction) => {
-      const userSnapshot = await transaction.get(userRef);
+    const { email, displayName, photoURL } = firebaseUser;
 
-      if (userSnapshot.exists()) {
-        // User already exists, do nothing in this transaction.
-        return;
-      }
+    // Determine the user's name with clear precedence
+    let finalName: string;
+    if (additionalData.name && additionalData.name.trim() !== '') {
+      finalName = additionalData.name;
+    } else if (displayName && displayName.trim() !== '') {
+      finalName = displayName;
+    } else if (email) {
+      finalName = email.split('@')[0];
+    } else {
+      finalName = 'Utilisateur Anonyme';
+    }
+    
+    // All new users get the default number of free listings.
+    // The founding member logic was unstable and has been removed for reliability.
+    const freeListings = 5;
 
-      // Get and increment the user counter
-      const counterDoc = await transaction.get(counterRef);
-      const currentCount = counterDoc.data()?.count || 0;
-      const newCount = currentCount + 1;
+    const newUserDocData = {
+      email,
+      name: finalName,
+      avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
+      dataAiHint: additionalData.dataAiHint || "profil personne",
+      joinedDate: serverTimestamp(),
+      location: additionalData.location || '',
+      lastActiveAt: serverTimestamp(),
+      credits: 0,
+      freeListingsRemaining: freeListings,
+      subscriberCount: 0,
+      subscriptionCount: 0,
+      isFoundingMember: false,
+    };
 
-      // Determine if the user is a founding member and set their free listings
-      const isFoundingMember = newCount <= 100;
-      const freeListings = isFoundingMember ? 15 : 5; // 10 bonus listings for first 100 users
-
-      // Prepare new user data
-      const { email, displayName, photoURL } = firebaseUser;
-      
-      // Determine the user's name with clear precedence
-      let finalName: string;
-      if (additionalData.name && additionalData.name.trim() !== '') {
-        finalName = additionalData.name; // Highest priority: name passed from signup form
-      } else if (displayName && displayName.trim() !== '') {
-        finalName = displayName; // Second priority: name from OAuth provider
-      } else if (email) {
-        finalName = email.split('@')[0]; // Third priority: derive from email
-      } else {
-        finalName = 'Utilisateur Anonyme'; // Fallback
-      }
-
-      const newUserDocData = {
-        email,
-        name: finalName,
-        avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
-        dataAiHint: additionalData.dataAiHint || "profil personne",
-        joinedDate: serverTimestamp(),
-        location: additionalData.location || '',
-        lastActiveAt: serverTimestamp(),
-        credits: 0,
-        freeListingsRemaining: freeListings,
-        subscriberCount: 0,
-        subscriptionCount: 0,
-        isFoundingMember: isFoundingMember,
-      };
-
-      // Set the new user document
-      transaction.set(userRef, newUserDocData);
-      
-      // Update the counter using set with merge to create if it doesn't exist
-      transaction.set(counterRef, { count: newCount }, { merge: true });
-    });
+    await setDoc(userRef, newUserDocData);
+    console.log(`Successfully created user document for ${firebaseUser.uid}`);
 
   } catch (error) {
-    console.error("Error creating user document with counter transaction: ", error);
+    console.error("Error creating user document: ", error);
+    // Re-throw the error so the calling function's catch block can handle it.
     throw error;
   }
 };
@@ -201,19 +197,16 @@ export const updateUserLastActive = async (uid: string): Promise<void> => {
   }
   const userDocRef = doc(db, 'users', uid);
   try {
-    // Use updateDoc which fails if the document does not exist.
-    // This prevents a race condition with createUserDocument.
-    await updateDoc(userDocRef, {
-      lastActiveAt: serverTimestamp(),
-    });
-  } catch (error: any) {
-    // It's normal for this to fail if the user document hasn't been created yet
-    // during the signup process. We can safely ignore the 'not-found' error.
-    if (error.code === 'not-found') {
-      // Silently ignore, as createUserDocument will handle creation.
-      return;
+    // Check if the document exists before trying to update it.
+    // This prevents errors on new user sign-up where the doc may not exist yet.
+    const userDocSnap = await getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+        await updateDoc(userDocRef, {
+            lastActiveAt: serverTimestamp(),
+        });
     }
-    // Log other types of errors.
+  } catch (error: any) {
+    // Log any errors that are not related to the document not being found.
     console.error(`Error updating lastActiveAt for user ${uid}:`, error);
   }
 };
