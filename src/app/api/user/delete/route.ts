@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // User's avatar
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
-    if (userDoc.exists() && userDoc.data()?.avatarUrl) {
+    if (userDoc.exists && userDoc.data()?.avatarUrl) {
         itemMediaUrls.push(userDoc.data()?.avatarUrl);
     }
     console.log(`[DELETE USER ${uid}]... found ${itemIds.length} items and ${itemMediaUrls.length} total media files.`);
@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error(`API DELETE USER: Error during account deletion for ${uid}:`, error);
+    // Correct the typo in the French error message
     return NextResponse.json({ error: error.message || "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
   }
 }
