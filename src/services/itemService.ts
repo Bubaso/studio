@@ -77,7 +77,7 @@ const mapDocToItem = (document: any): Item => {
     whatsappNumber: data.whatsappNumber || undefined,
     deliveryOptions: data.deliveryOptions || [],
     shippingPayer: data.shippingPayer,
-    status: data.status || 'active', // Default to active for older items
+    status: data.status,
     moderation: data.moderation,
   };
 };
@@ -146,9 +146,9 @@ export const getItemsFromFirestore = async (filters?: {
 
     // Client-side filtering for isSold and status
     items = items.filter(item => {
-      const isActive = !item.status || item.status === 'active';
-      const isNotSold = !item.isSold;
-      return isActive && isNotSold;
+      const isCorrectStatus = !item.status || item.status === 'active';
+      const isNotSold = item.isSold === undefined || item.isSold === false;
+      return isCorrectStatus && isNotSold;
     });
 
     // Client-side query text filtering, if any
