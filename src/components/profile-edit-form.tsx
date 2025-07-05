@@ -25,7 +25,6 @@ import { uploadAvatarAndGetURL, updateUserProfile } from "@/services/userService
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import imageCompression from 'browser-image-compression';
 
 const MAX_AVATAR_SIZE_MB = 10;
 const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -67,7 +66,7 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
     },
   });
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
@@ -89,35 +88,13 @@ export function ProfileEditForm({ currentUserProfile }: ProfileEditFormProps) {
         return;
       }
       
-      const options = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 800,
-        useWebWorker: true,
-      };
-
-      try {
-        setIsSubmitting(true);
-        toast({ description: "Optimisation de l'avatar..." });
-        const compressedFile = await imageCompression(file, options);
-        form.setValue("avatarFile", compressedFile, { shouldValidate: true });
+      form.setValue("avatarFile", file, { shouldValidate: true });
         
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAvatarPreview(reader.result as string);
-        };
-        reader.readAsDataURL(compressedFile);
-
-      } catch (error) {
-        console.error("Erreur de compression d'avatar:", error);
-        toast({
-            variant: "destructive",
-            title: "Erreur de compression",
-            description: "L'avatar n'a pas pu être optimisé.",
-        });
-        form.setValue("avatarFile", file, { shouldValidate: true });
-      } finally {
-        setIsSubmitting(false);
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
