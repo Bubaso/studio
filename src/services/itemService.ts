@@ -144,30 +144,7 @@ export const getItemsFromFirestore = async (filters?: {
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
 
-    // Manually filter docs for visibility (status and sold status)
-    const allVisibleDocs = querySnapshot.docs.filter(doc => {
-        const data = doc.data();
-        
-        // Item should be shown if status is 'active' OR if status field doesn't exist at all.
-        const isVisibleStatus = (data.status === 'active' || data.status === undefined || data.status === null);
-        
-        // Item should be shown if it's NOT sold (isSold is false OR isSold field doesn't exist).
-        const isNotSold = (data.isSold === false || data.isSold === undefined || data.isSold === null);
-        
-        return isVisibleStatus && isNotSold;
-    });
-
-    let items = allVisibleDocs.map(mapDocToItem);
-
-    // This logic is flawed for pagination but left as is from previous state.
-    // The main filtering logic is now handled above.
-    const fifteenDaysAgo = new Date();
-    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-    items = items.filter(item => {
-        if (!item.isSold) return true;
-        if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true;
-        return false;
-    });
+    const items = querySnapshot.docs.map(mapDocToItem);
 
     const hasMore = querySnapshot.docs.length === pageSize;
     const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
@@ -378,17 +355,11 @@ export async function createItemInFirestore(
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
-      // The item is created as 'active' for now.
-      // The AI moderation logic was incorrectly called from the client and has been removed.
-      // A proper implementation requires a backend trigger (e.g., Cloud Function).
-      status: 'active', 
+      status: 'active',
       isSold: false,
     });
 
     await batch.commit();
-
-    // The client-side call to AI moderation was removed from here to fix the bug.
-    // This logic should be moved to a backend Cloud Function that triggers on item creation.
     
     return newItemRef.id;
 
