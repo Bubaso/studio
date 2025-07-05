@@ -102,7 +102,7 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    queryConstraints.push(where('isSold', '==', false));
+    // We removed isSold and status filters from here to handle them post-fetch.
 
     if (filters?.categories && filters.categories.length > 0) {
       queryConstraints.push(where('category', 'in', filters.categories));
@@ -147,21 +147,29 @@ export const getItemsFromFirestore = async (filters?: {
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
 
-    // Manually filter out items with disallowed statuses
-    const allowedStatuses = new Set(['active', undefined, null]);
-    const allFetchedDocs = querySnapshot.docs.filter(doc => {
-        const status = doc.data().status;
-        return allowedStatuses.has(status);
+    // Manually filter docs for visibility (status and sold status)
+    const allVisibleDocs = querySnapshot.docs.filter(doc => {
+        const data = doc.data();
+        
+        // Item should be shown if status is 'active' OR if status field doesn't exist at all.
+        const isVisibleStatus = (data.status === 'active' || data.status === undefined || data.status === null);
+        
+        // Item should be shown if it's NOT sold (isSold is false OR isSold field doesn't exist).
+        const isNotSold = (data.isSold === false || data.isSold === undefined || data.isSold === null);
+        
+        return isVisibleStatus && isNotSold;
     });
 
-    const hasMore = allFetchedDocs.length > pageSize;
-    const pageDocs = allFetchedDocs.slice(0, pageSize);
+    const hasMore = allVisibleDocs.length > pageSize;
+    const pageDocs = allVisibleDocs.slice(0, pageSize);
     
     let items = pageDocs.map(mapDocToItem);
 
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
     items = items.filter(item => {
+        // This filter is for a different purpose: temporarily showing recently sold items.
+        // The main filtering for "unsold" items is now handled above.
         if (!item.isSold) return true;
         if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true;
         return false;
