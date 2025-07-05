@@ -2,12 +2,11 @@
 
 import { db, storage, auth } from '@/lib/firebase';
 import type { Item, ItemCategory, ItemCondition, SortByOption } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, writeBatch, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, runTransaction, increment } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
 import { deleteReportsForItem } from './reportService';
-import { createNotification } from './notificationService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -141,7 +140,8 @@ export const getItemsFromFirestore = async (filters?: {
 
     let items = querySnapshot.docs.map(mapDocToItem);
 
-    // Client-side filtering for isSold
+    // No longer filtering by status here. Let's show everything that isn't explicitly sold.
+    // This simplifies the logic and ensures legacy items are always shown.
     items = items.filter(item => item.isSold === undefined || item.isSold === false);
 
     // Client-side query text filtering, if any
@@ -314,27 +314,31 @@ export async function createItemInFirestore(
     throw new Error("Seller ID is missing from item data.");
   }
 
-  const batch = writeBatch(db);
-  const userRef = doc(db, 'users', userId);
-  
-  const newItemRef = doc(collection(db, "items")); 
-
-  try {
-    const userSnap = await getDoc(userRef);
+  // Use a transaction to ensure credit deduction and item creation are atomic
+  const newItemId = await runTransaction(db, async (transaction) => {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await transaction.get(userRef);
     if (!userSnap.exists()) {
       throw new Error("User profile not found.");
     }
     const userProfile = userSnap.data();
+
     const hasFreeListings = (userProfile.freeListingsRemaining || 0) > 0;
     const hasEnoughCredits = (userProfile.credits || 0) >= LISTING_COST_IN_CREDITS;
 
-    if (hasFreeListings) {
-      batch.update(userRef, { freeListingsRemaining: increment(-1) });
-    } else if (hasEnoughCredits) {
-      batch.update(userRef, { credits: increment(-LISTING_COST_IN_CREDITS) });
-    } else {
+    if (!hasFreeListings && !hasEnoughCredits) {
       throw new Error("Crédits ou annonces gratuites insuffisants.");
     }
+    
+    // Deduct credits or free listing
+    if (hasFreeListings) {
+      transaction.update(userRef, { freeListingsRemaining: increment(-1) });
+    } else {
+      transaction.update(userRef, { credits: increment(-LISTING_COST_IN_CREDITS) });
+    }
+
+    // Create the new item
+    const newItemRef = doc(collection(db, "items"));
 
     const dataToSend: any = { ...itemData };
     if (dataToSend.videoUrl === undefined) delete dataToSend.videoUrl;
@@ -345,20 +349,16 @@ export async function createItemInFirestore(
     if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
     if (dataToSend.shippingPayer === undefined) delete dataToSend.shippingPayer;
 
-    batch.set(newItemRef, {
+    transaction.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
       isSold: false,
     });
-
-    await batch.commit();
     
     return newItemRef.id;
+  });
 
-  } catch (error) {
-    console.error("SERVER: Error creating item in Firestore within transaction: ", error);
-    throw error; 
-  }
+  return newItemId;
 }
 
 export async function updateItemInFirestore(
