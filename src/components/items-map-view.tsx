@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -60,7 +59,7 @@ export function ItemsMapView() {
     const fetchMapData = async () => {
         setIsLoading(true);
 
-        const categoryParam = searchParams.get('category') as ItemCategory | null;
+        const categoriesParam = searchParams.getAll('category');
         const minPriceParam = searchParams.get('minPrice');
         const maxPriceParam = searchParams.get('maxPrice');
         const locationParam = searchParams.get('location');
@@ -72,7 +71,7 @@ export function ItemsMapView() {
         // For map view, we fetch a larger number of items to populate the area.
         const result = await getItemsFromFirestore({
             query: searchParams.get('q') || undefined,
-            category: categoryParam || undefined,
+            categories: categoriesParam.length > 0 ? categoriesParam : undefined,
             priceMin: minPriceParam ? parseInt(minPriceParam) : undefined,
             priceMax: maxPriceParam ? parseInt(maxPriceParam) : undefined,
             location: locationParam || undefined,
