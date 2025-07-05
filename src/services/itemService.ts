@@ -140,9 +140,8 @@ export const getItemsFromFirestore = async (filters?: {
 
     let items = querySnapshot.docs.map(mapDocToItem);
 
-    // No longer filtering by status here. Let's show everything that isn't explicitly sold.
-    // This simplifies the logic and ensures legacy items are always shown.
-    items = items.filter(item => item.isSold === undefined || item.isSold === false);
+    items = items.filter(item => !(item.isSold === true));
+
 
     // Client-side query text filtering, if any
     if (filters?.query) {
@@ -304,7 +303,7 @@ export const uploadVideoAndGetURL = (
 
 
 export async function createItemInFirestore(
-  itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
+    itemData: Omit<Item, 'id' | 'postedDate' | 'lastUpdated'>
 ): Promise<string> {
   if (!db) {
     throw new Error("Firestore (db) is not initialized.");
@@ -352,7 +351,7 @@ export async function createItemInFirestore(
     transaction.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
-      isSold: false,
+      isSold: false, // Explicitly set isSold to false
     });
     
     return newItemRef.id;
@@ -360,6 +359,7 @@ export async function createItemInFirestore(
 
   return newItemId;
 }
+
 
 export async function updateItemInFirestore(
   itemId: string,

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +41,6 @@ import { LISTING_COST_IN_CREDITS } from "@/lib/config";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Checkbox } from "./ui/checkbox";
 import { useTranslations } from "next-intl";
-import imageCompression from 'browser-image-compression';
 
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILES = 5;
@@ -261,68 +261,43 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
     form.setValue('location', address, { shouldValidate: true });
   }, [form]);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const filesFromInput = Array.from(event.target.files || []);
     if (!filesFromInput.length) return;
-
-    setIsSubmitting(true);
-    setUploadStatusText("Optimisation des images...");
-
+  
     const currentRHFNewFiles = form.getValues("imageFiles") || [];
     const existingHttpUrlsCount = imagePreviews.filter(url => url.startsWith("http")).length;
     const totalImageCount = existingHttpUrlsCount + currentRHFNewFiles.length;
-    
+  
     if (totalImageCount >= MAX_FILES) {
       toast({ description: t('errors.imageLimit', { maxFiles: MAX_FILES }) });
-      setIsSubmitting(false);
-      setUploadStatusText("");
       return;
     }
-
+  
     const slotsAvailable = MAX_FILES - totalImageCount;
     const filesToProcess = filesFromInput.slice(0, slotsAvailable);
-
+  
     if (filesToProcess.length < filesFromInput.length) {
       toast({ description: t('errors.imageLimit', { maxFiles: MAX_FILES }) });
     }
-
-    const compressedFiles: File[] = [];
-    const newObjectUrlsWithFileObjects: { objectUrl: string, file: File }[] = [];
-    const compressionOptions = {
-      maxSizeMB: 1.5,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    };
-
-    for (const file of filesToProcess) {
-      try {
-        const compressedFile = await imageCompression(file, compressionOptions);
-        compressedFiles.push(compressedFile);
-        newObjectUrlsWithFileObjects.push({ objectUrl: URL.createObjectURL(compressedFile), file: compressedFile });
-      } catch (error) {
-        console.error(`Erreur de compression pour le fichier ${file.name}:`, error);
-        toast({
-          variant: "destructive",
-          title: `Erreur de compression pour ${file.name}`,
-          description: "Ce fichier n'a pas pu être optimisé et ne sera pas téléversé.",
-        });
-      }
+  
+    // Directly use the files without compression
+    const newObjectUrlsWithFileObjects: { objectUrl: string, file: File }[] = filesToProcess.map(file => ({
+      objectUrl: URL.createObjectURL(file),
+      file: file,
+    }));
+  
+    if (filesToProcess.length > 0) {
+      const updatedRHFNewFiles = [...currentRHFNewFiles, ...filesToProcess];
+      form.setValue("imageFiles", updatedRHFNewFiles, { shouldValidate: true });
+  
+      setObjectUrlToFileMap(prevMap => {
+        const newMap = new Map(prevMap);
+        newObjectUrlsWithFileObjects.forEach(item => newMap.set(item.objectUrl, item.file));
+        return newMap;
+      });
+      setImagePreviews(prev => [...prev, ...newObjectUrlsWithFileObjects.map(item => item.objectUrl)]);
     }
-    
-    if(compressedFiles.length > 0) {
-        const updatedRHFNewFiles = [...currentRHFNewFiles, ...compressedFiles];
-        form.setValue("imageFiles", updatedRHFNewFiles, { shouldValidate: true });
-
-        setObjectUrlToFileMap(prevMap => {
-            const newMap = new Map(prevMap);
-            newObjectUrlsWithFileObjects.forEach(item => newMap.set(item.objectUrl, item.file));
-            return newMap;
-        });
-        setImagePreviews(prev => [...prev, ...newObjectUrlsWithFileObjects.map(item => item.objectUrl)]);
-    }
-
-    setIsSubmitting(false);
-    setUploadStatusText("");
   };
 
   const removeImage = (indexToRemove: number) => {
