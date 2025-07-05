@@ -102,9 +102,6 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    // Only show items that are not pending, under review, or rejected.
-    // This correctly includes both `status: 'active'` and older items without a status field.
-    queryConstraints.push(where('status', 'not-in', ['pending_review', 'under_review', 'rejected']));
     queryConstraints.push(where('isSold', '==', false));
 
     if (filters?.categories && filters.categories.length > 0) {
@@ -141,15 +138,24 @@ export const getItemsFromFirestore = async (filters?: {
       }
     }
     
+    // Fetch more items than needed to account for post-fetch filtering.
     const pageSize = filters?.pageSize || 50;
-    queryConstraints.push(limit(pageSize + 1)); // Fetch one extra to check for "hasMore"
+    const fetchLimit = pageSize * 2; // Fetch double to have a good chance of filling the page
+    queryConstraints.push(limit(fetchLimit));
 
     // Execute the query
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
 
-    const hasMore = querySnapshot.docs.length > pageSize;
-    const pageDocs = querySnapshot.docs.slice(0, pageSize);
+    // Manually filter out items with disallowed statuses
+    const allowedStatuses = new Set(['active', undefined, null]);
+    const allFetchedDocs = querySnapshot.docs.filter(doc => {
+        const status = doc.data().status;
+        return allowedStatuses.has(status);
+    });
+
+    const hasMore = allFetchedDocs.length > pageSize;
+    const pageDocs = allFetchedDocs.slice(0, pageSize);
     
     let items = pageDocs.map(mapDocToItem);
 
