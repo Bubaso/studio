@@ -1,5 +1,4 @@
 
-
 import Image from 'next/image';
 import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
@@ -161,6 +160,24 @@ export default async function ItemPage({ params }: ItemPageProps) {
         {/* Left Column: Image Gallery & Seller Info on Desktop */}
         <div className="space-y-4">
             <ItemMediaGallery item={item} />
+            <div className="text-sm text-muted-foreground space-y-1">
+              <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
+                  <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
+              </div>
+              {item.lastUpdated && !item.isSold && (
+                   <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
+                      <span>{t('lastModified')} {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                  </div>
+              )}
+               {item.isSold && item.soldAt && (
+                   <div className="flex items-center text-green-600">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <span>{t('soldOn')} {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                  </div>
+              )}
+            </div>
             <div className="mt-8 hidden md:block">{SellerProfileCard}</div>
         </div>
 
@@ -314,24 +331,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </AlertDescription>
           </Alert>
           
-           <div className="text-sm text-muted-foreground space-y-1">
-            <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
-            </div>
-             {item.soldAt && (
-                 <div className="flex items-center text-green-600">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    <span>{t('soldOn')} {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
-                </div>
-            )}
-            {item.lastUpdated && !item.soldAt && (
-                 <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                    <span>{t('lastModified')} {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
-                </div>
-            )}
-          </div>
         </div>
       </div> 
     </div>
