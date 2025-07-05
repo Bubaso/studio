@@ -102,8 +102,9 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    // Only show active, non-sold items to the public
-    queryConstraints.push(where('status', '==', 'active'));
+    // Only show items that are not pending, under review, or rejected.
+    // This correctly includes both `status: 'active'` and older items without a status field.
+    queryConstraints.push(where('status', 'not-in', ['pending_review', 'under_review', 'rejected']));
     queryConstraints.push(where('isSold', '==', false));
 
     if (filters?.categories && filters.categories.length > 0) {
