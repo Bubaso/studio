@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -128,6 +127,7 @@ const WhatsAppIcon = () => (
 
 export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const t = useTranslations('ListingForm');
+  const tTitleSuggestion = useTranslations('TitleSuggestion');
   const router = useRouter();
   const { toast } = useToast();
   const { firebaseUser, authLoading } = useAuth();
@@ -242,8 +242,8 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
   const handleTitleSuggested = (title: string) => {
     form.setValue("name", title, { shouldValidate: true });
     toast({
-      title: t('TitleSuggestion.toastApplied'),
-      description: t('TitleSuggestion.toastAppliedDesc'),
+      title: tTitleSuggestion('toastApplied'),
+      description: tTitleSuggestion('toastAppliedDesc'),
     });
   };
   
