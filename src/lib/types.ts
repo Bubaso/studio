@@ -42,14 +42,6 @@ export interface Item {
   whatsappNumber?: string;
   deliveryOptions?: DeliveryOption[];
   shippingPayer?: ShippingPayer;
-  status?: 'pending_review' | 'active' | 'under_review' | 'rejected';
-  moderation?: {
-    isSuspicious: boolean;
-    reason: string;
-    category: 'safe' | 'prohibited_item' | 'scam_behavior' | 'other';
-    checked: boolean;
-    checkedAt: string;
-  };
 }
 
 export interface UserProfile {

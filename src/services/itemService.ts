@@ -8,7 +8,6 @@ import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject }
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
 import { deleteReportsForItem } from './reportService';
 import { createNotification } from './notificationService';
-import { moderateListing } from '@/ai/flows/moderate-listing-flow';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | string): string => {
@@ -77,8 +76,6 @@ const mapDocToItem = (document: any): Item => {
     whatsappNumber: data.whatsappNumber || undefined,
     deliveryOptions: data.deliveryOptions || [],
     shippingPayer: data.shippingPayer,
-    status: data.status,
-    moderation: data.moderation,
   };
 };
 
@@ -144,12 +141,8 @@ export const getItemsFromFirestore = async (filters?: {
 
     let items = querySnapshot.docs.map(mapDocToItem);
 
-    // Client-side filtering for isSold and status
-    items = items.filter(item => {
-      const isCorrectStatus = !item.status || item.status === 'active';
-      const isNotSold = item.isSold === undefined || item.isSold === false;
-      return isCorrectStatus && isNotSold;
-    });
+    // Client-side filtering for isSold
+    items = items.filter(item => item.isSold === undefined || item.isSold === false);
 
     // Client-side query text filtering, if any
     if (filters?.query) {
@@ -324,7 +317,7 @@ export async function createItemInFirestore(
   const batch = writeBatch(db);
   const userRef = doc(db, 'users', userId);
   
-  const newItemRef = doc(collection(db, "items")); // Define it here
+  const newItemRef = doc(collection(db, "items")); 
 
   try {
     const userSnap = await getDoc(userRef);
@@ -355,7 +348,6 @@ export async function createItemInFirestore(
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
-      status: 'active',
       isSold: false,
     });
 
