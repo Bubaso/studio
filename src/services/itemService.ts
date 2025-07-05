@@ -22,7 +22,7 @@ const convertTimestampToISO = (timestamp: FirebaseTimestampType | undefined | st
       return new Date().toISOString();
     }
   }
-  console.warn('Invalid timestamp format encountered:', timestamp);
+  console.warn('Invalid timestamp format encountered in messageService:', timestamp);
   return new Date().toISOString();
 };
 
@@ -136,20 +136,35 @@ export const getItemsFromFirestore = async (filters?: {
       }
     }
     
-    // Fetch more items than needed to account for post-fetch filtering.
     const pageSize = filters?.pageSize || 50;
     queryConstraints.push(limit(pageSize));
 
-    // Execute the query
     const q = query(itemsCollectionRef, ...queryConstraints);
     const querySnapshot = await getDocs(q);
 
-    const items = querySnapshot.docs.map(mapDocToItem);
+    let items = querySnapshot.docs.map(mapDocToItem);
 
+    // Client-side filtering for isSold and status
+    items = items.filter(item => {
+      const isActive = !item.status || item.status === 'active';
+      const isNotSold = !item.isSold;
+      return isActive && isNotSold;
+    });
+
+    // Client-side query text filtering, if any
+    if (filters?.query) {
+      const lowerCaseQuery = filters.query.toLowerCase();
+      items = items.filter(item => 
+        item.name.toLowerCase().includes(lowerCaseQuery) ||
+        item.description.toLowerCase().includes(lowerCaseQuery) ||
+        item.category.toLowerCase().includes(lowerCaseQuery)
+      );
+    }
+    
     const hasMore = querySnapshot.docs.length === pageSize;
     const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
-
+    
     return { items, lastItemId, hasMore };
 
   } catch (error) {
@@ -304,21 +319,6 @@ export async function createItemInFirestore(
   const userId = itemData.sellerId;
   if (!userId) {
     throw new Error("Seller ID is missing from item data.");
-  }
-
-  // Check for duplicate items
-  const q = query(
-    collection(db, 'items'),
-    where('sellerId', '==', userId),
-    where('name', '==', itemData.name),
-    where('price', '==', itemData.price),
-    where('description', '==', itemData.description),
-    where('isSold', '==', false) // Only check against unsold items
-  );
-
-  const duplicatesSnapshot = await getDocs(q);
-  if (!duplicatesSnapshot.empty) {
-    throw new Error("Une annonce identique existe déjà.");
   }
 
   const batch = writeBatch(db);
