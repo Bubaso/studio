@@ -536,5 +536,70 @@
     "searchResultIntro": "Here are some items that might interest you:",
     "searchResultEmpty": "Sorry, I couldn't find any items matching your search.",
     "generalError": "Sorry, I couldn't answer your question right now. Please try again."
+  },
+  "CreditsPage": {
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredDesc": "To purchase credits, you must be logged in.",
+    "loginButton": "Sign In",
+    "title": "Need Credits?",
+    "subtitle": "Top up your account to feature and sell more items.",
+    "goodNewsTitle": "Good News!",
+    "freeListingsRemaining": "You still have {count, plural, one {# free listing} other {# free listings}} to use. You can buy credits now for later, or use them first.",
+    "creditInfo": "1 Credit = 1 Published Listing.",
+    "freeListingsInfo": "Your first 5 listings are <strong>free</strong> to help you get started!",
+    "packages": {
+      "starter": {
+        "name": "Starter Pack",
+        "description": "To get started and list a few items."
+      },
+      "seller": {
+        "name": "Seller Pack",
+        "description": "The best value for regular sellers."
+      },
+      "pro": {
+        "name": "Pro Pack",
+        "description": "For professionals and shops."
+      },
+      "mostPopular": "Most Popular",
+      "pricePerAd": "that's {price} XOF / listing",
+      "basePrice": "{basePrice} XOF",
+      "buyButton": "Buy this pack",
+      "saving": "SAVE {percent}%"
+    },
+    "paymentInfo": "All payments are securely processed by our partner PayTech.",
+    "toasts": {
+      "loginRequiredDesc": "Please log in to purchase credits.",
+      "redirectingTitle": "Redirecting to Payment",
+      "redirectingDesc": "You will be redirected to the secure payment page.",
+      "errorTitle": "Error",
+      "paymentError": "Could not initiate payment."
+    }
+  },
+  "CancelCreditsPage": {
+    "title": "Payment Canceled",
+    "description": "The transaction was canceled. No charges were applied.",
+    "info": "If you canceled by mistake, you can always go back and try again.",
+    "reference": "Reference: {ref}",
+    "retryPayment": "Retry Payment",
+    "backToHome": "Back to Home"
+  },
+  "SuccessCreditsPage": {
+    "toast": {
+      "verifyingTitle": "Verifying payment...",
+      "verifyingDesc": "Please wait while we confirm your transaction.",
+      "successTitle": "Payment successful!",
+      "successDesc": "Your {count} credits have been added to your account.",
+      "verificationErrorTitle": "Verification Error",
+      "verificationErrorDesc": "Could not verify your payment status in real time.",
+      "failedTitle": "Payment Failed",
+      "failedDesc": "The transaction failed. {error}"
+    },
+    "title": "Payment Successful",
+    "description": "Thank you for your purchase! Your payment has been processed successfully.",
+    "verifyingAlertTitle": "Verification in progress...",
+    "verifyingAlertDesc": "We are awaiting final confirmation from the payment service. Your credits will be added to your account shortly. You can close this page.",
+    "referenceLabel": "Transaction reference number:",
+    "publishAd": "Publish an Ad",
+    "continueBrowsing": "Continue Browsing"
   }
 }

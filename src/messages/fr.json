@@ -536,5 +536,70 @@
     "searchResultIntro": "Voici quelques articles qui pourraient vous intéresser :",
     "searchResultEmpty": "Désolé, je n'ai trouvé aucun article correspondant à votre recherche.",
     "generalError": "Désolé, je n'ai pas pu répondre à votre question pour le moment. Veuillez réessayer."
+  },
+  "CreditsPage": {
+    "loginRequiredTitle": "Connexion requise",
+    "loginRequiredDesc": "Pour acheter des crédits, vous devez être connecté.",
+    "loginButton": "Se connecter",
+    "title": "Besoin de Crédits ?",
+    "subtitle": "Rechargez votre compte pour mettre en avant et vendre plus d'articles.",
+    "goodNewsTitle": "Bonne nouvelle !",
+    "freeListingsRemaining": "Il vous reste encore {count, plural, one {# annonce gratuite} other {# annonces gratuites}} à utiliser. Vous pouvez acheter des crédits maintenant pour plus tard, ou les utiliser d'abord.",
+    "creditInfo": "1 Crédit = 1 Annonce publiée.",
+    "freeListingsInfo": "Vos 5 premières annonces sont <strong>gratuites</strong> pour vous aider à démarrer !",
+    "packages": {
+      "starter": {
+        "name": "Paquet Débutant",
+        "description": "Pour commencer et lister quelques articles."
+      },
+      "seller": {
+        "name": "Paquet Vendeur",
+        "description": "Le meilleur rapport qualité-prix pour les vendeurs réguliers."
+      },
+      "pro": {
+        "name": "Paquet Pro",
+        "description": "Pour les professionnels et les boutiques."
+      },
+      "mostPopular": "Le plus populaire",
+      "pricePerAd": "soit {price} XOF / annonce",
+      "basePrice": "{basePrice} XOF",
+      "buyButton": "Acheter ce paquet",
+      "saving": "ÉCONOMISEZ {percent}%"
+    },
+    "paymentInfo": "Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.",
+    "toasts": {
+      "loginRequiredDesc": "Veuillez vous connecter pour acheter des crédits.",
+      "redirectingTitle": "Redirection vers le paiement",
+      "redirectingDesc": "Vous allez être redirigé vers la page de paiement sécurisée.",
+      "errorTitle": "Erreur",
+      "paymentError": "Impossible d'initier le paiement."
+    }
+  },
+  "CancelCreditsPage": {
+    "title": "Paiement Annulé",
+    "description": "La transaction a été annulée. Aucun frais n'a été appliqué.",
+    "info": "Si vous avez annulé par erreur, vous pouvez toujours retourner en arrière et réessayer.",
+    "reference": "Référence: {ref}",
+    "retryPayment": "Réessayer le paiement",
+    "backToHome": "Retour à l'accueil"
+  },
+  "SuccessCreditsPage": {
+    "toast": {
+      "verifyingTitle": "Vérification du paiement...",
+      "verifyingDesc": "Veuillez patienter pendant que nous confirmons votre transaction.",
+      "successTitle": "Paiement réussi !",
+      "successDesc": "Vos {count} crédits ont été ajoutés à votre compte.",
+      "verificationErrorTitle": "Erreur de vérification",
+      "verificationErrorDesc": "Impossible de vérifier le statut de votre paiement en temps réel.",
+      "failedTitle": "Paiement échoué",
+      "failedDesc": "La transaction a échoué. {error}"
+    },
+    "title": "Paiement Réussi",
+    "description": "Merci pour votre achat ! Votre paiement a été traité avec succès.",
+    "verifyingAlertTitle": "Vérification en cours...",
+    "verifyingAlertDesc": "Nous attendons la confirmation finale de la part du service de paiement. Vos crédits seront ajoutés à votre compte dans quelques instants. Vous pouvez fermer cette page.",
+    "referenceLabel": "Numéro de référence de la transaction :",
+    "publishAd": "Publier une annonce",
+    "continueBrowsing": "Continuer à naviguer"
   }
 }

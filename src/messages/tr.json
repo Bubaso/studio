@@ -536,5 +536,70 @@
     "searchResultIntro": "İlginizi çekebilecek bazı ürünler şunlardır:",
     "searchResultEmpty": "Üzgünüm, aramanıza uygun herhangi bir ürün bulamadım.",
     "generalError": "Üzgünüm, şu anda sorunuza cevap veremiyorum. Lütfen tekrar deneyin."
+  },
+  "CreditsPage": {
+    "loginRequiredTitle": "Giriş Gerekli",
+    "loginRequiredDesc": "Kredi satın almak için giriş yapmalısınız.",
+    "loginButton": "Giriş Yap",
+    "title": "Krediye mi ihtiyacınız var?",
+    "subtitle": "Daha fazla ürün öne çıkarmak ve satmak için hesabınıza bakiye yükleyin.",
+    "goodNewsTitle": "İyi Haber!",
+    "freeListingsRemaining": "Hala kullanabileceğiniz {count, plural, one {# ücretsiz ilan hakkınız} other {# ücretsiz ilan hakkınız}} var. Kredileri şimdi alıp daha sonra kullanabilir veya önce ücretsiz haklarınızı kullanabilirsiniz.",
+    "creditInfo": "1 Kredi = 1 Yayınlanmış İlan.",
+    "freeListingsInfo": "Başlamanıza yardımcı olmak için ilk 5 ilanınız <strong>ücretsizdir</strong>!",
+    "packages": {
+      "starter": {
+        "name": "Başlangıç Paketi",
+        "description": "Başlamak ve birkaç ürün listelemek için."
+      },
+      "seller": {
+        "name": "Satıcı Paketi",
+        "description": "Düzenli satıcılar için en iyi değer."
+      },
+      "pro": {
+        "name": "Profesyonel Paket",
+        "description": "Profesyoneller ve dükkanlar için."
+      },
+      "mostPopular": "En Popüler",
+      "pricePerAd": "yani {price} XOF / ilan",
+      "basePrice": "{basePrice} XOF",
+      "buyButton": "Bu paketi satın al",
+      "saving": "%{percent} TASARRUF EDİN"
+    },
+    "paymentInfo": "Tüm ödemeler iş ortağımız PayTech tarafından güvenli bir şekilde işlenir.",
+    "toasts": {
+      "loginRequiredDesc": "Kredi satın almak için lütfen giriş yapın.",
+      "redirectingTitle": "Ödemeye Yönlendiriliyor",
+      "redirectingDesc": "Güvenli ödeme sayfasına yönlendirileceksiniz.",
+      "errorTitle": "Hata",
+      "paymentError": "Ödeme başlatılamadı."
+    }
+  },
+  "CancelCreditsPage": {
+    "title": "Ödeme İptal Edildi",
+    "description": "İşlem iptal edildi. Herhangi bir ücret alınmadı.",
+    "info": "Yanlışlıkla iptal ettiyseniz, her zaman geri dönüp tekrar deneyebilirsiniz.",
+    "reference": "Referans: {ref}",
+    "retryPayment": "Ödemeyi Tekrar Dene",
+    "backToHome": "Ana Sayfaya Dön"
+  },
+  "SuccessCreditsPage": {
+    "toast": {
+      "verifyingTitle": "Ödeme doğrulanıyor...",
+      "verifyingDesc": "İşleminizi onaylarken lütfen bekleyin.",
+      "successTitle": "Ödeme başarılı!",
+      "successDesc": "{count} krediniz hesabınıza eklendi.",
+      "verificationErrorTitle": "Doğrulama Hatası",
+      "verificationErrorDesc": "Ödeme durumunuz gerçek zamanlı olarak doğrulanamadı.",
+      "failedTitle": "Ödeme Başarısız",
+      "failedDesc": "İşlem başarısız oldu. {error}"
+    },
+    "title": "Ödeme Başarılı",
+    "description": "Satın alımınız için teşekkür ederiz! Ödemeniz başarıyla işlendi.",
+    "verifyingAlertTitle": "Doğrulama devam ediyor...",
+    "verifyingAlertDesc": "Ödeme servisinden son onayı bekliyoruz. Kredileriniz kısa süre içinde hesabınıza eklenecektir. Bu sayfayı kapatabilirsiniz.",
+    "referenceLabel": "İşlem referans numarası:",
+    "publishAd": "İlan Yayınla",
+    "continueBrowsing": "Göz Atmaya Devam Et"
   }
 }

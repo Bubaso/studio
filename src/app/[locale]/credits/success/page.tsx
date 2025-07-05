@@ -12,8 +12,10 @@ import { useAuth } from '@/context/AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTranslations } from 'next-intl';
 
 function SuccessPageContent() {
+    const t = useTranslations('SuccessCreditsPage');
     const searchParams = useSearchParams();
     const ref = searchParams.get('ref');
     const { toast } = useToast();
@@ -23,8 +25,8 @@ function SuccessPageContent() {
         if (!ref || !firebaseUser) return;
 
         toast({
-            title: 'Vérification du paiement...',
-            description: 'Veuillez patienter pendant que nous confirmons votre transaction.',
+            title: t('toast.verifyingTitle'),
+            description: t('toast.verifyingDesc'),
         });
 
         const paymentIntentRef = doc(db, "paymentIntents", ref);
@@ -35,30 +37,30 @@ function SuccessPageContent() {
                 if (data.status === 'success' && data.userId === firebaseUser.uid) {
                     toast({
                         variant: 'default',
-                        title: 'Paiement réussi !',
-                        description: `Vos ${data.creditAmount} crédits ont été ajoutés à votre compte.`,
+                        title: t('toast.successTitle'),
+                        description: t('toast.successDesc', { count: data.creditAmount }),
                         className: 'bg-green-100 border-green-300 text-green-800'
                     });
                     unsubscribe();
                 } else if (data.status === 'failed') {
                      toast({
                         variant: 'destructive',
-                        title: 'Paiement échoué',
-                        description: `La transaction a échoué. ${data.error || ''}`,
+                        title: t('toast.failedTitle'),
+                        description: t('toast.failedDesc', { error: data.error || '' }),
                     });
                     unsubscribe();
                 }
             }
         }, (error) => {
             console.error("Error listening to payment intent:", error);
-            toast({ variant: 'destructive', title: 'Erreur de vérification', description: 'Impossible de vérifier le statut de votre paiement en temps réel.' });
+            toast({ variant: 'destructive', title: t('toast.verificationErrorTitle'), description: t('toast.verificationErrorDesc') });
             unsubscribe();
         });
 
         // Cleanup subscription on component unmount
         return () => unsubscribe();
 
-    }, [ref, firebaseUser, toast]);
+    }, [ref, firebaseUser, toast, t]);
     
 
     return (
@@ -68,29 +70,29 @@ function SuccessPageContent() {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
                        <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
-                    <CardTitle className="text-2xl font-headline">Paiement Réussi</CardTitle>
+                    <CardTitle className="text-2xl font-headline">{t('title')}</CardTitle>
                     <CardDescription>
-                        Merci pour votre achat ! Votre paiement a été traité avec succès.
+                        {t('description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <Alert>
                      <Loader2 className="h-4 w-4 animate-spin"/>
-                     <AlertTitle>Vérification en cours...</AlertTitle>
+                     <AlertTitle>{t('verifyingAlertTitle')}</AlertTitle>
                      <AlertDescription>
-                        Nous attendons la confirmation finale de la part du service de paiement. Vos crédits seront ajoutés à votre compte dans quelques instants. Vous pouvez fermer cette page.
+                        {t('verifyingAlertDesc')}
                      </AlertDescription>
                    </Alert>
                     <p className="text-sm text-muted-foreground">
-                        Numéro de référence de la transaction : <span className="font-mono bg-muted p-1 rounded-sm">{ref || 'N/A'}</span>
+                        {t('referenceLabel')} <span className="font-mono bg-muted p-1 rounded-sm">{ref || 'N/A'}</span>
                     </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row gap-2">
                     <Button asChild className="w-full sm:w-auto">
-                        <Link href="/sell">Publier une annonce</Link>
+                        <Link href="/sell">{t('publishAd')}</Link>
                     </Button>
                     <Button asChild variant="outline" className="w-full sm:w-auto">
-                        <Link href="/browse">Continuer à naviguer</Link>
+                        <Link href="/browse">{t('continueBrowsing')}</Link>
                     </Button>
                 </CardFooter>
             </Card>

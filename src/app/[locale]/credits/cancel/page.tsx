@@ -7,8 +7,10 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { XCircle, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 function CancelPageContent() {
+    const t = useTranslations('CancelCreditsPage');
     const searchParams = useSearchParams();
     const ref = searchParams.get('ref');
 
@@ -19,23 +21,23 @@ function CancelPageContent() {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
                        <XCircle className="h-8 w-8 text-red-600" />
                     </div>
-                    <CardTitle className="text-2xl font-headline">Paiement Annulé</CardTitle>
+                    <CardTitle className="text-2xl font-headline">{t('title')}</CardTitle>
                     <CardDescription>
-                       La transaction a été annulée. Aucun frais n'a été appliqué.
+                       {t('description')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
-                        Si vous avez annulé par erreur, vous pouvez toujours retourner en arrière et réessayer.
-                         {ref && ` (Référence: ${ref})`}
+                        {t('info')}
+                         {ref && ` (${t('reference', {ref})})`}
                     </p>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row gap-2">
                      <Button asChild className="w-full sm:w-auto">
-                        <Link href="/credits">Réessayer le paiement</Link>
+                        <Link href="/credits">{t('retryPayment')}</Link>
                     </Button>
                     <Button asChild variant="outline" className="w-full sm:w-auto">
-                        <Link href="/browse">Retour à l'accueil</Link>
+                        <Link href="/browse">{t('backToHome')}</Link>
                     </Button>
                 </CardFooter>
             </Card>

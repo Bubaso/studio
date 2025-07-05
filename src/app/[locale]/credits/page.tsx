@@ -14,6 +14,7 @@ import { getUserDocument } from '@/services/userService';
 import type { UserProfile } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 
 interface CreditPackage {
@@ -26,20 +27,22 @@ interface CreditPackage {
     saving?: string;
 }
 
-const creditPackages: CreditPackage[] = [
-    { id: 'pack_1', credits: 10, price: 1000, name: "Paquet Débutant", description: "Pour commencer et lister quelques articles." },
-    { id: 'pack_2', credits: 25, price: 2250, name: "Paquet Vendeur", description: "Le meilleur rapport qualité-prix pour les vendeurs réguliers.", popular: true, saving: "ÉCONOMISEZ 10%" },
-    { id: 'pack_3', credits: 50, price: 4000, name: "Paquet Pro", description: "Pour les professionnels et les boutiques.", saving: "ÉCONOMISEZ 20%" },
-];
 const BASE_PRICE_PER_AD = 100;
 
 export default function CreditsPage() {
+    const t = useTranslations('CreditsPage');
     const { firebaseUser, authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+    const creditPackages: CreditPackage[] = [
+        { id: 'pack_1', credits: 10, price: 1000, name: t('packages.starter.name'), description: t('packages.starter.description') },
+        { id: 'pack_2', credits: 25, price: 2250, name: t('packages.seller.name'), description: t('packages.seller.description'), popular: true, saving: t('packages.saving', {percent: 10}) },
+        { id: 'pack_3', credits: 50, price: 4000, name: t('packages.pro.name'), description: t('packages.pro.description'), saving: t('packages.saving', {percent: 20}) },
+    ];
 
     useEffect(() => {
         if (authLoading) return;
@@ -55,7 +58,7 @@ export default function CreditsPage() {
 
     const handlePurchase = async (pkg: CreditPackage) => {
         if (!firebaseUser) {
-            toast({ variant: 'destructive', title: 'Connexion requise', description: 'Veuillez vous connecter pour acheter des crédits.' });
+            toast({ variant: 'destructive', title: t('loginRequiredTitle'), description: t('toasts.loginRequiredDesc') });
             router.push('/auth/signin?redirect=/credits');
             return;
         }
@@ -79,13 +82,13 @@ export default function CreditsPage() {
             const data = await response.json();
 
             if (response.ok && data.redirect_url) {
-                toast({ title: 'Redirection vers le paiement', description: 'Vous allez être redirigé vers la page de paiement sécurisée.' });
+                toast({ title: t('toasts.redirectingTitle'), description: t('toasts.redirectingDesc') });
                 window.location.href = data.redirect_url;
             } else {
-                throw new Error(data.error || "Impossible d'initier le paiement.");
+                throw new Error(data.error || t('toasts.paymentError'));
             }
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Erreur', description: error.message });
+            toast({ variant: 'destructive', title: t('toasts.errorTitle'), description: error.message });
             setIsPurchasing(null);
         }
     };
@@ -99,14 +102,14 @@ export default function CreditsPage() {
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
                 <Alert className="max-w-md">
                     <LogIn className="h-4 w-4" />
-                    <AlertTitle>Connexion requise</AlertTitle>
+                    <AlertTitle>{t('loginRequiredTitle')}</AlertTitle>
                     <AlertDescription>
-                        Pour acheter des crédits, vous devez être connecté.
+                        {t('loginRequiredDesc')}
                     </AlertDescription>
                 </Alert>
                 <Link href="/auth/signin?redirect=/credits" className="mt-6">
                     <Button>
-                        <LogIn className="mr-2 h-4 w-4" /> Se connecter
+                        <LogIn className="mr-2 h-4 w-4" /> {t('loginButton')}
                     </Button>
                 </Link>
             </div>
@@ -116,27 +119,29 @@ export default function CreditsPage() {
     return (
         <div className="space-y-8">
             <header className="text-center">
-                <h1 className="text-3xl font-bold font-headline text-primary">Besoin de Crédits ?</h1>
+                <h1 className="text-3xl font-bold font-headline text-primary">{t('title')}</h1>
                 <p className="text-lg text-muted-foreground mt-2">
-                    Rechargez votre compte pour mettre en avant et vendre plus d'articles.
+                    {t('subtitle')}
                 </p>
             </header>
             
             {userProfile && userProfile.freeListingsRemaining > 0 && (
                 <Alert variant="default" className="bg-green-100 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300">
                     <CheckCircle className="h-4 w-4 !text-green-700 dark:!text-green-300" />
-                    <AlertTitle>Bonne nouvelle !</AlertTitle>
+                    <AlertTitle>{t('goodNewsTitle')}</AlertTitle>
                     <AlertDescription>
-                        Il vous reste encore {userProfile.freeListingsRemaining} annonce(s) gratuite(s) à utiliser. Vous pouvez acheter des crédits maintenant pour plus tard, ou les utiliser d'abord.
+                        {t('freeListingsRemaining', { count: userProfile.freeListingsRemaining })}
                     </AlertDescription>
                 </Alert>
             )}
 
             <Card className="bg-card/50">
                  <CardContent className="space-y-2 text-muted-foreground p-6">
-                    <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" />1 Crédit = 1 Annonce publiée.</p>
+                    <p className="flex items-center"><Gem className="mr-2 h-4 w-4 text-primary" />{t('creditInfo')}</p>
                     <p>
-                        Vos <strong>5 premières annonces</strong> sont <strong>gratuites</strong> pour vous aider à démarrer !
+                       {t.rich('freeListingsInfo', {
+                            strong: (chunks) => <strong>{chunks}</strong>
+                       })}
                     </p>
                 </CardContent>
             </Card>
@@ -147,7 +152,7 @@ export default function CreditsPage() {
                     return (
                         <Card key={pkg.id} className={cn("flex flex-col relative", pkg.popular && "border-2 border-primary shadow-lg")}>
                              {pkg.popular && (
-                                <Badge variant="default" className="absolute top-2 right-2">Le plus populaire</Badge>
+                                <Badge variant="default" className="absolute top-2 right-2">{t('packages.mostPopular')}</Badge>
                              )}
                             <CardHeader>
                                 <CardTitle className="font-headline text-2xl">{pkg.name}</CardTitle>
@@ -163,10 +168,10 @@ export default function CreditsPage() {
                                     <div className="text-sm text-muted-foreground h-5">
                                         {pricePerAd < BASE_PRICE_PER_AD ? (
                                             <span>
-                                                soit <strong>{pricePerAd.toLocaleString('fr-FR')} XOF</strong> / annonce <span className="line-through ml-1">{BASE_PRICE_PER_AD.toLocaleString('fr-FR')} XOF</span>
+                                                {t('packages.pricePerAd', { price: pricePerAd.toLocaleString('fr-FR') })} <span className="line-through ml-1">{t('packages.basePrice', { basePrice: BASE_PRICE_PER_AD.toLocaleString('fr-FR') })}</span>
                                             </span>
                                         ) : (
-                                            <span>soit {pricePerAd.toLocaleString('fr-FR')} XOF / annonce</span>
+                                            <span>{t('packages.pricePerAd', { price: pricePerAd.toLocaleString('fr-FR') })}</span>
                                         )}
                                     </div>
                                 </div>
@@ -184,7 +189,7 @@ export default function CreditsPage() {
                                     {isPurchasing === pkg.id ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
-                                        "Acheter ce paquet"
+                                        t('packages.buyButton')
                                     )}
                                 </Button>
                             </CardFooter>
@@ -194,7 +199,7 @@ export default function CreditsPage() {
             </div>
 
             <p className="text-center text-sm text-muted-foreground">
-                Tous les paiements sont traités de manière sécurisée par notre partenaire PayTech.
+                {t('paymentInfo')}
             </p>
         </div>
     );
