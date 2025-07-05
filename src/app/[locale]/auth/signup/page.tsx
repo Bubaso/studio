@@ -111,8 +111,7 @@ function SignUpPageContent() {
         title: t('toast.successTitle'), 
         description: t('toast.welcome')
       });
-      // The onAuthStateChanged listener will handle the redirect.
-      // No router.push() needed here.
+      router.push(redirectTo);
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
       

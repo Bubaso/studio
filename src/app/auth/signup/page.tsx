@@ -21,7 +21,7 @@ import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type
 import { createUserDocument } from "@/services/userService"; 
 import { useIsMobile } from "@/hooks/use-mobile";
 import Link from 'next/link';
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 // Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
@@ -32,6 +32,7 @@ const appleProvider = new OAuthProvider('apple.com');
 function SignUpPageContent() {
   const t = useTranslations('SignUpPage');
   const tSignIn = useTranslations('SignInPage');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -69,7 +70,7 @@ function SignUpPageContent() {
           await createUserDocument(user, {
             name: user.displayName,
             avatarUrl: user.photoURL,
-          });
+          }, locale);
           toast({
             title: t('toast.successTitle'),
             description: t('toast.welcome'),
@@ -94,7 +95,7 @@ function SignUpPageContent() {
         // Whether there was a result or not, the check is complete.
         setIsProcessingRedirect(false);
       });
-  }, [toast, router, redirectTo, t, tSignIn]);
+  }, [toast, router, redirectTo, t, tSignIn, locale]);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +107,7 @@ function SignUpPageContent() {
       const fbUser = userCredential.user;
 
       await updateProfile(fbUser, { displayName: name });
-      await createUserDocument(fbUser, { name }); 
+      await createUserDocument(fbUser, { name }, locale); 
       
       toast({ 
         title: t('toast.successTitle'), 
@@ -156,7 +157,7 @@ function SignUpPageContent() {
         await createUserDocument(user, {
           name: user.displayName,
           avatarUrl: user.photoURL,
-        });
+        }, locale);
 
         toast({
           title: t('toast.successTitle'),
