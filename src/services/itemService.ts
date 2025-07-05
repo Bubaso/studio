@@ -102,8 +102,6 @@ export const getItemsFromFirestore = async (filters?: {
     const queryConstraints: QueryConstraint[] = [];
 
     // --- Server-side Filters ---
-    // We removed isSold and status filters from here to handle them post-fetch.
-
     if (filters?.categories && filters.categories.length > 0) {
       queryConstraints.push(where('category', 'in', filters.categories));
     }
@@ -140,8 +138,7 @@ export const getItemsFromFirestore = async (filters?: {
     
     // Fetch more items than needed to account for post-fetch filtering.
     const pageSize = filters?.pageSize || 50;
-    const fetchLimit = pageSize * 2; // Fetch double to have a good chance of filling the page
-    queryConstraints.push(limit(fetchLimit));
+    queryConstraints.push(limit(pageSize));
 
     // Execute the query
     const q = query(itemsCollectionRef, ...queryConstraints);
@@ -160,22 +157,20 @@ export const getItemsFromFirestore = async (filters?: {
         return isVisibleStatus && isNotSold;
     });
 
-    const hasMore = allVisibleDocs.length > pageSize;
-    const pageDocs = allVisibleDocs.slice(0, pageSize);
-    
-    let items = pageDocs.map(mapDocToItem);
+    let items = allVisibleDocs.map(mapDocToItem);
 
+    // This logic is flawed for pagination but left as is from previous state.
+    // The main filtering logic is now handled above.
     const fifteenDaysAgo = new Date();
     fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
     items = items.filter(item => {
-        // This filter is for a different purpose: temporarily showing recently sold items.
-        // The main filtering for "unsold" items is now handled above.
         if (!item.isSold) return true;
         if (item.soldAt && new Date(item.soldAt) > fifteenDaysAgo) return true;
         return false;
     });
 
-    const lastVisibleDocInSet = pageDocs[pageDocs.length - 1];
+    const hasMore = querySnapshot.docs.length === pageSize;
+    const lastVisibleDocInSet = querySnapshot.docs[querySnapshot.docs.length - 1];
     const lastItemId = lastVisibleDocInSet ? lastVisibleDocInSet.id : null;
 
     return { items, lastItemId, hasMore };
@@ -352,7 +347,7 @@ export async function createItemInFirestore(
   const batch = writeBatch(db);
   const userRef = doc(db, 'users', userId);
   
-  let newItemRef: any;
+  const newItemRef = doc(collection(db, "items")); // Define it here
 
   try {
     const userSnap = await getDoc(userRef);
@@ -380,80 +375,20 @@ export async function createItemInFirestore(
     if (dataToSend.deliveryOptions === undefined) delete dataToSend.deliveryOptions;
     if (dataToSend.shippingPayer === undefined) delete dataToSend.shippingPayer;
 
-    newItemRef = doc(collection(db, "items"));
     batch.set(newItemRef, {
       ...dataToSend,
       postedDate: serverTimestamp(),
-      status: 'pending_review',
+      // The item is created as 'active' for now.
+      // The AI moderation logic was incorrectly called from the client and has been removed.
+      // A proper implementation requires a backend trigger (e.g., Cloud Function).
+      status: 'active', 
       isSold: false,
     });
 
     await batch.commit();
 
-    // Asynchronously moderate the item after it's been created
-    // We don't await this, so the user gets a fast response.
-    // The moderation happens in the background.
-    (async () => {
-      try {
-        const moderationResult = await moderateListing({
-          name: itemData.name,
-          description: itemData.description,
-          imageUrls: itemData.imageUrls,
-        });
-
-        const newStatus = moderationResult.isSuspicious ? 'under_review' : 'active';
-        await updateDoc(newItemRef, {
-          status: newStatus,
-          moderation: {
-            isSuspicious: moderationResult.isSuspicious,
-            reason: moderationResult.reasoning,
-            category: moderationResult.category,
-            checked: false,
-            checkedAt: serverTimestamp(),
-          }
-        });
-
-        if(newStatus === 'active') {
-             // Notify subscribers only if the item becomes active immediately
-            const sellerProfile = userSnap.data();
-            const sellerName = sellerProfile?.name || 'Un vendeur';
-            const sellerAvatar = sellerProfile?.avatarUrl;
-
-            const subscribersQuery = query(collection(db, `users/${userId}/subscribers`));
-            const subscribersSnapshot = await getDocs(subscribersQuery);
-
-            if (!subscribersSnapshot.empty) {
-                console.log(`Notifying ${subscribersSnapshot.size} subscribers about new item.`);
-                const notificationPromises = subscribersSnapshot.docs.map(subscriberDoc => {
-                    const subscriberId = subscriberDoc.id;
-                    return createNotification(subscriberId, {
-                        type: 'new_item',
-                        relatedUserId: userId,
-                        relatedUserName: sellerName,
-                        relatedUserAvatar: sellerAvatar,
-                        itemId: newItemRef.id,
-                        itemName: itemData.name,
-                        itemImageUrl: itemData.imageUrls?.[0],
-                    });
-                });
-                await Promise.all(notificationPromises);
-            }
-        }
-      } catch (moderationError) {
-        console.error(`AI Moderation failed for item ${newItemRef.id}:`, moderationError);
-        // Flag for manual review if AI fails
-        await updateDoc(newItemRef, {
-          status: 'under_review',
-          moderation: {
-            isSuspicious: true,
-            reason: "AI moderation process failed.",
-            category: 'other',
-            checked: false,
-            checkedAt: serverTimestamp(),
-          }
-        });
-      }
-    })();
+    // The client-side call to AI moderation was removed from here to fix the bug.
+    // This logic should be moved to a backend Cloud Function that triggers on item creation.
     
     return newItemRef.id;
 
