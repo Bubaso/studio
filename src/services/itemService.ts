@@ -2,7 +2,7 @@
 
 import { db, storage, auth } from '@/lib/firebase';
 import type { Item, ItemCategory, ItemCondition, SortByOption } from '@/lib/types';
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, runTransaction, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, QueryConstraint, updateDoc, serverTimestamp, addDoc, deleteDoc, Timestamp as FirestoreTimestamp, deleteField, startAfter, runTransaction, increment, writeBatch } from 'firebase/firestore';
 import type { Timestamp as FirebaseTimestampType } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { LISTING_COST_IN_CREDITS } from '@/lib/config';
