@@ -4,9 +4,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Folder, ImageIcon } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import type { UserCollection } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface CollectionCardProps {
   collection: UserCollection;
@@ -15,6 +16,7 @@ interface CollectionCardProps {
 const genericBlurDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
 export function CollectionCard({ collection }: CollectionCardProps) {
+  const t = useTranslations('FavoritesPage.collectionCard');
   const previews = collection.previewImageUrls || [];
 
   return (
@@ -60,11 +62,11 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             {collection.name}
           </CardTitle>
           <CardDescription>
-            {collection.itemCount} article{collection.itemCount !== 1 ? 's' : ''}
+            {t('itemCount', { count: collection.itemCount })}
           </CardDescription>
         </CardContent>
         <CardFooter className="p-3 pt-0 text-xs text-muted-foreground">
-           Créé le {new Date(collection.createdAt).toLocaleDateString('fr-FR')}
+           {t('createdAt', { date: new Date(collection.createdAt).toLocaleDateString() })}
         </CardFooter>
       </Card>
     </Link>

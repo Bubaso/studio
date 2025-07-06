@@ -58,22 +58,22 @@ export default function FavoritesPage() {
 
   const handleCreateCollection = async () => {
       if (!currentUser || !newCollectionName.trim()) {
-          toast({ variant: "destructive", title: "Nom de la collection requis."});
+          toast({ variant: "destructive", title: t('toast.nameRequired')});
           return;
       };
       setIsCreating(true);
       try {
           const result = await createEmptyCollection(currentUser.uid, newCollectionName);
           if (result.success) {
-            toast({ title: "Collection créée !", description: `"${newCollectionName}" a été ajoutée.`});
+            toast({ title: t('toast.createSuccessTitle'), description: t('toast.createSuccessDesc', { name: newCollectionName })});
             setNewCollectionName("");
             setIsDialogOpen(false);
             fetchCollections(); // Refresh the list
           } else {
-              throw new Error(result.error || "Could not create collection.");
+              throw new Error(result.error || t('toast.createErrorDesc'));
           }
       } catch(error: any) {
-          toast({ variant: "destructive", title: "Erreur", description: error.message || "Impossible de créer la collection."});
+          toast({ variant: "destructive", title: t('toast.createErrorTitle'), description: error.message || t('toast.createErrorDesc')});
       } finally {
           setIsCreating(false);
       }
@@ -84,7 +84,7 @@ export default function FavoritesPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Chargement de vos collections...</p>
+        <p className="text-muted-foreground">{t('loading')}</p>
       </div>
     );
   }
@@ -94,14 +94,14 @@ export default function FavoritesPage() {
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
         <Alert className="max-w-md">
           <LogIn className="h-4 w-4" />
-          <AlertTitle>Connexion requise</AlertTitle>
+          <AlertTitle>{t('loginRequired.title')}</AlertTitle>
           <AlertDescription>
-            Pour voir et gérer vos collections, veuillez vous connecter.
+            {t('loginRequired.description')}
           </AlertDescription>
         </Alert>
         <Link href="/auth/signin?redirect=/favorites" className="mt-6">
           <Button>
-            <LogIn className="mr-2 h-4 w-4" /> Se connecter
+            <LogIn className="mr-2 h-4 w-4" /> {t('loginRequired.button')}
           </Button>
         </Link>
       </div>
@@ -112,40 +112,40 @@ export default function FavoritesPage() {
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <div className="space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold font-headline text-primary">Mes Collections</h1>
+          <h1 className="text-3xl font-bold font-headline text-primary">{t('title')}</h1>
           <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Nouvelle Collection
+                <Plus className="mr-2 h-4 w-4" /> {t('newCollectionButton')}
               </Button>
           </DialogTrigger>
         </div>
         
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Créer une nouvelle collection</DialogTitle>
+            <DialogTitle>{t('dialog.title')}</DialogTitle>
             <DialogDescription>
-              Donnez un nom à votre nouvelle collection pour commencer à y sauvegarder des articles.
+              {t('dialog.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
-                Nom
+                {t('dialog.nameLabel')}
               </Label>
               <Input
                 id="name"
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
                 className="col-span-3"
-                placeholder="ex: Idées de salon"
+                placeholder={t('dialog.namePlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
-            <DialogClose asChild><Button variant="ghost">Annuler</Button></DialogClose>
+            <DialogClose asChild><Button variant="ghost">{t('dialog.cancelButton')}</Button></DialogClose>
             <Button type="submit" onClick={handleCreateCollection} disabled={isCreating}>
               {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-              Créer
+              {t('dialog.createButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -159,13 +159,13 @@ export default function FavoritesPage() {
         ) : (
           <div className="text-center py-10 border-2 border-dashed rounded-lg shadow-sm bg-card/50 p-6 flex flex-col items-center">
             <FolderPlus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">{t('noCollectionsTitle')}</h2>
+            <h2 className="text-2xl font-semibold mb-2">{t('noCollections.title')}</h2>
             <p className="text-muted-foreground mb-6">
-              {t('noCollectionsDesc')}
+              {t('noCollections.description')}
             </p>
             <DialogTrigger asChild>
                <Button>
-                  <Plus className="mr-2 h-4 w-4" /> {t('createFirstCollection')}
+                  <Plus className="mr-2 h-4 w-4" /> {t('noCollections.createFirstCollection')}
               </Button>
             </DialogTrigger>
           </div>

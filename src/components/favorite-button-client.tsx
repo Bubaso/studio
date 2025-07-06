@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { AddToCollectionDialog } from './add-to-collection-dialog';
+import { useTranslations } from 'next-intl';
 
 interface FavoriteButtonClientProps {
   itemId: string;
@@ -19,6 +20,7 @@ interface FavoriteButtonClientProps {
 }
 
 export function FavoriteButtonClient({ itemId, sellerId, className, size = 'icon' }: FavoriteButtonClientProps) {
+  const t = useTranslations('FavoriteButton');
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -57,9 +59,9 @@ export function FavoriteButtonClient({ itemId, sellerId, className, size = 'icon
 
     if (!currentUser) {
       toast({
-        title: "Connexion requise",
-        description: "Pour ajouter un article à vos favoris, veuillez vous connecter.",
-        action: <Button onClick={() => router.push(`/auth/signin?redirect=/items/${itemId}`)}>Se connecter</Button>
+        title: t('loginRequiredTitle'),
+        description: t('loginRequiredDesc'),
+        action: <Button onClick={() => router.push(`/auth/signin?redirect=/items/${itemId}`)}>{t('loginButton')}</Button>
       });
       return;
     }
@@ -99,10 +101,10 @@ export function FavoriteButtonClient({ itemId, sellerId, className, size = 'icon
           isFavorited ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-red-500",
           className
         )}
-        aria-label={isFavorited ? "Modifier les collections" : "Ajouter aux favoris"}
+        aria-label={isFavorited ? t('ariaLabelEdit') : t('ariaLabelAdd')}
       >
         <Heart className={cn(isFavorited ? "fill-current" : "", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
-        {size !== 'icon' && (isFavorited ? 'Sauvegardé' : 'Sauvegarder')}
+        {size !== 'icon' && (isFavorited ? t('saved') : t('save'))}
       </Button>
 
       {currentUser && (

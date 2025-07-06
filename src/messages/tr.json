@@ -182,9 +182,7 @@
       "saveErrorTitle": "Kaydetme Hatası",
       "createError": "İlan oluşturulamadı. {errorDetails}",
       "updateError": "İlan güncellenemedi. {errorDetails}",
-      "tryAgain": "Lütfen tekrar deneyin.",
-      "welcomeEmailGeneratedTitle": "Hoş Geldin E-postası Oluşturuldu!",
-      "welcomeEmailGeneratedDesc": "Simüle edilen e-posta içeriğini görmek için tarayıcı konsolunu kontrol edin."
+      "tryAgain": "Lütfen tekrar deneyin."
     },
     "locationInfo": {
       "title": "Doğru bir konum neden önemlidir?",
@@ -498,11 +496,6 @@
     "price_asc": "Fiyat: Düşükten yükseğe",
     "price_desc": "Fiyat: Yüksekten düşüğe"
   },
-  "FavoritesPage": {
-    "noCollectionsTitle": "Henüz koleksiyon yok",
-    "noCollectionsDesc": "Sevdiğiniz ürünleri düzenlemek için ilk koleksiyonunuzu oluşturun.",
-    "createFirstCollection": "İlk Koleksiyonu Oluştur"
-  },
   "Dashboard": {
     "title": "Satıcı Paneli",
     "subtitle": "İlanlarınızı yönetin, istatistikleri görüntüleyin ve satılanları görün.",
@@ -518,15 +511,7 @@
     "noSoldListings": "Henüz hiç ürün satmadınız.",
     "views": "Görüntülenme",
     "view": "Görüntüle",
-    "edit": "Düzenle",
-    "statuses": {
-      "active": "Aktif",
-      "pending_review": "Beklemede",
-      "under_review": "İncelemede",
-      "rejected": "Reddedildi",
-      "unknown": "Bilinmiyor",
-      "tooltip": "Durum: {status}"
-    }
+    "edit": "Düzenle"
   },
   "Chatbot": {
     "title": "Asistan",
@@ -601,5 +586,97 @@
     "referenceLabel": "İşlem referans numarası:",
     "publishAd": "İlan Yayınla",
     "continueBrowsing": "Göz Atmaya Devam Et"
+  },
+  "FavoritesPage": {
+    "title": "Koleksiyonlarım",
+    "newCollectionButton": "Yeni Koleksiyon",
+    "loading": "Koleksiyonlarınız yükleniyor...",
+    "loginRequired": {
+      "title": "Giriş Gerekli",
+      "description": "Koleksiyonlarınızı görüntülemek ve yönetmek için lütfen giriş yapın.",
+      "button": "Giriş Yap"
+    },
+    "noCollections": {
+      "title": "Henüz koleksiyon yok",
+      "description": "Sevdiğiniz ürünleri düzenlemek için ilk koleksiyonunuzu oluşturun.",
+      "createFirstCollection": "İlk Koleksiyonu Oluştur"
+    },
+    "dialog": {
+      "title": "Yeni bir koleksiyon oluştur",
+      "description": "Ürünleri kaydetmeye başlamak için yeni koleksiyonunuza bir isim verin.",
+      "nameLabel": "İsim",
+      "namePlaceholder": "ör: Oturma odası fikirleri",
+      "cancelButton": "İptal",
+      "createButton": "Oluştur"
+    },
+    "toast": {
+      "nameRequired": "Koleksiyon adı gerekli.",
+      "createSuccessTitle": "Koleksiyon Oluşturuldu!",
+      "createSuccessDesc": "\"{name}\" eklendi.",
+      "createErrorTitle": "Hata",
+      "createErrorDesc": "Koleksiyon oluşturulamadı."
+    },
+    "collectionCard": {
+      "itemCount": "{count, plural, one {# ürün} other {# ürün}}",
+      "createdAt": "{date} tarihinde oluşturuldu"
+    }
+  },
+  "CollectionDetailPage": {
+    "loading": "Koleksiyon yükleniyor...",
+    "notFound": {
+      "title": "Koleksiyon Bulunamadı",
+      "description": "Aradığınız koleksiyon mevcut değil veya görüntüleme izniniz yok.",
+      "button": "Koleksiyonlarıma geri dön"
+    },
+    "backToCollections": "Tüm koleksiyonlar",
+    "itemCount": "{count, plural, one {# ürün} other {# ürün}}",
+    "deleteCollection": {
+      "button": "Koleksiyonu Sil",
+      "dialogTitle": "Emin misiniz?",
+      "dialogDescription": "Bu işlem geri alınamaz. \"{name}\" adlı koleksiyon kalıcı olarak silinecektir. İçerdiği ürünler platformdan silinmeyecektir.",
+      "cancelButton": "İptal",
+      "confirmButton": "Evet, sil"
+    },
+    "emptyCollection": {
+      "title": "Bu koleksiyon boş",
+      "description": "Ürünlere göz atın ve bu koleksiyona eklemek için ❤️ simgesine tıklayın.",
+      "browseButton": "Ürünleri keşfet"
+    },
+    "toast": {
+      "error": "Hata",
+      "notFound": "Koleksiyon bulunamadı veya yetkisiz erişim.",
+      "deleted": "Koleksiyon silindi"
+    }
+  },
+  "AddToCollectionDialog": {
+    "title": "Kaydet...",
+    "description": "Bu ürünü kaydetmek istediğiniz koleksiyonları işaretleyin.",
+    "loading": "Yükleniyor...",
+    "errorLoading": "Koleksiyonlarınız yüklenemedi.",
+    "newCollection": {
+      "placeholder": "Yeni koleksiyon adı",
+      "createButton": "Oluştur",
+      "trigger": "Yeni bir koleksiyon oluştur"
+    },
+    "itemCount": "{count, plural, one {# ürün} other {# ürün}}",
+    "cancelButton": "İptal",
+    "saveButton": "Kaydet",
+    "toast": {
+      "error": "Hata",
+      "createSuccess": "Koleksiyon oluşturuldu",
+      "createSuccessDesc": "\"{name}\" oluşturuldu. Ürünü eklemek için kaydedin.",
+      "saveError": "Değişiklikler kaydedilemedi.",
+      "saveSuccessTitle": "Koleksiyonlar güncellendi",
+      "saveSuccessDesc": "Favorileriniz kaydedildi."
+    }
+  },
+  "FavoriteButton": {
+    "loginRequiredTitle": "Giriş Gerekli",
+    "loginRequiredDesc": "Bir ürünü favorilerinize eklemek için lütfen giriş yapın.",
+    "loginButton": "Giriş Yap",
+    "ariaLabelAdd": "Favorilere ekle",
+    "ariaLabelEdit": "Koleksiyonları düzenle",
+    "saved": "Kaydedildi",
+    "save": "Kaydet"
   }
 }

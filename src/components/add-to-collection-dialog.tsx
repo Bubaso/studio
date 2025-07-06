@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useTransition } from 'react';
@@ -25,6 +26,7 @@ import {
 } from '@/services/favoriteService';
 import { ScrollArea } from './ui/scroll-area';
 import { Checkbox } from './ui/checkbox';
+import { useTranslations } from 'next-intl';
 
 interface AddToCollectionDialogProps {
   itemId: string;
@@ -43,6 +45,7 @@ const areSetsEqual = (a: Set<string>, b: Set<string>) => {
 
 
 export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToCollectionDialogProps) {
+  const t = useTranslations('AddToCollectionDialog');
   const { firebaseUser } = useAuth();
   const { toast } = useToast();
   
@@ -73,7 +76,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
       setDraftSelectedIds(initialIds);
 
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger vos collections.' });
+      toast({ variant: 'destructive', title: t('toast.error'), description: t('errorLoading') });
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +109,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
     startUpdateTransition(async () => {
       const result = await createEmptyCollection(firebaseUser.uid, newCollectionName);
       if (result.success && result.collectionId) {
-        toast({ title: 'Collection créée', description: `"${newCollectionName}" a été créée. Enregistrez pour ajouter l'article.` });
+        toast({ title: t('toast.createSuccess'), description: t('toast.createSuccessDesc', { name: newCollectionName }) });
         
         const newCollection: UserCollection = {
           id: result.collectionId,
@@ -123,7 +126,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
         setNewCollectionName("");
 
       } else {
-        toast({ variant: 'destructive', title: 'Erreur', description: result.error });
+        toast({ variant: 'destructive', title: t('toast.error'), description: result.error });
       }
     });
   };
@@ -147,10 +150,10 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
         
         try {
             await Promise.all(promises);
-            toast({ title: "Collections mises à jour", description: "Vos favoris ont été sauvegardés." });
+            toast({ title: t('toast.saveSuccessTitle'), description: t('toast.saveSuccessDesc') });
             onOpenChange(true); // Close dialog and trigger refresh
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Erreur', description: error.message || "Impossible de sauvegarder les modifications." });
+            toast({ variant: 'destructive', title: t('toast.error'), description: error.message || t('toast.saveError') });
         }
     });
   };
@@ -164,9 +167,9 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
         onClick={(e) => e.stopPropagation()}
       >
         <DialogHeader>
-          <DialogTitle>Sauvegarder dans...</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Cochez les collections où vous souhaitez sauvegarder cet article.
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         
@@ -187,7 +190,7 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
                             />
                             <Label htmlFor={`collection-${collection.id}`} className="flex-1 cursor-pointer">
                                 {collection.name}
-                                <span className="text-xs text-muted-foreground ml-2">({collection.itemCount} articles)</span>
+                                <span className="text-xs text-muted-foreground ml-2">({t('itemCount', { count: collection.itemCount })})</span>
                             </Label>
                         </div>
                     ))}
@@ -201,11 +204,11 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
                     <Input
                         value={newCollectionName}
                         onChange={(e) => setNewCollectionName(e.target.value)}
-                        placeholder="Nom de la nouvelle collection"
+                        placeholder={t('newCollection.placeholder')}
                         disabled={isUpdating}
                     />
                     <Button onClick={handleCreateCollection} disabled={isUpdating || !newCollectionName.trim()}>
-                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Créer"}
+                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : t('newCollection.createButton')}
                     </Button>
                 </div>
             ) : (
@@ -219,21 +222,21 @@ export function AddToCollectionDialog({ itemId, open, onOpenChange }: AddToColle
                   }}
                 >
                     <Plus className="mr-2 h-4 w-4" />
-                    Créer une nouvelle collection
+                    {t('newCollection.trigger')}
                 </Button>
             )}
         </div>
         
         <DialogFooter className="mt-4 pt-4 border-t">
             <DialogClose asChild>
-                <Button variant="ghost">Annuler</Button>
+                <Button variant="ghost">{t('cancelButton')}</Button>
             </DialogClose>
             <Button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || isUpdating}
             >
                 {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Enregistrer
+                {t('saveButton')}
             </Button>
         </DialogFooter>
 

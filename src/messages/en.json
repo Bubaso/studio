@@ -182,9 +182,7 @@
       "saveErrorTitle": "Save Error",
       "createError": "Failed to create listing. {errorDetails}",
       "updateError": "Failed to update listing. {errorDetails}",
-      "tryAgain": "Please try again.",
-      "welcomeEmailGeneratedTitle": "Welcome Email Generated!",
-      "welcomeEmailGeneratedDesc": "Check the browser console to see the simulated email content."
+      "tryAgain": "Please try again."
     },
     "locationInfo": {
       "title": "Why is a precise location important?",
@@ -498,11 +496,6 @@
     "price_asc": "Price: Low to high",
     "price_desc": "Price: High to low"
   },
-  "FavoritesPage": {
-    "noCollectionsTitle": "No collections yet",
-    "noCollectionsDesc": "Create your first collection to organize the items you love.",
-    "createFirstCollection": "Create First Collection"
-  },
   "Dashboard": {
     "title": "Seller Dashboard",
     "subtitle": "Manage your listings, view stats, and see what's sold.",
@@ -518,15 +511,7 @@
     "noSoldListings": "You haven't sold any items yet.",
     "views": "Views",
     "view": "View",
-    "edit": "Edit",
-    "statuses": {
-      "active": "Active",
-      "pending_review": "Pending",
-      "under_review": "Under Review",
-      "rejected": "Rejected",
-      "unknown": "Unknown",
-      "tooltip": "Status: {status}"
-    }
+    "edit": "Edit"
   },
   "Chatbot": {
     "title": "Assistant",
@@ -601,5 +586,97 @@
     "referenceLabel": "Transaction reference number:",
     "publishAd": "Publish an Ad",
     "continueBrowsing": "Continue Browsing"
+  },
+  "FavoritesPage": {
+    "title": "My Collections",
+    "newCollectionButton": "New Collection",
+    "loading": "Loading your collections...",
+    "loginRequired": {
+      "title": "Login Required",
+      "description": "To view and manage your collections, please log in.",
+      "button": "Sign In"
+    },
+    "noCollections": {
+      "title": "No collections yet",
+      "description": "Create your first collection to organize the items you love.",
+      "createFirstCollection": "Create First Collection"
+    },
+    "dialog": {
+      "title": "Create a new collection",
+      "description": "Give your new collection a name to start saving items to it.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g., Living room ideas",
+      "cancelButton": "Cancel",
+      "createButton": "Create"
+    },
+    "toast": {
+      "nameRequired": "Collection name is required.",
+      "createSuccessTitle": "Collection Created!",
+      "createSuccessDesc": "\"{name}\" has been added.",
+      "createErrorTitle": "Error",
+      "createErrorDesc": "Could not create the collection."
+    },
+    "collectionCard": {
+      "itemCount": "{count, plural, one {# item} other {# items}}",
+      "createdAt": "Created on {date}"
+    }
+  },
+  "CollectionDetailPage": {
+    "loading": "Loading collection...",
+    "notFound": {
+      "title": "Collection Not Found",
+      "description": "The collection you are looking for does not exist or you do not have permission to view it.",
+      "button": "Back to my collections"
+    },
+    "backToCollections": "All collections",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "deleteCollection": {
+      "button": "Delete Collection",
+      "dialogTitle": "Are you sure?",
+      "dialogDescription": "This action is irreversible. The collection \"{name}\" will be permanently deleted. The items it contains will not be deleted from the platform.",
+      "cancelButton": "Cancel",
+      "confirmButton": "Yes, delete"
+    },
+    "emptyCollection": {
+      "title": "This collection is empty",
+      "description": "Browse items and click the ❤️ to add them to this collection.",
+      "browseButton": "Explore items"
+    },
+    "toast": {
+      "error": "Error",
+      "notFound": "Collection not found or unauthorized access.",
+      "deleted": "Collection deleted"
+    }
+  },
+  "AddToCollectionDialog": {
+    "title": "Save to...",
+    "description": "Check the collections where you want to save this item.",
+    "loading": "Loading...",
+    "errorLoading": "Could not load your collections.",
+    "newCollection": {
+      "placeholder": "New collection name",
+      "createButton": "Create",
+      "trigger": "Create a new collection"
+    },
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "cancelButton": "Cancel",
+    "saveButton": "Save",
+    "toast": {
+      "error": "Error",
+      "createSuccess": "Collection created",
+      "createSuccessDesc": "\"{name}\" has been created. Save to add the item.",
+      "saveError": "Could not save changes.",
+      "saveSuccessTitle": "Collections updated",
+      "saveSuccessDesc": "Your favorites have been saved."
+    }
+  },
+  "FavoriteButton": {
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredDesc": "To add an item to your favorites, please log in.",
+    "loginButton": "Sign In",
+    "ariaLabelAdd": "Add to favorites",
+    "ariaLabelEdit": "Edit collections",
+    "saved": "Saved",
+    "save": "Save"
   }
 }

@@ -182,9 +182,7 @@
       "saveErrorTitle": "Erreur de sauvegarde",
       "createError": "Échec de la création de l'annonce. {errorDetails}",
       "updateError": "Échec de la mise à jour de l'annonce. {errorDetails}",
-      "tryAgain": "Veuillez réessayer.",
-      "welcomeEmailGeneratedTitle": "E-mail de bienvenue généré !",
-      "welcomeEmailGeneratedDesc": "Vérifiez la console du navigateur pour voir le contenu de l'e-mail simulé."
+      "tryAgain": "Veuillez réessayer."
     },
     "locationInfo": {
       "title": "Pourquoi un lieu précis est-il important ?",
@@ -498,11 +496,6 @@
     "price_asc": "Prix : Croissant",
     "price_desc": "Prix : Décroissant"
   },
-  "FavoritesPage": {
-    "noCollectionsTitle": "Aucune collection pour le moment",
-    "noCollectionsDesc": "Créez votre première collection pour organiser les articles que vous aimez.",
-    "createFirstCollection": "Créer la première collection"
-  },
   "Dashboard": {
     "title": "Tableau de bord Vendeur",
     "subtitle": "Gérez vos annonces, consultez les statistiques et voyez ce qui est vendu.",
@@ -518,15 +511,7 @@
     "noSoldListings": "Vous n'avez encore vendu aucun article.",
     "views": "Vues",
     "view": "Voir",
-    "edit": "Modifier",
-    "statuses": {
-      "active": "Actif",
-      "pending_review": "En attente",
-      "under_review": "En cours d'examen",
-      "rejected": "Rejeté",
-      "unknown": "Inconnu",
-      "tooltip": "Statut : {status}"
-    }
+    "edit": "Modifier"
   },
   "Chatbot": {
     "title": "Assistant",
@@ -601,5 +586,97 @@
     "referenceLabel": "Numéro de référence de la transaction :",
     "publishAd": "Publier une annonce",
     "continueBrowsing": "Continuer à naviguer"
+  },
+  "FavoritesPage": {
+    "title": "Mes Collections",
+    "newCollectionButton": "Nouvelle Collection",
+    "loading": "Chargement de vos collections...",
+    "loginRequired": {
+      "title": "Connexion requise",
+      "description": "Pour voir et gérer vos collections, veuillez vous connecter.",
+      "button": "Se connecter"
+    },
+    "noCollections": {
+      "title": "Aucune collection pour le moment",
+      "description": "Créez votre première collection pour organiser les articles que vous aimez.",
+      "createFirstCollection": "Créer la première collection"
+    },
+    "dialog": {
+      "title": "Créer une nouvelle collection",
+      "description": "Donnez un nom à votre nouvelle collection pour commencer à y sauvegarder des articles.",
+      "nameLabel": "Nom",
+      "namePlaceholder": "ex: Idées de salon",
+      "cancelButton": "Annuler",
+      "createButton": "Créer"
+    },
+    "toast": {
+      "nameRequired": "Nom de la collection requis.",
+      "createSuccessTitle": "Collection créée !",
+      "createSuccessDesc": "\"{name}\" a été ajoutée.",
+      "createErrorTitle": "Erreur",
+      "createErrorDesc": "Impossible de créer la collection."
+    },
+    "collectionCard": {
+      "itemCount": "{count, plural, one {# article} other {# articles}}",
+      "createdAt": "Créé le {date}"
+    }
+  },
+  "CollectionDetailPage": {
+    "loading": "Chargement de la collection...",
+    "notFound": {
+      "title": "Collection non trouvée",
+      "description": "La collection que vous cherchez n'existe pas ou vous n'avez pas la permission de la voir.",
+      "button": "Retour à mes collections"
+    },
+    "backToCollections": "Toutes les collections",
+    "itemCount": "{count, plural, one {# article} other {# articles}}",
+    "deleteCollection": {
+      "button": "Supprimer la collection",
+      "dialogTitle": "Êtes-vous sûr(e) ?",
+      "dialogDescription": "Cette action est irréversible. La collection \"{name}\" sera définitivement supprimée. Les articles qu'elle contient ne seront pas supprimés de la plateforme.",
+      "cancelButton": "Annuler",
+      "confirmButton": "Oui, supprimer"
+    },
+    "emptyCollection": {
+      "title": "Cette collection est vide",
+      "description": "Parcourez les articles et cliquez sur le ❤️ pour les ajouter à cette collection.",
+      "browseButton": "Explorer les articles"
+    },
+    "toast": {
+      "error": "Erreur",
+      "notFound": "Collection non trouvée ou accès non autorisé.",
+      "deleted": "Collection supprimée"
+    }
+  },
+  "AddToCollectionDialog": {
+    "title": "Sauvegarder dans...",
+    "description": "Cochez les collections où vous souhaitez sauvegarder cet article.",
+    "loading": "Chargement...",
+    "errorLoading": "Impossible de charger vos collections.",
+    "newCollection": {
+      "placeholder": "Nom de la nouvelle collection",
+      "createButton": "Créer",
+      "trigger": "Créer une nouvelle collection"
+    },
+    "itemCount": "{count, plural, one {# article} other {# articles}}",
+    "cancelButton": "Annuler",
+    "saveButton": "Enregistrer",
+    "toast": {
+      "error": "Erreur",
+      "createSuccess": "Collection créée",
+      "createSuccessDesc": "\"{name}\" a été créée. Enregistrez pour ajouter l'article.",
+      "saveError": "Impossible de sauvegarder les modifications.",
+      "saveSuccessTitle": "Collections mises à jour",
+      "saveSuccessDesc": "Vos favoris ont été sauvegardés."
+    }
+  },
+  "FavoriteButton": {
+    "loginRequiredTitle": "Connexion requise",
+    "loginRequiredDesc": "Pour ajouter un article à vos favoris, veuillez vous connecter.",
+    "loginButton": "Se connecter",
+    "ariaLabelAdd": "Ajouter aux favoris",
+    "ariaLabelEdit": "Modifier les collections",
+    "saved": "Sauvegardé",
+    "save": "Sauvegarder"
   }
 }
