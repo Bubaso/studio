@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
 import { SellerActionsClient } from '@/components/seller-actions-client';
-import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
 import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
@@ -22,6 +21,8 @@ import { ConfirmSoldStatusClient } from '@/components/confirm-sold-status-client
 import { SubscribeButton } from '@/components/SubscribeButton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { ItemViewCount } from '@/components/item-view-count';
+import { FavoriteButtonClient } from '@/components/favorite-button-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -162,10 +163,15 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <ConfirmSoldStatusClient item={item} />
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Left Column: Image Gallery, Timestamps, Desktop Seller Info */}
+        {/* Left Column: Image Gallery, Desktop Seller Info */}
         <div className="space-y-4">
             <ItemMediaGallery item={item} />
-            <div className="text-sm text-muted-foreground space-y-1">
+            <div className="mt-8 hidden md:block">{SellerProfileCard}</div>
+        </div>
+
+        {/* Right Column: Item Details, Actions */}
+        <div className="space-y-6 min-w-0">
+          <div className="text-sm text-muted-foreground space-y-1">
               <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
                   <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
@@ -183,14 +189,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   </div>
               )}
             </div>
-            <div className="mt-8 hidden md:block">{SellerProfileCard}</div>
-        </div>
-
-        {/* Right Column: Item Details, Actions */}
-        <div className="space-y-6 min-w-0">
           
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words">{item.name}</h1>
           
+          <div className="flex items-center gap-2 pt-2 !-mt-4">
+            <ItemViewCount itemId={item.id} />
+            <FavoriteButtonClient
+              itemId={item.id}
+              sellerId={item.sellerId}
+              className="bg-background/70 hover:bg-background/90 h-7 w-7"
+            />
+          </div>
+
           <div className="flex justify-between items-center gap-4">
             <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             <WhatsAppShareButton item={item} />
