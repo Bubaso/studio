@@ -4,79 +4,68 @@
 
 @layer base {
   :root {
-    --background: 60 56% 91%;   /* #F5F5DC - Light beige */
-    --foreground: 25 30% 20%;   /* Dark, desaturated brown-orange */
-
-    --card: 60 56% 94%;         /* Lighter beige */
-    --card-foreground: 25 30% 20%;
-
-    --popover: 60 56% 94%;      /* Lighter beige */
-    --popover-foreground: 25 30% 20%;
-
-    --primary: 30 48% 54%;    /* #C48C4E - Earthy Orange */
-    --primary-foreground: 30 80% 95%;  /* Very light, warm off-white */
-
-    --secondary: 30 65% 65%;   /* Lighter orange for secondary */
-    --secondary-foreground: 30 100% 15%; /* Darker orange/brown */
-
-    --muted: 60 50% 88%;        /* Desaturated beige */
-    --muted-foreground: 25 25% 45%;  /* Darker muted foreground */
-
-    --accent: 60 100% 25%;      /* #808000 - Olive Green */
-    --accent-foreground: 60 30% 92%; /* Very light green */
-
-    --destructive: 0 70% 50%;    /* Standard red for destructive actions */
-    --destructive-foreground: 0 0% 98%; /* Light foreground for destructive */
-
-    --border: 60 50% 85%;       /* Soft beige-gray for borders */
-    --input: 60 50% 85%;        /* Same as border */
-    --ring: 30 48% 54%;       /* Primary color for focus rings */
-
-    --radius: 0.5rem;
-
-    --chart-1: 30 48% 54%;   /* Earthy Orange */
-    --chart-2: 60 100% 25%;   /* Olive Green */
-    --chart-3: 45 89% 50%;    /* #F1C40F (golden yellow) */
-    --chart-4: 30 80% 65%;    /* Lighter orange */
-    --chart-5: 60 30% 70%;    /* Muted beige-gray */
-
-    /* Sidebar variables adjusted for the new theme */
-    --sidebar-background: 60 80% 88%;        
-    --sidebar-foreground: 25 30% 20%;        
-    --sidebar-primary: 30 48% 54%;          
-    --sidebar-primary-foreground: 30 80% 95%;
-    --sidebar-accent: 60 100% 25%;           
-    --sidebar-accent-foreground: 60 30% 92%;
-    --sidebar-border: 60 50% 75%;           
-    --sidebar-ring: 30 48% 54%;            
-  }
-
-  .dark {
-    /* Keeping default dark theme from shadcn as it was not specified for dark mode */
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
