@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,7 +12,7 @@ import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useTranslations } from 'next-intl';
-import { StatusFeed } from './status-feed';
+import { StatusStories } from './status-stories';
 
 interface PersonalizedContentProps {
   latestItems: Item[];
@@ -45,57 +44,56 @@ function CardSkeleton() {
   );
 }
 
-
 export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
   const t = useTranslations('HomePage');
-  const { firebaseUser } = useAuth();
+  const { firebaseUser, authLoading } = useAuth();
   const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
   const [statusFeed, setStatusFeed] = useState<StatusFeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   useEffect(() => {
+    if (authLoading) {
+      return; // Wait until auth state is resolved
+    }
+
     if (firebaseUser) {
-      // Fetch both recommendations and status feed in parallel
+      setIsLoadingContent(true);
       Promise.all([
         getFollowingStatusFeed(firebaseUser.uid),
         getPersonalizedRecommendations(firebaseUser.uid)
       ]).then(([feed, recs]) => {
         setStatusFeed(feed);
         setRecommendedItems(recs);
-        setIsLoading(false);
+      }).finally(() => {
+        setIsLoadingContent(false);
       });
     } else {
-      setIsLoading(false);
+      // Not logged in, no personalized content to load
+      setIsLoadingContent(false);
     }
-  }, [firebaseUser]);
+  }, [firebaseUser, authLoading]);
 
-  const MainContent = () => {
-    if (isLoading) {
-        return <RecommendationsSkeleton />;
-    }
-    if (recommendedItems.length > 0) {
-        return <PersonalizedRecommendations items={recommendedItems} />;
-    }
-    // Fallback to latest items
-    return (
-        <section className="py-4 md:py-6">
-            <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-                {t('latestFindings')}
-            </h2>
-            <FeaturedItemsGrid initialItems={latestItems} />
-            <div className="text-center mt-6 md:mt-8">
-                <Link href="/browse">
-                <Button variant="secondary" size="lg">{t('viewAllItems')}</Button>
-                </Link>
-            </div>
-        </section>
-    );
-  };
-  
   return (
     <>
-      <MainContent />
-      {!isLoading && statusFeed.length > 0 && <StatusFeed items={statusFeed} />}
+      <StatusStories items={statusFeed} />
+      
+      {isLoadingContent ? (
+        <RecommendationsSkeleton />
+      ) : recommendedItems.length > 0 ? (
+        <PersonalizedRecommendations items={recommendedItems} />
+      ) : (
+        <section className="py-4 md:py-6">
+          <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
+            {t('latestFindings')}
+          </h2>
+          <FeaturedItemsGrid initialItems={latestItems} />
+          <div className="text-center mt-6 md:mt-8">
+            <Link href="/browse">
+              <Button variant="secondary" size="lg">{t('viewAllItems')}</Button>
+            </Link>
+          </div>
+        </section>
+      )}
     </>
   );
 }
