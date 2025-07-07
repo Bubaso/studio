@@ -362,7 +362,8 @@
       "error": "Erreur",
       "contactError": "Impossible de contacter le vendeur. Veuillez réessayer.",
       "communicationError": "Erreur de communication"
-    }
+    },
+    "sellerActiveListings": "{count, plural, one {Voir l'autre annonce active du vendeur} other {Voir les {count} autres annonces actives du vendeur}}"
   },
   "SellerActions": {
     "loading": "Chargement...",
@@ -387,7 +388,6 @@
   },
   "ItemStats": {
     "viewsToday": "{count, plural, one {# personne a vu cet article aujourd'hui} other {# personnes ont vu cet article aujourd'hui}}",
-    "saves": "{count, plural, one {# personne a sauvegardé cet article} other {# personnes ont sauvegardé cet article}}",
     "activeListings": "{count, plural, one {# annonce active par ce vendeur} other {# annonces actives par ce vendeur}}"
   },
   "ReportItemButton": {

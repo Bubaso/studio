@@ -156,11 +156,12 @@ export async function toggleItemInCollection(userId: string, collectionId: strin
     if (!userId || !collectionId || !itemId) {
         return { success: false, error: "User ID, collection ID, and item ID are required." };
     }
-    const collectionRef = doc(db, 'collections', collectionId);
-    const itemRef = doc(collectionRef, 'items', itemId);
 
     try {
         await runTransaction(db, async (transaction) => {
+            const collectionRef = doc(db, 'collections', collectionId);
+            const itemRef = doc(collectionRef, 'items', itemId);
+
             const collectionSnap = await transaction.get(collectionRef);
             if (!collectionSnap.exists() || collectionSnap.data().userId !== userId) {
                 throw new Error("Collection not found or access denied.");
@@ -170,9 +171,6 @@ export async function toggleItemInCollection(userId: string, collectionId: strin
                 transaction.delete(itemRef);
                 transaction.update(collectionRef, {
                     itemCount: increment(-1),
-                    // Note: Removing from previewImageUrls is complex.
-                    // For simplicity, we'll only decrement the count.
-                    // A background function would be better for maintaining previews.
                 });
             } else { // ADD
                 const itemData = await getItemByIdFromFirestore(itemId);
@@ -180,12 +178,12 @@ export async function toggleItemInCollection(userId: string, collectionId: strin
 
                 transaction.set(itemRef, { 
                     addedAt: serverTimestamp(),
-                    userId: userId // Add userId for security rules
+                    userId: userId 
                 });
+                
                 const updatePayload: any = { itemCount: increment(1) };
-
                 const currentPreviews = collectionSnap.data().previewImageUrls || [];
-                if (currentPreviews.length < 4 && itemData.imageUrls.length > 0) {
+                if (currentPreviews.length < 4 && itemData.imageUrls.length > 0 && !currentPreviews.includes(itemData.imageUrls[0])) {
                     updatePayload.previewImageUrls = arrayUnion(itemData.imageUrls[0]);
                 }
                 transaction.update(collectionRef, updatePayload);

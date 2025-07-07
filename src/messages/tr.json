@@ -362,7 +362,8 @@
       "error": "Hata",
       "contactError": "Satıcıyla iletişim kurulamadı. Lütfen tekrar deneyin.",
       "communicationError": "İletişim Hatası"
-    }
+    },
+    "sellerActiveListings": "{count, plural, one {Satıcının diğer aktif ilanını gör} other {Satıcının diğer {count} aktif ilanını gör}}"
   },
   "SellerActions": {
     "loading": "Yükleniyor...",
@@ -387,7 +388,6 @@
   },
   "ItemStats": {
     "viewsToday": "{count, plural, one {Bugün # kişi bu ürünü gördü} other {Bugün # kişi bu ürünü gördü}}",
-    "saves": "{count, plural, one {# kişi bu ürünü kaydetti} other {# kişi bu ürünü kaydetti}}",
     "activeListings": "{count, plural, one {Bu satıcının # aktif ilanı var} other {Bu satıcının # aktif ilanı var}}"
   },
   "ReportItemButton": {

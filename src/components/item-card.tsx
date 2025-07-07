@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FavoriteButtonClient } from './favorite-button-client';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { ItemViewCount } from './item-view-count';
 
 interface ItemCardProps {
   item: Item;
@@ -70,7 +71,8 @@ export function ItemCard({ item }: ItemCardProps) {
                 </div>
             )}
           </div>
-          <div className="absolute top-2 right-2 z-10 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
+            <ItemViewCount itemId={item.id} />
             <FavoriteButtonClient itemId={item.id} sellerId={item.sellerId} className="bg-background/70 hover:bg-background/90" />
           </div>
         </CardHeader>

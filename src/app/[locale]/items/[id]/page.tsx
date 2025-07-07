@@ -1,6 +1,6 @@
 
 import Image from 'next/image';
-import { getItemByIdFromFirestore, getItemsFromFirestore } from '@/services/itemService';
+import { getItemByIdFromFirestore, getItemsFromFirestore, getUserListingsFromFirestore } from '@/services/itemService';
 import { getUserDocument } from '@/services/userService';
 import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/types'; 
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import { FavoriteButtonClient } from '@/components/favorite-button-client';
 import { SimilarListingsCarousel } from '@/components/similar-listings-carousel';
 import { auth } from '@/lib/firebase';
 import { ItemViewLogger } from '@/components/item-view-logger';
-import { ItemStatsDisplay } from '@/components/item-stats-display';
 import { ReportItemButton } from '@/components/report-item-button';
 import { ItemMediaGallery } from '@/components/item-media-gallery';
 import { WhatsAppShareButton } from '@/components/whatsapp-share-button';
@@ -47,7 +46,7 @@ const WhatsAppIcon = () => (
 );
 
 export default async function ItemPage({ params }: ItemPageProps) {
-  setRequestLocale(params.locale);
+  await setRequestLocale(params.locale);
   const t = await getTranslations('ItemDetailPage');
   const { id: itemId } = params; 
   
@@ -82,15 +81,21 @@ export default async function ItemPage({ params }: ItemPageProps) {
       priceMax: Math.round(item.price * 1.2),
       pageSize: 10, 
     }) : Promise.resolve({ items: [], lastItemId: null, hasMore: false });
+  const sellerListingsPromise = getUserListingsFromFirestore(item.sellerId);
+
 
   // Await all promises concurrently
   const [
     seller,
-    { items: fetchedSimilarItems }
+    { items: fetchedSimilarItems },
+    sellerListings,
   ] = await Promise.all([
     sellerPromise,
-    similarItemsPromise
+    similarItemsPromise,
+    sellerListingsPromise,
   ]);
+  
+  const activeSellerListingsCount = sellerListings.filter(l => !l.isSold).length;
 
   // Process the results
   const similarItems = fetchedSimilarItems.filter(si => si.id !== itemId).slice(0, 7);
@@ -190,17 +195,26 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           {/* Mobile-only Compact Seller Info */}
           {seller && (
-            <div className="md:hidden flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
-              <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-                  <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span className="font-semibold text-md hover:text-primary transition-colors truncate">
-                  {seller.name || t('anonymousSeller')}
-                </span>
-              </Link>
-              <SubscribeButton targetUserId={seller.uid} />
+            <div className="md:hidden">
+              <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
+                <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                    <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold text-md hover:text-primary transition-colors truncate">
+                    {seller.name || t('anonymousSeller')}
+                  </span>
+                </Link>
+                <SubscribeButton targetUserId={seller.uid} />
+              </div>
+              {activeSellerListingsCount > 1 && (
+                  <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4 px-4">
+                      <Badge variant="secondary">
+                          {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
+                      </Badge>
+                  </Link>
+              )}
             </div>
           )}
 
@@ -265,11 +279,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
           </Card>
 
           <div className="flex items-center gap-2">
-            <FavoriteButtonClient itemId={itemId} sellerId={item.sellerId} size="default" />
             <WhatsAppShareButton item={item} />
           </div>
-          
-          <ItemStatsDisplay itemId={itemId} sellerId={item.sellerId} />
 
           <Card>
             <CardHeader>

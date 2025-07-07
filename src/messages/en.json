@@ -362,7 +362,8 @@
       "error": "Error",
       "contactError": "Could not contact seller. Please try again.",
       "communicationError": "Communication Error"
-    }
+    },
+    "sellerActiveListings": "See seller's {count, plural, one {other active listing} other {{count} other active listings}}"
   },
   "SellerActions": {
     "loading": "Loading...",
@@ -387,7 +388,6 @@
   },
   "ItemStats": {
     "viewsToday": "{count, plural, one {# person saw this item today} other {# people saw this item today}}",
-    "saves": "{count, plural, one {# person saved this item} other {# people saved this item}}",
     "activeListings": "{count, plural, one {# active listing by this seller} other {# active listings by this seller}}"
   },
   "ReportItemButton": {
