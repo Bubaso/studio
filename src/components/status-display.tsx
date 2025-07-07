@@ -2,25 +2,36 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import type { UserProfile, UserStatus, Item } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Pin } from 'lucide-react';
-import { getItemByIdFromFirestore } from '@/services/itemService';
+import { Pin, Trash2, Loader2 } from 'lucide-react';
+import { getItemByIdFromFirestore, deleteItem } from '@/services/itemService';
+import { deleteUserStatus } from '@/services/userService';
 import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from './ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
 
 interface StatusDisplayProps {
   user: UserProfile;
   status: UserStatus;
+  onStatusDeleted: (statusId: string) => void;
 }
 
-export function StatusDisplay({ user, status }: StatusDisplayProps) {
+export function StatusDisplay({ user, status, onStatusDeleted }: StatusDisplayProps) {
   const t = useTranslations('StatusDisplay');
+  const { firebaseUser } = useAuth();
+  const { toast } = useToast();
   const [item, setItem] = useState<Item | null>(null);
   const [isLoadingItem, setIsLoadingItem] = useState(false);
+  const [isDeleting, startDeleteTransition] = useTransition();
+
+  const isOwner = firebaseUser?.uid === user.uid;
 
   useEffect(() => {
     if (status.itemId) {
@@ -32,13 +43,52 @@ export function StatusDisplay({ user, status }: StatusDisplayProps) {
       setItem(null);
     }
   }, [status.itemId]);
+  
+  const handleDelete = () => {
+    if (!isOwner) return;
+    startDeleteTransition(async () => {
+        const result = await deleteUserStatus(user.uid, status.id);
+        if(result.success) {
+            toast({title: "Statut supprimé"});
+            onStatusDeleted(status.id);
+        } else {
+            toast({variant: "destructive", title: "Erreur", description: "Impossible de supprimer le statut."})
+        }
+    });
+  }
 
   return (
     <Card className="bg-primary/5 border-primary/20">
       <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-primary/80 mb-2">
-            <Pin className="h-4 w-4" />
-            <span>{t('title', { name: user.name?.split(' ')[0] || 'Utilisateur' })}</span>
+        <div className="flex items-center justify-between gap-2 text-sm font-semibold text-primary/80 mb-2">
+            <div className="flex items-center gap-2">
+                <Pin className="h-4 w-4" />
+                <span>{t('title', { name: user.name?.split(' ')[0] || 'Utilisateur' })}</span>
+            </div>
+            {isOwner && (
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10 h-auto px-2 py-1">
+                            Effacer le statut
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Êtes-vous sûr(e) ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Cette action supprimera définitivement ce statut.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Oui, supprimer
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
         <p className="text-foreground/90 whitespace-pre-wrap mb-3">
           {status.text}

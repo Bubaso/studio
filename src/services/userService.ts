@@ -3,9 +3,10 @@
 
 
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
-import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField } from 'firebase/firestore'; // Added updateDoc and runTransaction
+import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item, UserStatus } from '@/lib/types';
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc } from 'firebase/firestore'; // Added updateDoc and runTransaction
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -123,11 +124,6 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         subscriberCount: data.subscriberCount || 0,
         subscriptionCount: data.subscriptionCount || 0,
         isFoundingMember: data.isFoundingMember || false, // Add new field
-        status: data.status ? { // Add status field
-            text: data.status.text,
-            itemId: data.status.itemId,
-            updatedAt: convertTimestampToISO(data.status.updatedAt as Timestamp),
-        } : undefined,
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);
@@ -307,40 +303,69 @@ export async function getSubscribersForUser(userId: string): Promise<UserProfile
   }
 }
 
-export async function updateUserStatus(uid: string, text: string | null, itemId: string | null): Promise<{ success: boolean; error?: string }> {
+export async function addUserStatus(uid: string, text: string, itemId: string | null): Promise<{ success: boolean; error?: string }> {
   if (!uid) {
     return { success: false, error: "User not authenticated." };
   }
-  const userRef = doc(db, 'users', uid);
+  if (!text.trim()) {
+    return { success: false, error: "Status text cannot be empty." };
+  }
+  const statusesRef = collection(db, 'users', uid, 'statuses');
+  const statusData: { text: string; createdAt: any; itemId?: string } = {
+    text: text,
+    createdAt: serverTimestamp(),
+  };
+
+  if (itemId && itemId !== "none") {
+    const itemRef = doc(db, 'items', itemId);
+    const itemSnap = await getDoc(itemRef);
+    if (!itemSnap.exists() || itemSnap.data().sellerId !== uid) {
+      return { success: false, error: "You can only feature your own items in your status." };
+    }
+    statusData.itemId = itemId;
+  }
 
   try {
-    if (text === null) {
-      // Clear status by deleting the field
-      await updateDoc(userRef, {
-        status: deleteField()
-      });
-    } else {
-      const statusUpdate: { text: string; itemId?: string; updatedAt: any } = {
-        text: text,
-        updatedAt: serverTimestamp(),
-      };
-      if (itemId && itemId !== "none") {
-        // Validate that the item belongs to the user
-        const itemRef = doc(db, 'items', itemId);
-        const itemSnap = await getDoc(itemRef);
-        if (!itemSnap.exists() || itemSnap.data().sellerId !== uid) {
-          return { success: false, error: "You can only feature your own items in your status." };
-        }
-        statusUpdate.itemId = itemId;
-      }
-      await updateDoc(userRef, {
-        status: statusUpdate
-      });
-    }
+    await addDoc(statusesRef, statusData);
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating user status:", error);
-    return { success: false, error: error.message || "Could not update status." };
+    console.error("Error adding user status:", error);
+    return { success: false, error: "Could not add status." };
+  }
+}
+
+export async function deleteUserStatus(uid: string, statusId: string): Promise<{ success: boolean; error?: string }> {
+    if (!uid || !statusId) {
+        return { success: false, error: "User ID and Status ID are required." };
+    }
+    const statusRef = doc(db, 'users', uid, 'statuses', statusId);
+    try {
+        await deleteDoc(statusRef);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error deleting user status:", error);
+        return { success: false, error: "Could not delete status." };
+    }
+}
+
+export async function getUserStatuses(userId: string): Promise<UserStatus[]> {
+  if (!userId) return [];
+  try {
+    const statusesRef = collection(db, 'users', userId, 'statuses');
+    const q = query(statusesRef, orderBy('createdAt', 'desc'), limit(10)); // Limit to latest 10 statuses for profile
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        text: data.text,
+        itemId: data.itemId,
+        createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+      } as UserStatus;
+    });
+  } catch (error) {
+    console.error("Error fetching user statuses:", error);
+    return [];
   }
 }
 
@@ -349,40 +374,54 @@ export async function getFollowingStatusFeed(userId: string): Promise<StatusFeed
   try {
     const subscriptions = await getSubscriptionsForUser(userId);
     if (subscriptions.length === 0) return [];
-    
-    // Filter out users without a recent status
-    const usersWithStatus = subscriptions.filter(user => user.status && user.status.updatedAt);
-    
-    // Sort by status update time, newest first
-    const sortedUsers = usersWithStatus.sort((a, b) => 
-      new Date(b.status!.updatedAt).getTime() - new Date(a.status!.updatedAt).getTime()
+
+    const statusPromises = subscriptions.map(async (user) => {
+      const statusesRef = collection(db, 'users', user.uid, 'statuses');
+      const q = query(statusesRef, orderBy('createdAt', 'desc'), limit(1));
+      const statusSnapshot = await getDocs(q);
+
+      if (statusSnapshot.empty) {
+        return null;
+      }
+
+      const statusDoc = statusSnapshot.docs[0];
+      const statusData = statusDoc.data();
+      const status: UserStatus = {
+        id: statusDoc.id,
+        text: statusData.text,
+        itemId: statusData.itemId,
+        createdAt: convertTimestampToISO(statusData.createdAt),
+      };
+
+      let itemData: Item | null = null;
+      if (status.itemId) {
+        itemData = await getItemByIdFromFirestore(status.itemId);
+      }
+      return {
+        status: status,
+        user: {
+          uid: user.uid,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+        },
+        item: itemData ? {
+          id: itemData.id,
+          name: itemData.name,
+          price: itemData.price,
+          imageUrls: itemData.imageUrls,
+        } : null,
+      } as StatusFeedItem;
+    });
+
+    const feedItemsUnfiltered = await Promise.all(statusPromises);
+    const feedItems = feedItemsUnfiltered.filter((item): item is StatusFeedItem => item !== null);
+
+    // Sort by status creation time, newest first
+    const sortedFeed = feedItems.sort((a, b) =>
+      new Date(b.status.createdAt).getTime() - new Date(a.status.createdAt).getTime()
     );
 
-    // Fetch item details for statuses that have an itemId
-    const feedItems = await Promise.all(
-      sortedUsers.map(async (user) => {
-        let itemData: Item | null = null;
-        if (user.status!.itemId) {
-          itemData = await getItemByIdFromFirestore(user.status!.itemId);
-        }
-        return {
-          status: user.status!,
-          user: {
-            uid: user.uid,
-            name: user.name,
-            avatarUrl: user.avatarUrl,
-          },
-          item: itemData ? {
-            id: itemData.id,
-            name: itemData.name,
-            price: itemData.price,
-            imageUrls: itemData.imageUrls,
-          } : null,
-        } as StatusFeedItem;
-      })
-    );
-
-    return feedItems;
+    return sortedFeed;
   } catch (error) {
     console.error(`Error fetching status feed for user ${userId}:`, error);
     return [];

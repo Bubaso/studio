@@ -1,11 +1,12 @@
 
+
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import type { UserProfile, Item, Review } from '@/lib/types';
+import type { UserProfile, Item, Review, UserStatus } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { deleteUserAccount, getSubscribersForUser, getSubscriptionsForUser } from '@/services/userService';
+import { deleteUserAccount, getSubscribersForUser, getSubscriptionsForUser, getUserStatuses } from '@/services/userService';
 import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
 import { SetStatusDialog } from '@/components/set-status-dialog';
 import { StatusDisplay } from '@/components/status-display';
@@ -32,8 +33,29 @@ export default function ProfilePageClient() {
   
   const [subscribers, setSubscribers] = useState<UserProfile[]>([]);
   const [subscriptions, setSubscriptions] = useState<UserProfile[]>([]);
-  const [isLoadingSubs, setIsLoadingSubs] = useState(true);
+  const [statuses, setStatuses] = useState<UserStatus[]>([]);
+  const [isLoadingSubsAndStatuses, setIsLoadingSubsAndStatuses] = useState(true);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+
+  const fetchSubsAndStatuses = useCallback(async () => {
+      if (firebaseUser) {
+        setIsLoadingSubsAndStatuses(true);
+        try {
+            const [subs, scrips, userStatuses] = await Promise.all([
+                getSubscribersForUser(firebaseUser.uid),
+                getSubscriptionsForUser(firebaseUser.uid),
+                getUserStatuses(firebaseUser.uid),
+            ]);
+            setSubscribers(subs);
+            setSubscriptions(scrips);
+            setStatuses(userStatuses);
+        } finally {
+            setIsLoadingSubsAndStatuses(false);
+        }
+    } else if(!isAuthLoading) {
+        setIsLoadingSubsAndStatuses(false);
+    }
+  }, [firebaseUser, isAuthLoading]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -44,21 +66,9 @@ export default function ProfilePageClient() {
   }, []);
   
   useEffect(() => {
-    if (firebaseUser) {
-        setIsLoadingSubs(true);
-        Promise.all([
-            getSubscribersForUser(firebaseUser.uid),
-            getSubscriptionsForUser(firebaseUser.uid)
-        ]).then(([subs, scrips]) => {
-            setSubscribers(subs);
-            setSubscriptions(scrips);
-        }).finally(() => {
-            setIsLoadingSubs(false);
-        });
-    } else if(!isAuthLoading) {
-        setIsLoadingSubs(false);
-    }
-  }, [firebaseUser, isAuthLoading]);
+    fetchSubsAndStatuses();
+  }, [firebaseUser, fetchSubsAndStatuses]);
+
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -84,10 +94,15 @@ export default function ProfilePageClient() {
 
   const handleStatusUpdate = () => {
     setIsStatusDialogOpen(false);
-    refetchProfile(); // Re-fetch profile to show the new status
+    fetchSubsAndStatuses(); // Re-fetch statuses to show the new one
   };
 
-  const isLoading = isAuthLoading || isProfileLoading || isLoadingSubs;
+  const handleStatusDeleted = (deletedStatusId: string) => {
+    setStatuses(prev => prev.filter(s => s.id !== deletedStatusId));
+  };
+
+
+  const isLoading = isAuthLoading || isProfileLoading || isLoadingSubsAndStatuses;
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -114,11 +129,21 @@ export default function ProfilePageClient() {
         open={isStatusDialogOpen} 
         onOpenChange={setIsStatusDialogOpen}
         onStatusUpdated={handleStatusUpdate}
-        currentStatus={userProfile.status}
         userListings={listings.filter(l => !l.isSold)}
       />
 
-      {userProfile.status && <StatusDisplay user={userProfile} status={userProfile.status} />}
+      {statuses.length > 0 && (
+        <div className="space-y-4">
+            {statuses.map(status => (
+                <StatusDisplay
+                    key={status.id}
+                    user={userProfile}
+                    status={status}
+                    onStatusDeleted={handleStatusDeleted}
+                />
+            ))}
+        </div>
+      )}
 
       <Card className="shadow-lg">
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
@@ -162,7 +187,7 @@ export default function ProfilePageClient() {
             <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
               <Button variant="outline" onClick={() => setIsStatusDialogOpen(true)} className="w-full">
                   <PenSquare className="mr-2 h-4 w-4" />
-                  Définir le statut
+                  Ajouter un statut
               </Button>
               <div className="flex w-full gap-2">
                   <Link href="/profile/edit" className="w-1/2">

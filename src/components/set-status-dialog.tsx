@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PenSquare, Trash2 } from 'lucide-react';
+import { Loader2, PenSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Select,
@@ -24,20 +24,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Item, UserStatus } from '@/lib/types';
-import { updateUserStatus } from '@/services/userService';
+import type { Item } from '@/lib/types';
+import { addUserStatus } from '@/services/userService';
 
 interface SetStatusDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStatusUpdated: () => void;
-  currentStatus?: UserStatus;
   userListings: Item[];
 }
 
 const MAX_STATUS_LENGTH = 150;
 
-export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentStatus, userListings }: SetStatusDialogProps) {
+export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, userListings }: SetStatusDialogProps) {
   const { firebaseUser } = useAuth();
   const { toast } = useToast();
   
@@ -47,10 +46,11 @@ export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentSt
 
   useEffect(() => {
     if (open) {
-        setText(currentStatus?.text || "");
-        setSelectedItemId(currentStatus?.itemId || "none");
+        // Reset form when dialog opens
+        setText("");
+        setSelectedItemId("none");
     }
-  }, [open, currentStatus]);
+  }, [open]);
 
 
   const handleSave = () => {
@@ -60,28 +60,13 @@ export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentSt
         return;
     }
     startTransition(async () => {
-      const result = await updateUserStatus(firebaseUser.uid, text.trim(), selectedItemId === "none" ? null : selectedItemId);
+      const result = await addUserStatus(firebaseUser.uid, text.trim(), selectedItemId === "none" ? null : selectedItemId);
       if (result.success) {
-        toast({ title: "Statut mis à jour !"});
+        toast({ title: "Statut ajouté !"});
         onStatusUpdated();
       } else {
         toast({ variant: 'destructive', title: "Erreur", description: result.error });
       }
-    });
-  };
-
-  const handleClear = () => {
-    if (!firebaseUser) return;
-    startTransition(async () => {
-        const result = await updateUserStatus(firebaseUser.uid, null, null);
-        if (result.success) {
-            toast({ title: "Statut effacé."});
-            setText("");
-            setSelectedItemId("none");
-            onStatusUpdated();
-        } else {
-            toast({ variant: 'destructive', title: "Erreur", description: result.error });
-        }
     });
   };
 
@@ -94,7 +79,7 @@ export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentSt
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PenSquare className="h-5 w-5" />
-            Modifier votre statut
+            Ajouter un nouveau statut
           </DialogTitle>
           <DialogDescription>
             Partagez ce que vous faites ou mettez en avant un de vos articles. Votre statut sera visible sur votre profil.
@@ -132,25 +117,17 @@ export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentSt
             </div>
         </div>
         
-        <DialogFooter className="mt-4 pt-4 border-t sm:justify-between">
-            {currentStatus ? (
-                <Button variant="destructive" onClick={handleClear} disabled={isPending}>
-                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    Effacer le statut
-                </Button>
-            ) : <div />}
-            <div className="flex gap-2">
-                <DialogClose asChild>
-                    <Button variant="ghost">Annuler</Button>
-                </DialogClose>
-                <Button
-                    onClick={handleSave}
-                    disabled={isPending || !text.trim()}
-                >
-                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Enregistrer
-                </Button>
-            </div>
+        <DialogFooter className="mt-4 pt-4 border-t">
+            <DialogClose asChild>
+                <Button variant="ghost">Annuler</Button>
+            </DialogClose>
+            <Button
+                onClick={handleSave}
+                disabled={isPending || !text.trim()}
+            >
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enregistrer le statut
+            </Button>
         </DialogFooter>
 
       </DialogContent>

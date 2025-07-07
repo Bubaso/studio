@@ -2,6 +2,7 @@
 
 
 
+
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
@@ -47,9 +48,10 @@ export interface Item {
 }
 
 export interface UserStatus {
+  id: string; // The document ID of the status
   text: string;
   itemId?: string;
-  updatedAt: string; // ISO String
+  createdAt: string; // ISO String
 }
 
 export interface StatusFeedItem {
@@ -80,7 +82,6 @@ export interface UserProfile {
   subscriberCount?: number; // How many people subscribe to this user
   subscriptionCount?: number; // How many people this user subscribes to
   isFoundingMember?: boolean;
-  status?: UserStatus;
 }
 
 export interface Review {
