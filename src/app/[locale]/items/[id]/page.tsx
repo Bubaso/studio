@@ -162,7 +162,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
       <ConfirmSoldStatusClient item={item} />
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Left Column: Image Gallery & Seller Info on Desktop */}
+        {/* Left Column: Image Gallery, Timestamps, Desktop Seller Info */}
         <div className="space-y-4">
             <ItemMediaGallery item={item} />
             <div className="text-sm text-muted-foreground space-y-1">
@@ -186,47 +186,25 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <div className="mt-8 hidden md:block">{SellerProfileCard}</div>
         </div>
 
-        {/* Right Column: Item Details, Seller Info on Mobile, Actions */}
+        {/* Right Column: Item Details, Actions */}
         <div className="space-y-6 min-w-0">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words flex-1">{item.name}</h1>
-            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-          </div>
           
-          {/* Mobile-only Compact Seller Info */}
-          {seller && (
-            <div className="md:hidden">
-              <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
-                <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-                    <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-md hover:text-primary transition-colors truncate">
-                    {seller.name || t('anonymousSeller')}
-                  </span>
-                </Link>
-                <SubscribeButton targetUserId={seller.uid} />
-              </div>
-              {activeSellerListingsCount > 1 && (
-                  <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4 px-4">
-                      <Badge variant="secondary">
-                          {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
-                      </Badge>
-                  </Link>
-              )}
-            </div>
-          )}
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words">{item.name}</h1>
+          
+          <div className="flex justify-between items-center gap-4">
+            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+            <WhatsAppShareButton item={item} />
+          </div>
 
           {item.isSold && (
-             <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
+             <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
                   <CheckCircle className="h-4 w-4 mr-2" />
                   {t('itemSold')}
               </Badge>
           )}
 
           {item.suspectedSold && !item.isSold && (
-              <Badge variant="destructive" className="mt-2 text-base py-1 px-3">
+              <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
                   <Flag className="h-4 w-4 mr-2" />
                   {t('unconfirmedSold')}
               </Badge>
@@ -250,6 +228,42 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline text-xl">{t('itemDescription')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
+            </CardContent>
+          </Card>
+          
+          {/* Mobile-only Compact Seller Info */}
+          <div className="md:hidden">
+              {seller && (
+                <div>
+                  <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
+                    <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                        <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-md hover:text-primary transition-colors truncate">
+                        {seller.name || t('anonymousSeller')}
+                      </span>
+                    </Link>
+                    <SubscribeButton targetUserId={seller.uid} />
+                  </div>
+                  {activeSellerListingsCount > 1 && (
+                      <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4">
+                          <Badge variant="secondary">
+                              {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
+                          </Badge>
+                      </Link>
+                  )}
+                </div>
+              )}
+            </div>
+
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('deliveryDetails')}</CardTitle>
@@ -278,19 +292,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </CardContent>
           </Card>
 
-          <div className="flex items-center gap-2">
-            <WhatsAppShareButton item={item} />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline text-xl">{t('itemDescription')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
-            </CardContent>
-          </Card>
-          
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             {item && item.sellerId && !item.isSold && (
                 <ContactSellerButtonClient sellerId={item.sellerId} itemId={itemId} className="h-16 text-lg md:h-12 md:text-base" />
@@ -317,8 +318,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <SimilarListingsCarousel items={similarItems} currentItemId={itemId} />
             </section>
           )}
-          
-          <div className="md:hidden">{SellerProfileCard}</div>
           
           {item && <SellerActionsClient item={item} />}
 
@@ -347,3 +346,4 @@ export default async function ItemPage({ params }: ItemPageProps) {
     </div>
   );
 }
+

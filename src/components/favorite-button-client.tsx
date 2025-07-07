@@ -103,7 +103,7 @@ export function FavoriteButtonClient({ itemId, sellerId, className, size = 'icon
         )}
         aria-label={isFavorited ? t('ariaLabelEdit') : t('ariaLabelAdd')}
       >
-        <Heart className={cn(isFavorited ? "fill-current" : "", size === 'icon' ? "h-5 w-5" : "h-4 w-4 mr-2")} />
+        <Heart className={cn(isFavorited ? "fill-current" : "", size === 'icon' ? "h-4 w-4" : "h-4 w-4 mr-2")} />
         {size !== 'icon' && (isFavorited ? t('saved') : t('save'))}
       </Button>
 
