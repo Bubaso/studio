@@ -2,6 +2,7 @@
 
 
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item } from '@/lib/types';
 import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField } from 'firebase/firestore'; // Added updateDoc and runTransaction
@@ -179,11 +180,14 @@ export const updateUserProfile = async (
   if (data.location !== undefined) {
     firestoreUpdateData.location = data.location;
   }
-  if (data.avatarUrl) {
+  if (data.avatarUrl !== undefined) {
     authProfileUpdate.photoURL = data.avatarUrl;
     firestoreUpdateData.avatarUrl = data.avatarUrl;
-    firestoreUpdateData.dataAiHint = "profil personne";
+    if (data.avatarUrl) {
+      firestoreUpdateData.dataAiHint = "profil personne";
+    }
   }
+
 
   try {
     if (Object.keys(authProfileUpdate).length > 0) {
@@ -191,7 +195,7 @@ export const updateUserProfile = async (
     }
 
     if (Object.keys(firestoreUpdateData).length > 0) {
-      await updateDoc(userDocRef, firestoreUpdateData);
+      await updateDoc(userDocRef, firestoreUpdateData as { [x: string]: any });
     }
   } catch (error) {
     console.error("Error updating user profile:", error);
@@ -311,7 +315,7 @@ export async function updateUserStatus(uid: string, text: string | null, itemId:
 
   try {
     if (text === null) {
-      // Clear status
+      // Clear status by deleting the field
       await updateDoc(userRef, {
         status: deleteField()
       });
@@ -320,7 +324,7 @@ export async function updateUserStatus(uid: string, text: string | null, itemId:
         text: text,
         updatedAt: serverTimestamp(),
       };
-      if (itemId) {
+      if (itemId && itemId !== "none") {
         // Validate that the item belongs to the user
         const itemRef = doc(db, 'items', itemId);
         const itemSnap = await getDoc(itemRef);

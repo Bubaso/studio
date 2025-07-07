@@ -126,7 +126,7 @@ export default function ProfilePageClient() {
             <AvatarImage src={userProfile.avatarUrl || undefined} alt={userProfile.name || 'User'} data-ai-hint={userProfile.dataAiHint} />
             <AvatarFallback className="text-4xl">{(userProfile.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 text-center md:text-left">
+          <div className="flex-1 text-center md:text-left w-full">
             <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{userProfile.name || 'Utilisateur'}</h1>
             
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
@@ -158,22 +158,26 @@ export default function ProfilePageClient() {
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(userProfile.joinedDate).toLocaleDateString('fr-FR')}
             </div>
-            <div className="flex items-center justify-center md:justify-start gap-2">
-              <Button variant="outline" onClick={() => setIsStatusDialogOpen(true)}>
-                <PenSquare className="mr-2 h-4 w-4" />
-                Définir le statut
+            
+            <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
+              <Button variant="outline" onClick={() => setIsStatusDialogOpen(true)} className="w-full">
+                  <PenSquare className="mr-2 h-4 w-4" />
+                  Définir le statut
               </Button>
-              <Link href="/profile/edit">
-                <Button variant="outline">
-                  <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil
-                </Button>
-              </Link>
-               <Link href="/dashboard">
-                <Button>
-                  <LayoutDashboard className="mr-2 h-4 w-4" /> Gérer mes annonces
-                </Button>
-              </Link>
+              <div className="flex w-full gap-2">
+                  <Link href="/profile/edit" className="w-1/2">
+                      <Button variant="outline" className="w-full">
+                      <Edit3 className="mr-2 h-4 w-4" /> Modifier
+                      </Button>
+                  </Link>
+                  <Link href="/dashboard" className="w-1/2">
+                      <Button className="w-full">
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                      </Button>
+                  </Link>
+              </div>
             </div>
+
           </div>
         </CardContent>
       </Card>

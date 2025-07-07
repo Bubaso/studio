@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PenSquare, Trash2, X } from 'lucide-react';
+import { Loader2, PenSquare, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   Select,
@@ -41,9 +41,17 @@ export function SetStatusDialog({ open, onOpenChange, onStatusUpdated, currentSt
   const { firebaseUser } = useAuth();
   const { toast } = useToast();
   
-  const [text, setText] = useState(currentStatus?.text || "");
-  const [selectedItemId, setSelectedItemId] = useState<string | "none">(currentStatus?.itemId || "none");
+  const [text, setText] = useState("");
+  const [selectedItemId, setSelectedItemId] = useState<string>("none");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (open) {
+        setText(currentStatus?.text || "");
+        setSelectedItemId(currentStatus?.itemId || "none");
+    }
+  }, [open, currentStatus]);
+
 
   const handleSave = () => {
     if (!firebaseUser) return;
