@@ -6,7 +6,7 @@ import type { UserProfile, Item, ItemCategory, DeliveryOption } from '@/lib/type
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront, Handshake, Wallet, ShieldCheck } from 'lucide-react'; 
+import { Package, MapPin, Clock, Flag, CheckCircle, Video, Phone, Truck, Bike, Car, CarFront, Handshake, Wallet, ShieldCheck, Store } from 'lucide-react'; 
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ContactSellerButtonClient } from '@/components/contact-seller-button-client';
@@ -284,26 +284,24 @@ export default async function ItemPage({ params }: ItemPageProps) {
           {/* Mobile-only Compact Seller Info */}
           <div className="md:hidden">
               {seller && (
-                <div>
-                  <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
-                    <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-                        <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-semibold text-md hover:text-primary transition-colors truncate">
-                        {seller.name || t('anonymousSeller')}
-                      </span>
-                    </Link>
-                    <SubscribeButton targetUserId={seller.uid} />
-                  </div>
+                <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
+                  <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                      <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-semibold text-md hover:text-primary transition-colors truncate">
+                      {seller.name || t('anonymousSeller')}
+                    </span>
+                  </Link>
                   {activeSellerListingsCount > 1 && (
-                      <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4">
-                          <Badge variant="secondary">
-                              {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
-                          </Badge>
+                      <Link href={`/profile/${seller.uid}`} passHref>
+                         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" aria-label={`Voir les autres annonces de ${seller.name || 'ce vendeur'}`}>
+                              <Store className="h-5 w-5" />
+                         </Button>
                       </Link>
                   )}
+                  <SubscribeButton targetUserId={seller.uid} />
                 </div>
               )}
             </div>
