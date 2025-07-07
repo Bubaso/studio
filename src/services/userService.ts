@@ -4,6 +4,7 @@
 
 
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item, UserStatus } from '@/lib/types';
 import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc } from 'firebase/firestore'; // Added updateDoc and runTransaction
@@ -123,7 +124,7 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         freeListingsRemaining: data.freeListingsRemaining ?? 0,
         subscriberCount: data.subscriberCount || 0,
         subscriptionCount: data.subscriptionCount || 0,
-        isFoundingMember: data.isFoundingMember || false, // Add new field
+        isFoundingMember: data.isFoundingMember || false,
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);
@@ -311,9 +312,10 @@ export async function addUserStatus(uid: string, text: string, itemId: string | 
     return { success: false, error: "Status text cannot be empty." };
   }
   const statusesRef = collection(db, 'users', uid, 'statuses');
-  const statusData: { text: string; createdAt: any; itemId?: string } = {
+  const statusData: { text: string; createdAt: any; updatedAt: any; itemId?: string } = {
     text: text,
     createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   };
 
   if (itemId && itemId !== "none") {
@@ -361,6 +363,7 @@ export async function getUserStatuses(userId: string): Promise<UserStatus[]> {
         text: data.text,
         itemId: data.itemId,
         createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+        updatedAt: convertTimestampToISO(data.updatedAt as Timestamp),
       } as UserStatus;
     });
   } catch (error) {
@@ -377,7 +380,7 @@ export async function getFollowingStatusFeed(userId: string): Promise<StatusFeed
 
     const statusPromises = subscriptions.map(async (user) => {
       const statusesRef = collection(db, 'users', user.uid, 'statuses');
-      const q = query(statusesRef, orderBy('createdAt', 'desc'), limit(1));
+      const q = query(statusesRef, orderBy('updatedAt', 'desc'), limit(1));
       const statusSnapshot = await getDocs(q);
 
       if (statusSnapshot.empty) {
@@ -391,6 +394,7 @@ export async function getFollowingStatusFeed(userId: string): Promise<StatusFeed
         text: statusData.text,
         itemId: statusData.itemId,
         createdAt: convertTimestampToISO(statusData.createdAt),
+        updatedAt: convertTimestampToISO(statusData.updatedAt),
       };
 
       let itemData: Item | null = null;
@@ -418,7 +422,7 @@ export async function getFollowingStatusFeed(userId: string): Promise<StatusFeed
 
     // Sort by status creation time, newest first
     const sortedFeed = feedItems.sort((a, b) =>
-      new Date(b.status.createdAt).getTime() - new Date(a.status.createdAt).getTime()
+      new Date(b.status.updatedAt).getTime() - new Date(a.status.updatedAt).getTime()
     );
 
     return sortedFeed;

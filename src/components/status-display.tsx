@@ -6,7 +6,7 @@ import { useEffect, useState, useTransition } from 'react';
 import type { UserProfile, UserStatus, Item } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Pin, Trash2, Loader2 } from 'lucide-react';
-import { getItemByIdFromFirestore, deleteItem } from '@/services/itemService';
+import { getItemByIdFromFirestore } from '@/services/itemService';
 import { deleteUserStatus } from '@/services/userService';
 import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 interface StatusDisplayProps {
   user: UserProfile;
   status: UserStatus;
-  onStatusDeleted: (statusId: string) => void;
+  onStatusDeleted?: (statusId: string) => void;
 }
 
 export function StatusDisplay({ user, status, onStatusDeleted }: StatusDisplayProps) {
@@ -50,7 +50,7 @@ export function StatusDisplay({ user, status, onStatusDeleted }: StatusDisplayPr
         const result = await deleteUserStatus(user.uid, status.id);
         if(result.success) {
             toast({title: "Statut supprimé"});
-            onStatusDeleted(status.id);
+            onStatusDeleted?.(status.id);
         } else {
             toast({variant: "destructive", title: "Erreur", description: "Impossible de supprimer le statut."})
         }

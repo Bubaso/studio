@@ -3,6 +3,7 @@
 
 
 
+
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
@@ -52,6 +53,7 @@ export interface UserStatus {
   text: string;
   itemId?: string;
   createdAt: string; // ISO String
+  updatedAt: string; // ISO String, for sorting the feed
 }
 
 export interface StatusFeedItem {

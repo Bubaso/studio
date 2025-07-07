@@ -3,8 +3,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import type { UserProfile, Item } from '@/lib/types';
-import { getUserDocument, getSubscribersForUser, getSubscriptionsForUser } from '@/services/userService';
+import type { UserProfile, Item, UserStatus } from '@/lib/types';
+import { getUserDocument, getSubscribersForUser, getSubscriptionsForUser, getUserStatuses } from '@/services/userService';
 import { getUserListingsFromFirestore } from '@/services/itemService';
 import { UserProfileCard } from '@/components/user-profile-card';
 import { Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function UserProfilePageClient({ userId }: UserProfilePageClientP
   const [listings, setListings] = useState<Item[]>([]);
   const [subscriptions, setSubscriptions] = useState<UserProfile[]>([]);
   const [subscribers, setSubscribers] = useState<UserProfile[]>([]);
+  const [statuses, setStatuses] = useState<UserStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,12 +28,13 @@ export default function UserProfilePageClient({ userId }: UserProfilePageClientP
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch all data in parallel from the client
-        const [user, userListings, userSubscriptions, userSubscribers] = await Promise.all([
+        // Fetch all data in parallel
+        const [user, userListings, userSubscriptions, userSubscribers, userStatuses] = await Promise.all([
           getUserDocument(userId),
           getUserListingsFromFirestore(userId),
           getSubscriptionsForUser(userId),
           getSubscribersForUser(userId),
+          getUserStatuses(userId),
         ]);
 
         if (!user) {
@@ -42,6 +44,7 @@ export default function UserProfilePageClient({ userId }: UserProfilePageClientP
           setListings(userListings);
           setSubscriptions(userSubscriptions);
           setSubscribers(userSubscribers);
+          setStatuses(userStatuses);
         }
       } catch (e: any) {
         console.error("Failed to fetch user profile data:", e);
@@ -71,7 +74,18 @@ export default function UserProfilePageClient({ userId }: UserProfilePageClientP
 
   return (
     <div className="space-y-8">
-      {userProfile.status && <StatusDisplay user={userProfile} status={userProfile.status} />}
+      {statuses.length > 0 && (
+        <div className="space-y-4">
+          {statuses.map(status => (
+            <StatusDisplay
+              key={status.id}
+              user={userProfile}
+              status={status}
+              // onStatusDeleted is not passed here as you can't delete other's statuses
+            />
+          ))}
+        </div>
+      )}
       <UserProfileCard
         user={userProfile}
         listings={listings}
