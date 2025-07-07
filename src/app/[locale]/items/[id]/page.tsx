@@ -23,6 +23,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ItemViewCount } from '@/components/item-view-count';
 import { FavoriteButtonClient } from '@/components/favorite-button-client';
+import { Separator } from '@/components/ui/separator';
 
 export const dynamic = 'force-dynamic';
 
@@ -171,6 +172,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         {/* Right Column: Item Details, Actions */}
         <div className="space-y-6 min-w-0">
+          <Separator className="my-4" />
           <div className="text-sm text-muted-foreground space-y-1">
               <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
@@ -189,6 +191,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                   </div>
               )}
             </div>
+           <Separator className="my-4" />
           
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words">{item.name}</h1>
           
@@ -197,7 +200,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <WhatsAppShareButton item={item} />
           </div>
 
-          <div className="flex items-center gap-2 !-mt-2">
+          <div className="flex items-center gap-2 !mt-4">
             <ItemViewCount itemId={item.id} />
             <FavoriteButtonClient
               itemId={item.id}
@@ -205,6 +208,9 @@ export default async function ItemPage({ params }: ItemPageProps) {
               className="bg-background/70 hover:bg-background/90 h-7 w-7"
             />
           </div>
+          
+          <Separator className="my-4" />
+
 
           {item.isSold && (
              <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
@@ -247,33 +253,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </CardContent>
           </Card>
           
-          {/* Mobile-only Compact Seller Info */}
-          <div className="md:hidden">
-              {seller && (
-                <div>
-                  <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
-                    <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
-                        <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-semibold text-md hover:text-primary transition-colors truncate">
-                        {seller.name || t('anonymousSeller')}
-                      </span>
-                    </Link>
-                    <SubscribeButton targetUserId={seller.uid} />
-                  </div>
-                  {activeSellerListingsCount > 1 && (
-                      <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4">
-                          <Badge variant="secondary">
-                              {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
-                          </Badge>
-                      </Link>
-                  )}
-                </div>
-              )}
-            </div>
-
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('deliveryDetails')}</CardTitle>
@@ -301,6 +280,33 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 )}
             </CardContent>
           </Card>
+          
+          {/* Mobile-only Compact Seller Info */}
+          <div className="md:hidden">
+              {seller && (
+                <div>
+                  <div className="flex items-center gap-3 p-3 border-t border-b -mx-4 px-4 my-4">
+                    <Link href={`/profile/${seller.uid}`} className="flex-1 flex items-center gap-3 overflow-hidden">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={seller.avatarUrl || undefined} alt={seller.name || 'Vendeur'} data-ai-hint={seller.dataAiHint} />
+                        <AvatarFallback>{(seller.name || 'V').substring(0,1).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-md hover:text-primary transition-colors truncate">
+                        {seller.name || t('anonymousSeller')}
+                      </span>
+                    </Link>
+                    <SubscribeButton targetUserId={seller.uid} />
+                  </div>
+                  {activeSellerListingsCount > 1 && (
+                      <Link href={`/profile/${seller.uid}`} className="block -mt-4 mb-4">
+                          <Badge variant="secondary">
+                              {t('sellerActiveListings', { count: activeSellerListingsCount -1 })}
+                          </Badge>
+                      </Link>
+                  )}
+                </div>
+              )}
+            </div>
 
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
             {item && item.sellerId && !item.isSold && (

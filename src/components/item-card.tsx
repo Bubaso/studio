@@ -70,10 +70,14 @@ export function ItemCard({ item }: ItemCardProps) {
                     </Badge>
                 </div>
             )}
-          </div>
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
-            <ItemViewCount itemId={item.id} />
-            <FavoriteButtonClient itemId={item.id} sellerId={item.sellerId} className="bg-background/70 hover:bg-background/90 h-7 w-7" />
+
+            <div className="absolute bottom-2 left-2 z-10">
+                <ItemViewCount itemId={item.id} />
+            </div>
+
+            <div className="absolute top-2 right-2 z-10 opacity-80 group-hover/itemcard:opacity-100 transition-opacity">
+                <FavoriteButtonClient itemId={item.id} sellerId={item.sellerId} className="bg-background/70 hover:bg-background/90 h-7 w-7" />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-3 flex-grow flex flex-col">
