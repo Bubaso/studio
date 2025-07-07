@@ -679,5 +679,11 @@
     "ariaLabelEdit": "Koleksiyonları düzenle",
     "saved": "Kaydedildi",
     "save": "Kaydet"
+  },
+  "StatusFeed": {
+    "title": "Ağınızdan"
+  },
+  "StatusDisplay": {
+    "title": "{name} Kullanıcısının Durumu"
   }
 }

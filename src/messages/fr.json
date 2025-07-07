@@ -679,5 +679,11 @@
     "ariaLabelEdit": "Modifier les collections",
     "saved": "Sauvegardé",
     "save": "Sauvegarder"
+  },
+  "StatusFeed": {
+    "title": "Depuis Votre Réseau"
+  },
+  "StatusDisplay": {
+    "title": "Statut de {name}"
   }
 }

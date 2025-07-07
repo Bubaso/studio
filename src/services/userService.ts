@@ -1,12 +1,15 @@
 
 
+
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
-import type { UserProfile, ViewHistoryItem } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment } from 'firebase/firestore'; // Added updateDoc and runTransaction
+import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item } from '@/lib/types';
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField } from 'firebase/firestore'; // Added updateDoc and runTransaction
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { sendWelcomeEmail } from './emailService';
+import { getItemByIdFromFirestore } from './itemService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
@@ -119,6 +122,11 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
         subscriberCount: data.subscriberCount || 0,
         subscriptionCount: data.subscriptionCount || 0,
         isFoundingMember: data.isFoundingMember || false, // Add new field
+        status: data.status ? { // Add status field
+            text: data.status.text,
+            itemId: data.status.itemId,
+            updatedAt: convertTimestampToISO(data.status.updatedAt as Timestamp),
+        } : undefined,
       } as UserProfile;
     } else {
       console.log(`No such user document with UID: ${uid}`);
@@ -291,6 +299,88 @@ export async function getSubscribersForUser(userId: string): Promise<UserProfile
     return userProfiles.filter((p): p is UserProfile => p !== null);
   } catch (error) {
     console.error(`Error fetching subscribers for user ${userId}:`, error);
+    return [];
+  }
+}
+
+export async function updateUserStatus(uid: string, text: string | null, itemId: string | null): Promise<{ success: boolean; error?: string }> {
+  if (!uid) {
+    return { success: false, error: "User not authenticated." };
+  }
+  const userRef = doc(db, 'users', uid);
+
+  try {
+    if (text === null) {
+      // Clear status
+      await updateDoc(userRef, {
+        status: deleteField()
+      });
+    } else {
+      const statusUpdate: { text: string; itemId?: string; updatedAt: any } = {
+        text: text,
+        updatedAt: serverTimestamp(),
+      };
+      if (itemId) {
+        // Validate that the item belongs to the user
+        const itemRef = doc(db, 'items', itemId);
+        const itemSnap = await getDoc(itemRef);
+        if (!itemSnap.exists() || itemSnap.data().sellerId !== uid) {
+          return { success: false, error: "You can only feature your own items in your status." };
+        }
+        statusUpdate.itemId = itemId;
+      }
+      await updateDoc(userRef, {
+        status: statusUpdate
+      });
+    }
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating user status:", error);
+    return { success: false, error: error.message || "Could not update status." };
+  }
+}
+
+export async function getFollowingStatusFeed(userId: string): Promise<StatusFeedItem[]> {
+  if (!userId) return [];
+  try {
+    const subscriptions = await getSubscriptionsForUser(userId);
+    if (subscriptions.length === 0) return [];
+    
+    // Filter out users without a recent status
+    const usersWithStatus = subscriptions.filter(user => user.status && user.status.updatedAt);
+    
+    // Sort by status update time, newest first
+    const sortedUsers = usersWithStatus.sort((a, b) => 
+      new Date(b.status!.updatedAt).getTime() - new Date(a.status!.updatedAt).getTime()
+    );
+
+    // Fetch item details for statuses that have an itemId
+    const feedItems = await Promise.all(
+      sortedUsers.map(async (user) => {
+        let itemData: Item | null = null;
+        if (user.status!.itemId) {
+          itemData = await getItemByIdFromFirestore(user.status!.itemId);
+        }
+        return {
+          status: user.status!,
+          user: {
+            uid: user.uid,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+          },
+          item: itemData ? {
+            id: itemData.id,
+            name: itemData.name,
+            price: itemData.price,
+            imageUrls: itemData.imageUrls,
+          } : null,
+        } as StatusFeedItem;
+      })
+    );
+
+    return feedItems;
+  } catch (error) {
+    console.error(`Error fetching status feed for user ${userId}:`, error);
     return [];
   }
 }

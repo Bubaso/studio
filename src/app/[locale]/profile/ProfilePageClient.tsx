@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ItemCard } from '@/components/item-card';
-import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2, LayoutDashboard } from 'lucide-react';
+import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2, LayoutDashboard, PenSquare } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,8 @@ import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteUserAccount, getSubscribersForUser, getSubscriptionsForUser } from '@/services/userService';
 import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
+import { SetStatusDialog } from '@/components/set-status-dialog';
+import { StatusDisplay } from '@/components/status-display';
 
 export default function ProfilePageClient() {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -26,11 +28,12 @@ export default function ProfilePageClient() {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const { userProfile, listings, isLoading: isProfileLoading } = useUserProfile(firebaseUser?.uid || null);
+  const { userProfile, listings, isLoading: isProfileLoading, refetch: refetchProfile } = useUserProfile(firebaseUser?.uid || null);
   
   const [subscribers, setSubscribers] = useState<UserProfile[]>([]);
   const [subscriptions, setSubscriptions] = useState<UserProfile[]>([]);
   const [isLoadingSubs, setIsLoadingSubs] = useState(true);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -79,6 +82,11 @@ export default function ProfilePageClient() {
     }
   };
 
+  const handleStatusUpdate = () => {
+    setIsStatusDialogOpen(false);
+    refetchProfile(); // Re-fetch profile to show the new status
+  };
+
   const isLoading = isAuthLoading || isProfileLoading || isLoadingSubs;
 
   if (isLoading) {
@@ -102,6 +110,16 @@ export default function ProfilePageClient() {
 
   return (
     <div className="space-y-8">
+       <SetStatusDialog 
+        open={isStatusDialogOpen} 
+        onOpenChange={setIsStatusDialogOpen}
+        onStatusUpdated={handleStatusUpdate}
+        currentStatus={userProfile.status}
+        userListings={listings.filter(l => !l.isSold)}
+      />
+
+      {userProfile.status && <StatusDisplay user={userProfile} status={userProfile.status} />}
+
       <Card className="shadow-lg">
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
           <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-primary">
@@ -141,6 +159,10 @@ export default function ProfilePageClient() {
               <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(userProfile.joinedDate).toLocaleDateString('fr-FR')}
             </div>
             <div className="flex items-center justify-center md:justify-start gap-2">
+              <Button variant="outline" onClick={() => setIsStatusDialogOpen(true)}>
+                <PenSquare className="mr-2 h-4 w-4" />
+                Définir le statut
+              </Button>
               <Link href="/profile/edit">
                 <Button variant="outline">
                   <Edit3 className="mr-2 h-4 w-4" /> Modifier le profil

@@ -1,147 +1,109 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper function to check if a user is authenticated
-    function isAuthenticated() {
+
+    // Helper Functions
+    function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Helper function to check if the user is the owner of a document
+
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
     // USER PROFILES
     match /users/{userId} {
-      // Anyone can read a user's public profile
       allow read: if true;
-      // Only the user themselves can create, update, or delete their profile
-      allow create, update, delete: if isOwner(userId);
+      allow create: if isOwner(userId);
 
-      // Subcollections of user profiles
+      // Allow a user to update specific fields on their own document.
+      // The validity of the 'status' object's content (e.g., item ownership)
+      // is checked in the trusted server-side service function (updateUserStatus).
+      allow update: if isOwner(userId);
       
-      // Notifications are private
-      match /notifications/{notificationId} {
-        allow read, write, delete: if isOwner(userId);
-      }
-      
-      // View history is private
-      match /viewHistory/{historyId} {
-        allow read, write, delete: if isOwner(userId);
-      }
-
-      // Subscriptions and subscribers lists are public to read
-      match /subscriptions/{subscriptionId} {
+      match /subscriptions/{targetId} {
         allow read: if true;
-        allow write, delete: if isOwner(userId);
+        allow create, delete: if isOwner(userId);
       }
-      
       match /subscribers/{subscriberId} {
         allow read: if true;
-        allow write, delete: if isOwner(userId);
+        allow write: if false; // Only server can write here to prevent tampering
+      }
+      match /viewHistory/{historyId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow update: if isOwner(userId) && request.resource.data.keys().hasOnly(['isRead']);
+        // Notifications are created by a trusted server environment
+        allow create: if false; 
+        allow delete: if isOwner(userId);
+      }
+    }
+    
+    // COLLECTIONS (Favorites)
+    match /collections/{collectionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      match /items/{itemId} {
+        allow read: if isSignedIn();
+        // Allow creation only by the collection owner.
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/collections/$(collectionId)).data.userId == request.auth.uid;
+        // Allow deletion only by the collection owner.
+        allow delete: if isSignedIn() && get(/databases/$(database)/documents/collections/$(collectionId)).data.userId == request.auth.uid;
       }
     }
     
     // ITEMS
     match /items/{itemId} {
-      // Anyone can read an item
       allow read: if true;
-      // Only authenticated users can create items, and they must be the seller
-      allow create: if isAuthenticated() && request.resource.data.sellerId == request.auth.uid;
-      // Only the seller can update or delete their item
-      allow update, delete: if isOwner(resource.data.sellerId);
-      
-      // Views on an item
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+
       match /views/{viewId} {
-        // Only the item's seller can read the list of views
-        allow list: if isOwner(get(/databases/$(database)/documents/items/$(itemId)).data.sellerId);
-        // Any authenticated user can create a view (log it)
-        allow create: if isAuthenticated();
-        // Nobody can read a single view or delete/update them from the client
-        allow read, update, delete: if false;
-      }
-    }
-    
-    // COLLECTIONS (FAVORITES)
-    match /collections/{collectionId} {
-      // Anyone can read a collection's basic info
-      allow read: if true;
-      // Only authenticated users can create a collection for themselves
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      // Only the owner can update or delete their collection
-      allow update, delete: if isOwner(resource.data.userId);
-      
-      // Items within a collection
-      match /items/{itemId} {
-         // Anyone can read the list of items in a collection
-        allow read: if true;
-        // Only the owner of the parent collection can add/remove items
-        allow write, delete: if isOwner(get(/databases/$(database)/documents/collections/$(collectionId)).data.userId);
-      }
-    }
-
-    // MESSAGE THREADS
-    match /messageThreads/{threadId} {
-      // Only participants can access a thread document
-      allow get: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-      // Users can only list threads they are a part of
-      allow list: if isAuthenticated() && request.auth.uid == request.query.where.array_contains[0];
-      // Participants can update a thread (e.g., mark as seen, block, etc.)
-      allow update: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-       // Writing/creating new threads is handled by secure backend logic, not client rules
-      allow create: if false;
-
-
-      // Messages within a thread
-      match /messages/{messageId} {
-        // Only participants can read messages
-        allow read: if isAuthenticated() && (get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
-                        get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid);
-        // Only participants can create messages, and they must be the sender
-        allow create: if isAuthenticated() && (get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[0] == request.auth.uid ||
-                        get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds[1] == request.auth.uid) &&
-                        request.resource.data.senderId == request.auth.uid;
-        // Nobody can update or delete messages
-        allow update, delete: if false;
+        allow create: if isSignedIn();
+        allow read: if resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/items/$(itemId)).data.sellerId == request.auth.uid;
       }
     }
     
     // REVIEWS
     match /reviews/{reviewId} {
-       // Anyone can read reviews
-      allow read: if true;
-      // Only authenticated users can create a review for themselves
-      allow create: if isOwner(request.resource.data.reviewerId);
-      // Nobody can update or delete reviews from the client
-      allow update, delete: if false;
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.reviewerId == request.auth.uid;
+        allow update, delete: if false; // No updates/deletes to maintain integrity
+    }
+
+    // MESSAGE THREADS
+    match /messageThreads/{threadId} {
+        allow read, update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+        allow create: if false; // Handled by trusted API route
+        
+        match /messages/{messageId} {
+            allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+            allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+            allow update: if isSignedIn() && request.auth.uid == request.resource.data.senderId; // for read status
+        }
     }
     
     // PRODUCT REPORTS
     match /productReports/{itemId}/reports/{userId} {
-      // Only the reporter can create their own report document
-      allow create: if isOwner(userId);
-      // Nobody can read/update/delete reports from the client
-      allow read, update, delete: if false;
-    }
-
-    // PAYMENT INTENTS (PRIVATE)
-    match /paymentIntents/{intentId} {
-      // Only the owner of the payment intent can read/write it before completion
-      allow read, write: if isAuthenticated() && (isOwner(resource.data.userId) || isOwner(request.resource.data.userId));
-      // Nobody can list or delete them from the client
-      allow list, delete: if false;
-    }
-
-    // RATE LIMITS (Server-side only)
-    match /rateLimits/{limitId} {
-      allow read, write: if false;
+        allow read: if isOwner(userId);
+        allow create: if isSignedIn() && isOwner(userId);
+        allow delete: if isSignedIn();
     }
     
-    // USER FAVORITES (Legacy, should be phased out for collections)
-    match /userFavorites/{favoriteId} {
-      allow read, write, delete: if isAuthenticated() && isOwner(resource.data.userId);
+    // SERVER-ONLY COLLECTIONS
+    match /paymentIntents/{intentId} {
+        allow read, write: if false;
+    }
+    match /rateLimits/{limitId} {
+        allow read, write: if false;
     }
   }
 }

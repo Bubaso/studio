@@ -1,5 +1,7 @@
 
 
+
+
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
@@ -44,6 +46,27 @@ export interface Item {
   shippingPayer?: ShippingPayer;
 }
 
+export interface UserStatus {
+  text: string;
+  itemId?: string;
+  updatedAt: string; // ISO String
+}
+
+export interface StatusFeedItem {
+    status: UserStatus;
+    user: {
+        uid: string;
+        name: string | null;
+        avatarUrl: string | null;
+    };
+    item?: {
+        id: string;
+        name: string;
+        price: number;
+        imageUrls: string[];
+    } | null;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
@@ -57,6 +80,7 @@ export interface UserProfile {
   subscriberCount?: number; // How many people subscribe to this user
   subscriptionCount?: number; // How many people this user subscribes to
   isFoundingMember?: boolean;
+  status?: UserStatus;
 }
 
 export interface Review {

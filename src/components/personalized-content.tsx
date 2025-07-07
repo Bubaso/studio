@@ -1,16 +1,19 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import type { Item } from '@/lib/types';
+import type { Item, StatusFeedItem } from '@/lib/types';
 import { getPersonalizedRecommendations } from '@/ai/flows/suggest-recommendations-flow';
+import { getFollowingStatusFeed } from '@/services/userService';
 import { PersonalizedRecommendations } from './personalized-recommendations';
 import { FeaturedItemsGrid } from './featured-items-grid';
 import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useTranslations } from 'next-intl';
+import { StatusFeed } from './status-feed';
 
 interface PersonalizedContentProps {
   latestItems: Item[];
@@ -47,12 +50,18 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
   const t = useTranslations('HomePage');
   const { firebaseUser } = useAuth();
   const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
+  const [statusFeed, setStatusFeed] = useState<StatusFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (firebaseUser) {
-      getPersonalizedRecommendations(firebaseUser.uid).then(items => {
-        setRecommendedItems(items);
+      // Fetch both recommendations and status feed in parallel
+      Promise.all([
+        getFollowingStatusFeed(firebaseUser.uid),
+        getPersonalizedRecommendations(firebaseUser.uid)
+      ]).then(([feed, recs]) => {
+        setStatusFeed(feed);
+        setRecommendedItems(recs);
         setIsLoading(false);
       });
     } else {
@@ -60,26 +69,33 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
     }
   }, [firebaseUser]);
 
-  if (isLoading) {
-    return <RecommendationsSkeleton />;
-  }
-
-  if (recommendedItems.length > 0) {
-    return <PersonalizedRecommendations items={recommendedItems} />;
-  }
+  const MainContent = () => {
+    if (isLoading) {
+        return <RecommendationsSkeleton />;
+    }
+    if (recommendedItems.length > 0) {
+        return <PersonalizedRecommendations items={recommendedItems} />;
+    }
+    // Fallback to latest items
+    return (
+        <section className="py-4 md:py-6">
+            <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
+                {t('latestFindings')}
+            </h2>
+            <FeaturedItemsGrid initialItems={latestItems} />
+            <div className="text-center mt-6 md:mt-8">
+                <Link href="/browse">
+                <Button variant="secondary" size="lg">{t('viewAllItems')}</Button>
+                </Link>
+            </div>
+        </section>
+    );
+  };
   
-  // Fallback to latest items if no recommendations
   return (
-    <section className="py-4 md:py-6">
-        <h2 className="text-xl sm:text-2xl font-bold font-headline text-center mb-4 md:mb-6 text-primary">
-            {t('latestFindings')}
-        </h2>
-        <FeaturedItemsGrid initialItems={latestItems} />
-        <div className="text-center mt-6 md:mt-8">
-            <Link href="/browse">
-            <Button variant="secondary" size="lg">{t('viewAllItems')}</Button>
-            </Link>
-        </div>
-    </section>
+    <>
+      <MainContent />
+      {!isLoading && statusFeed.length > 0 && <StatusFeed items={statusFeed} />}
+    </>
   );
 }

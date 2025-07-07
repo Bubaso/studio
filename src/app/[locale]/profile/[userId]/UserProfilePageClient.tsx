@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { getUserDocument, getSubscribersForUser, getSubscriptionsForUser } from 
 import { getUserListingsFromFirestore } from '@/services/itemService';
 import { UserProfileCard } from '@/components/user-profile-card';
 import { Loader2 } from 'lucide-react';
+import { StatusDisplay } from '@/components/status-display';
 
 interface UserProfilePageClientProps {
   userId: string;
@@ -68,11 +70,14 @@ export default function UserProfilePageClient({ userId }: UserProfilePageClientP
   }
 
   return (
-    <UserProfileCard
-      user={userProfile}
-      listings={listings}
-      subscriptions={subscriptions}
-      subscribers={subscribers}
-    />
+    <div className="space-y-8">
+      {userProfile.status && <StatusDisplay user={userProfile} status={userProfile.status} />}
+      <UserProfileCard
+        user={userProfile}
+        listings={listings}
+        subscriptions={subscriptions}
+        subscribers={subscribers}
+      />
+    </div>
   );
 }

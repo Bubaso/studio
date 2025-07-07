@@ -679,5 +679,11 @@
     "ariaLabelEdit": "Edit collections",
     "saved": "Saved",
     "save": "Save"
+  },
+  "StatusFeed": {
+    "title": "From Your Network"
+  },
+  "StatusDisplay": {
+    "title": "{name}'s Status"
   }
 }
