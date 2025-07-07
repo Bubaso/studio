@@ -160,7 +160,8 @@
       "saveChanges": "Sauvegarder les modifications",
       "createListing": "Créer l'annonce",
       "sending": "Envoi en cours...",
-      "submitting": "Soumission de l'annonce..."
+      "submitting": "Soumission de l'annonce...",
+      "signIn": "Se connecter"
     },
     "dialogs": {
       "insufficientCreditsTitle": "Crédits Insuffisants",

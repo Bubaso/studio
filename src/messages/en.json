@@ -160,7 +160,8 @@
       "saveChanges": "Save Changes",
       "createListing": "Create Listing",
       "sending": "Sending...",
-      "submitting": "Submitting listing..."
+      "submitting": "Submitting listing...",
+      "signIn": "Sign In"
     },
     "dialogs": {
       "insufficientCreditsTitle": "Insufficient Credits",

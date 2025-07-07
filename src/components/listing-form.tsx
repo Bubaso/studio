@@ -462,7 +462,7 @@ export function ListingForm({ initialItemData = null }: ListingFormProps) {
             <h2 className="text-2xl font-semibold mb-2">{t('toasts.authRequired')}</h2>
             <p className="text-muted-foreground mb-4">{t('toasts.authRequired')}</p>
             <Link href={`/auth/signin?redirect=${isEditMode ? `/items/${initialItemData?.id}/edit` : '/sell'}`}>
-                <Button>{t('Header.userMenu.signIn')}</Button>
+                <Button>{t('buttons.signIn')}</Button>
             </Link>
         </div>
      )

@@ -160,7 +160,8 @@
       "saveChanges": "Değişiklikleri Kaydet",
       "createListing": "İlan Oluştur",
       "sending": "Gönderiliyor...",
-      "submitting": "İlan gönderiliyor..."
+      "submitting": "İlan gönderiliyor...",
+      "signIn": "Giriş Yap"
     },
     "dialogs": {
       "insufficientCreditsTitle": "Yetersiz Kredi",
