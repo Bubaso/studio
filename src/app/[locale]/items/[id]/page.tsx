@@ -192,18 +192,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words">{item.name}</h1>
           
-          <div className="flex items-center gap-2 pt-2 !-mt-4">
+          <div className="flex justify-between items-center gap-4">
+            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+            <WhatsAppShareButton item={item} />
+          </div>
+
+          <div className="flex items-center gap-2 !-mt-2">
             <ItemViewCount itemId={item.id} />
             <FavoriteButtonClient
               itemId={item.id}
               sellerId={item.sellerId}
               className="bg-background/70 hover:bg-background/90 h-7 w-7"
             />
-          </div>
-
-          <div className="flex justify-between items-center gap-4">
-            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
-            <WhatsAppShareButton item={item} />
           </div>
 
           {item.isSold && (
@@ -356,4 +356,3 @@ export default async function ItemPage({ params }: ItemPageProps) {
     </div>
   );
 }
-
