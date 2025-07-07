@@ -172,7 +172,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
 
         {/* Right Column: Item Details, Actions */}
         <div className="space-y-6 min-w-0">
-          <Separator className="my-4" />
           <div className="text-sm text-muted-foreground space-y-1">
               <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
@@ -211,21 +210,6 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
           <Separator className="my-4" />
 
-
-          {item.isSold && (
-             <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {t('itemSold')}
-              </Badge>
-          )}
-
-          {item.suspectedSold && !item.isSold && (
-              <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
-                  <Flag className="h-4 w-4 mr-2" />
-                  {t('unconfirmedSold')}
-              </Badge>
-          )}
-          
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="text-sm py-1 px-3">
               <Package className="h-4 w-4 mr-2" />
@@ -244,6 +228,8 @@ export default async function ItemPage({ params }: ItemPageProps) {
             )}
           </div>
           
+           <Separator className="my-4" />
+          
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('itemDescription')}</CardTitle>
@@ -252,7 +238,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <p className="text-muted-foreground whitespace-pre-wrap break-words">{item.description}</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('deliveryDetails')}</CardTitle>
@@ -280,6 +266,20 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 )}
             </CardContent>
           </Card>
+          
+          {item.isSold && (
+             <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  {t('itemSold')}
+              </Badge>
+          )}
+
+          {item.suspectedSold && !item.isSold && (
+              <Badge variant="destructive" className="!mt-2 text-base py-1 px-3">
+                  <Flag className="h-4 w-4 mr-2" />
+                  {t('unconfirmedSold')}
+              </Badge>
+          )}
           
           {/* Mobile-only Compact Seller Info */}
           <div className="md:hidden">
