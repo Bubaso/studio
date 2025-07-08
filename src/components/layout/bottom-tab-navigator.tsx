@@ -32,17 +32,17 @@ export function BottomTabNavigator() {
                 {/* Absolutely positioned container for the buttons */}
                 <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-start gap-16">
                     
-                    {/* Explorer Button */}
+                    {/* Jënd Button */}
                     <Link href="/browse" className="flex flex-col items-center justify-center text-center">
-                        <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg border-4 border-background">
+                        <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
                             <ShoppingCart className="h-8 w-8 text-primary-foreground" />
                         </div>
                         <span className="text-xs text-muted-foreground mt-1">Jënd</span>
                     </Link>
 
-                    {/* Vendre Button */}
+                    {/* Jaay Button */}
                     <Link href="/sell" className="flex flex-col items-center justify-center text-center">
-                        <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg border-4 border-background">
+                        <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
                             <PlusCircle className="h-8 w-8 text-primary-foreground" />
                         </div>
                         <span className="text-xs text-muted-foreground mt-1">Jaay</span>
