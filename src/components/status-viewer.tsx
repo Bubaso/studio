@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import type { StatusFeedItem } from '@/lib/types';
@@ -68,6 +68,9 @@ export function StatusViewer({ items, startIndex, open, onOpenChange }: StatusVi
         onPointerUp={() => setIsPaused(false)}
         className="p-0 bg-black/95 border-none w-screen h-screen max-w-full max-h-full sm:h-[95vh] sm:w-auto sm:max-w-md sm:aspect-[9/16] sm:rounded-2xl flex flex-col gap-0 overflow-hidden"
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Statut de {currentItem.user.name}</DialogTitle>
+        </DialogHeader>
         <div className="absolute top-0 left-0 right-0 p-4 z-20 flex flex-col gap-2">
             {/* Progress Bars */}
             <div className="flex items-center gap-1.5">
