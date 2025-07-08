@@ -16,26 +16,28 @@ export function BottomTabNavigator() {
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-12 bg-background border-t z-40">
              {/* This div creates the floating effect for the buttons */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-4">
-                {/* Jënd Button */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-6">
+                {/* Browse (Jënd) Button */}
                 <Button
                     asChild
-                    className="h-14 w-28 rounded-full shadow-lg font-headline text-lg"
+                    variant="default" // Use the primary color
+                    className="h-16 w-16 rounded-full shadow-lg flex items-center justify-center"
+                    aria-label="Parcourir les articles"
                 >
                     <Link href="/browse">
-                        <ShoppingBag className="mr-2 h-5 w-5" />
-                        Jënd
+                        <ShoppingBag className="h-8 w-8" />
                     </Link>
                 </Button>
 
-                {/* Jaay Button */}
+                {/* Sell (Jaay) Button */}
                 <Button
                     asChild
-                    className="h-14 w-28 rounded-full shadow-lg font-headline text-lg"
+                    variant="default" // Use the primary color
+                    className="h-16 w-16 rounded-full shadow-lg flex items-center justify-center"
+                    aria-label="Vendre un article"
                 >
                     <Link href="/sell">
-                        <PlusCircle className="mr-2 h-5 w-5" />
-                        Jaay
+                        <PlusCircle className="h-8 w-8" />
                     </Link>
                 </Button>
             </div>
