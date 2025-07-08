@@ -35,57 +35,77 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
   if (!firebaseUser) throw new Error("Firebase user object is required.");
 
   const userRef = doc(db, 'users', firebaseUser.uid);
-
-  const userSnapshot = await getDoc(userRef);
-
-  if (userSnapshot.exists()) {
-    console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-    return;
-  }
+  const counterRef = doc(db, '_counters', 'users');
 
   try {
-    const { email, displayName, photoURL } = firebaseUser;
+    let userJustCreated = false;
+    await runTransaction(db, async (transaction) => {
+        const userSnapshot = await transaction.get(userRef);
 
-    let finalName: string;
-    if (additionalData.name && additionalData.name.trim() !== '') {
-      finalName = additionalData.name;
-    } else if (displayName && displayName.trim() !== '') {
-      finalName = displayName;
-    } else if (email) {
-      finalName = email.split('@')[0];
-    } else {
-      finalName = 'Utilisateur Anonyme';
-    }
+        if (userSnapshot.exists()) {
+            console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
+            return; // Exit transaction if user exists
+        }
+
+        const counterSnap = await transaction.get(counterRef);
+        const userCount = counterSnap.exists() ? counterSnap.data().count : 0;
+
+        let isFoundingMember = false;
+        let freeListings = 5; // Default free listings
+
+        if (userCount < 100) {
+            isFoundingMember = true;
+            freeListings = 15; // 5 default + 10 bonus
+        }
+        
+        const { email, displayName, photoURL } = firebaseUser;
+        let finalName: string;
+        if (additionalData.name && additionalData.name.trim() !== '') {
+          finalName = additionalData.name;
+        } else if (displayName && displayName.trim() !== '') {
+          finalName = displayName;
+        } else if (email) {
+          finalName = email.split('@')[0];
+        } else {
+          finalName = 'Utilisateur Anonyme';
+        }
+
+        const newUserDocData = {
+          email,
+          name: finalName,
+          avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
+          dataAiHint: additionalData.dataAiHint || "profil personne",
+          joinedDate: serverTimestamp(),
+          location: additionalData.location || '',
+          lastActiveAt: serverTimestamp(),
+          credits: 0,
+          freeListingsRemaining: freeListings,
+          subscriberCount: 0,
+          subscriptionCount: 0,
+          isFoundingMember: isFoundingMember,
+        };
+        
+        // Perform the writes within the transaction
+        transaction.set(userRef, newUserDocData);
+        if (counterSnap.exists()) {
+            transaction.update(counterRef, { count: increment(1) });
+        } else {
+            transaction.set(counterRef, { count: 1 });
+        }
+        userJustCreated = true;
+    });
     
-    const freeListings = 5;
-
-    const newUserDocData = {
-      email,
-      name: finalName,
-      avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
-      dataAiHint: additionalData.dataAiHint || "profil personne",
-      joinedDate: serverTimestamp(),
-      location: additionalData.location || '',
-      lastActiveAt: serverTimestamp(),
-      credits: 0,
-      freeListingsRemaining: freeListings,
-      subscriberCount: 0,
-      subscriptionCount: 0,
-      isFoundingMember: false,
-    };
-
-    await setDoc(userRef, newUserDocData);
-    console.log(`Successfully created user document for ${firebaseUser.uid}`);
-
-    if (finalName && email) {
-      // Asynchronously send the welcome email. We don't await it here,
-      // as the user's creation process should not block on email sending.
-      // Errors are handled and logged within the sendWelcomeEmail service itself.
-      sendWelcomeEmail({ to: email, name: finalName, locale: locale });
+    // After the transaction succeeds, send the welcome email if a new user was created.
+    if (userJustCreated) {
+        console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
+        const { email, displayName } = firebaseUser;
+        if (email) {
+            sendWelcomeEmail({ to: email, name: displayName || email.split('@')[0], locale });
+        }
     }
 
   } catch (error) {
-    console.error("Error creating user document: ", error);
+    console.error("Error in createUserDocument transaction: ", error);
     throw error;
   }
 };
