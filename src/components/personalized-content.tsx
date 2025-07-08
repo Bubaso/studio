@@ -3,8 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import type { Item, StatusFeedItem } from '@/lib/types';
-import { getPersonalizedRecommendations } from '@/ai/flows/suggest-recommendations-flow';
+import type { Item, UserStory } from '@/lib/types';
 import { getFollowingStatusFeed } from '@/services/userService';
 import { PersonalizedRecommendations } from './personalized-recommendations';
 import { FeaturedItemsGrid } from './featured-items-grid';
@@ -48,7 +47,7 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
   const t = useTranslations('HomePage');
   const { firebaseUser, authLoading } = useAuth();
   const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
-  const [statusFeed, setStatusFeed] = useState<StatusFeedItem[]>([]);
+  const [statusFeed, setStatusFeed] = useState<UserStory[]>([]);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   useEffect(() => {
@@ -58,15 +57,11 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
 
     if (firebaseUser) {
       setIsLoadingContent(true);
-      Promise.all([
-        getFollowingStatusFeed(firebaseUser.uid),
-        getPersonalizedRecommendations(firebaseUser.uid)
-      ]).then(([feed, recs]) => {
-        setStatusFeed(feed);
-        setRecommendedItems(recs);
-      }).finally(() => {
-        setIsLoadingContent(false);
-      });
+      getFollowingStatusFeed(firebaseUser.uid)
+        .then(setStatusFeed)
+        .finally(() => {
+          setIsLoadingContent(false);
+        });
     } else {
       // Not logged in, no personalized content to load
       setIsLoadingContent(false);

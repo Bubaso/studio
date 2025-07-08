@@ -4,6 +4,7 @@
 
 
 
+
 export interface ViewHistoryItem {
   itemId: string;
   viewedAt: string;
@@ -54,8 +55,27 @@ export interface UserStatus {
   itemId?: string;
   createdAt: string; // ISO String
   updatedAt: string; // ISO String, for sorting the feed
+  // Add denormalized item data for feed performance
+  itemPreview?: {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl: string;
+  } | null;
 }
 
+// A collection of stories from a single user for the story viewer
+export interface UserStory {
+  user: {
+    uid: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
+  stories: UserStatus[]; // An array of statuses for that user
+}
+
+
+// This type is now obsolete and replaced by UserStory
 export interface StatusFeedItem {
     status: UserStatus;
     user: {

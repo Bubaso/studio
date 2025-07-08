@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import type { StatusFeedItem } from '@/lib/types';
+import type { UserStory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,7 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface StatusViewerProps {
-  items: StatusFeedItem[];
+  items: UserStory[];
   startIndex: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,61 +23,96 @@ interface StatusViewerProps {
 const STORY_DURATION_MS = 7000;
 
 export function StatusViewer({ items, startIndex, open, onOpenChange }: StatusViewerProps) {
-  const [currentIndex, setCurrentIndex] = useState(startIndex);
+  const [currentUserIndex, setCurrentUserIndex] = useState(startIndex);
+  const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  // Memoize navigation functions
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
   const goToNext = useCallback(() => {
-    if (currentIndex < items.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else {
-      onOpenChange(false); // Close at the end
+    const currentUserStoryGroup = items[currentUserIndex];
+    if (!currentUserStoryGroup) {
+      onOpenChange(false);
+      return;
     }
-  }, [currentIndex, items.length, onOpenChange]);
+
+    if (currentStoryIndex < currentUserStoryGroup.stories.length - 1) {
+      setCurrentStoryIndex(prev => prev + 1);
+    } else if (currentUserIndex < items.length - 1) {
+      setCurrentUserIndex(prev => prev + 1);
+      setCurrentStoryIndex(0);
+    } else {
+      onOpenChange(false);
+    }
+  }, [currentUserIndex, currentStoryIndex, items, onOpenChange]);
 
   const goToPrev = useCallback(() => {
-    setCurrentIndex((prev) => Math.max(0, prev - 1));
-  }, []);
+    if (currentStoryIndex > 0) {
+      setCurrentStoryIndex(prev => prev - 1);
+    } else if (currentUserIndex > 0) {
+      const prevUserStories = items[currentUserIndex - 1].stories;
+      setCurrentUserIndex(prev => prev - 1);
+      setCurrentStoryIndex(prevUserStories.length - 1);
+    }
+  }, [currentUserIndex, currentStoryIndex, items]);
 
-  // Reset index when viewer is opened
+
+  // Reset indices when viewer is opened or start index changes
   useEffect(() => {
     if (open) {
-      setCurrentIndex(startIndex);
+      setCurrentUserIndex(startIndex);
+      setCurrentStoryIndex(0);
+      setIsPaused(false);
     }
   }, [startIndex, open]);
-
+  
   // Handle auto-advance timer
   useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     if (open && !isPaused) {
-      const timer = setTimeout(goToNext, STORY_DURATION_MS);
-      return () => clearTimeout(timer);
+      timerRef.current = setTimeout(goToNext, STORY_DURATION_MS);
     }
-  }, [currentIndex, open, isPaused, goToNext]);
-  
-  if (!open) return null;
-  const currentItem = items[currentIndex];
-  if (!currentItem) return null;
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [currentUserIndex, currentStoryIndex, open, isPaused, goToNext]);
 
-  const mainImage = currentItem.item?.imageUrls[0];
-  const itemLink = currentItem.item ? `/items/${currentItem.item.id}` : '#';
+
+  if (!open || !items[currentUserIndex]) return null;
+  const currentUserStoryGroup = items[currentUserIndex];
+  const currentStory = currentUserStoryGroup.stories[currentStoryIndex];
+  if (!currentStory) {
+      onOpenChange(false); // Close if there's no story, e.g., data issue
+      return null;
+  }
+
+  const mainImage = currentStory.itemPreview?.imageUrl;
+  const itemLink = currentStory.itemPreview ? `/items/${currentStory.itemPreview.id}` : '#';
+
+  const handlePointerDown = () => setIsPaused(true);
+  const handlePointerUp = () => setIsPaused(false);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        onPointerDown={() => setIsPaused(true)}
-        onPointerUp={() => setIsPaused(false)}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onMouseLeave={handlePointerUp}
         className="p-0 bg-black/95 border-none w-screen h-screen max-w-full max-h-full sm:h-[95vh] sm:w-auto sm:max-w-md sm:aspect-[9/16] sm:rounded-2xl flex flex-col gap-0 overflow-hidden"
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Statut de {currentItem.user.name}</DialogTitle>
+          <DialogTitle>Statut de {currentUserStoryGroup.user.name}</DialogTitle>
         </DialogHeader>
         <div className="absolute top-0 left-0 right-0 p-4 z-20 flex flex-col gap-2">
             {/* Progress Bars */}
             <div className="flex items-center gap-1.5">
-                {items.map((_, index) => (
+                {currentUserStoryGroup.stories.map((_, index) => (
                     <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
                         <div
-                            className={cn("h-full bg-white", index === currentIndex && !isPaused && 'animate-story-progress')}
+                            className={cn(
+                                "h-full bg-white",
+                                index < currentStoryIndex ? "w-full" : "w-0",
+                                index === currentStoryIndex && !isPaused ? "animate-story-progress" : ""
+                            )}
                             style={{ animationDuration: `${STORY_DURATION_MS}ms`}}
                         />
                     </div>
@@ -85,43 +120,45 @@ export function StatusViewer({ items, startIndex, open, onOpenChange }: StatusVi
             </div>
             {/* User Info */}
             <div className="flex items-center gap-3 text-white">
-                <Link href={`/profile/${currentItem.user.uid}`} onClick={() => onOpenChange(false)}>
+                <Link href={`/profile/${currentUserStoryGroup.user.uid}`} onClick={() => onOpenChange(false)}>
                     <Avatar className="h-9 w-9 border-2 border-white/50">
-                        <AvatarImage src={currentItem.user.avatarUrl || undefined} />
-                        <AvatarFallback>{(currentItem.user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={currentUserStoryGroup.user.avatarUrl || undefined} />
+                        <AvatarFallback>{(currentUserStoryGroup.user.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div className="flex flex-col">
-                    <Link href={`/profile/${currentItem.user.uid}`} onClick={() => onOpenChange(false)} className="font-semibold hover:underline text-sm">{currentItem.user.name}</Link>
-                    <span className="text-xs text-white/70">{formatDistanceToNow(new Date(currentItem.status.updatedAt), { addSuffix: true, locale: fr })}</span>
+                    <Link href={`/profile/${currentUserStoryGroup.user.uid}`} onClick={() => onOpenChange(false)} className="font-semibold hover:underline text-sm">{currentUserStoryGroup.user.name}</Link>
+                    <span className="text-xs text-white/70">{formatDistanceToNow(new Date(currentStory.updatedAt), { addSuffix: true, locale: fr })}</span>
                 </div>
             </div>
         </div>
 
         {/* Background Image */}
         {mainImage && (
-            <Image src={mainImage} alt={currentItem.item?.name || "Status Image"} fill className="object-cover z-0" data-ai-hint="product photo"/>
+            <Image src={mainImage} alt={currentStory.itemPreview?.name || "Status Image"} fill className="object-cover z-0" data-ai-hint="product photo"/>
         )}
          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/50 z-10" />
         
         {/* Main Content */}
         <div className="relative z-20 flex-1 flex flex-col justify-end p-6 text-white text-center">
-            <p className="text-lg font-medium drop-shadow-lg">{currentItem.status.text}</p>
+            <p className="text-lg font-medium drop-shadow-lg">{currentStory.text}</p>
         </div>
 
         {/* Footer Link */}
-        {currentItem.item && (
+        {currentStory.itemPreview && (
              <div className="relative z-20 p-4 border-t border-white/20">
                 <Link href={itemLink} onClick={() => onOpenChange(false)} className="block text-center text-white font-semibold text-sm hover:underline">
-                    Voir l'article
+                    Voir l'article: {currentStory.itemPreview.name}
                 </Link>
             </div>
         )}
 
         {/* Navigation Overlays */}
-        <div className="absolute inset-0 flex justify-between items-center z-30">
-            <button onClick={goToPrev} className="h-full w-1/3" aria-label="Previous Story" />
-            <button onClick={goToNext} className="h-full w-1/3" aria-label="Next Story" />
+        <div className="absolute inset-y-0 left-0 flex justify-between items-center z-30 w-1/3">
+            <button onClick={goToPrev} className="h-full w-full" aria-label="Previous Story" />
+        </div>
+        <div className="absolute inset-y-0 right-0 flex justify-between items-center z-30 w-1/3">
+            <button onClick={goToNext} className="h-full w-full" aria-label="Next Story" />
         </div>
         
         {/* Close Button */}

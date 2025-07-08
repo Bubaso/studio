@@ -5,9 +5,10 @@
 
 
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
-import type { UserProfile, ViewHistoryItem, StatusFeedItem, Item, UserStatus } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc } from 'firebase/firestore'; // Added updateDoc and runTransaction
+import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Added updateDoc and runTransaction
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -312,19 +313,28 @@ export async function addUserStatus(uid: string, text: string, itemId: string | 
     return { success: false, error: "Status text cannot be empty." };
   }
   const statusesRef = collection(db, 'users', uid, 'statuses');
-  const statusData: { text: string; createdAt: any; updatedAt: any; itemId?: string } = {
+  const statusData: { text: string; createdAt: any; updatedAt: any; itemId?: string, itemPreview?: any } = {
     text: text,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+    itemPreview: null,
   };
 
   if (itemId && itemId !== "none") {
-    const itemRef = doc(db, 'items', itemId);
-    const itemSnap = await getDoc(itemRef);
-    if (!itemSnap.exists() || itemSnap.data().sellerId !== uid) {
+    const item = await getItemByIdFromFirestore(itemId);
+    if (!item || item.sellerId !== uid) {
       return { success: false, error: "You can only feature your own items in your status." };
     }
     statusData.itemId = itemId;
+    // Denormalize item data for efficient feed loading
+    statusData.itemPreview = { 
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      imageUrl: item.imageUrls[0] || '',
+    };
+  } else {
+     statusData.itemPreview = deleteField();
   }
 
   try {
@@ -364,6 +374,7 @@ export async function getUserStatuses(userId: string): Promise<UserStatus[]> {
         itemId: data.itemId,
         createdAt: convertTimestampToISO(data.createdAt as Timestamp),
         updatedAt: convertTimestampToISO(data.updatedAt as Timestamp),
+        itemPreview: data.itemPreview || null,
       } as UserStatus;
     });
   } catch (error) {
@@ -372,62 +383,72 @@ export async function getUserStatuses(userId: string): Promise<UserStatus[]> {
   }
 }
 
-export async function getFollowingStatusFeed(userId: string): Promise<StatusFeedItem[]> {
+export async function getFollowingStatusFeed(userId: string): Promise<UserStory[]> {
   if (!userId) return [];
   try {
     const subscriptions = await getSubscriptionsForUser(userId);
     if (subscriptions.length === 0) return [];
 
-    const statusPromises = subscriptions.map(async (user) => {
+    const userStoryPromises = subscriptions.map(async (user) => {
       const statusesRef = collection(db, 'users', user.uid, 'statuses');
-      const q = query(statusesRef, orderBy('updatedAt', 'desc'), limit(1));
+      const twentyFourHoursAgo = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+      const q = query(
+        statusesRef, 
+        where('updatedAt', '>=', twentyFourHoursAgo),
+        orderBy('updatedAt', 'desc'), 
+        limit(5)
+      );
       const statusSnapshot = await getDocs(q);
 
       if (statusSnapshot.empty) {
         return null;
       }
+      
+      const statuses = statusSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            text: data.text,
+            itemId: data.itemId,
+            createdAt: convertTimestampToISO(data.createdAt as Timestamp),
+            updatedAt: convertTimestampToISO(data.updatedAt as Timestamp),
+            itemPreview: data.itemPreview || null,
+        } as UserStatus;
+      }).reverse(); // Reverse to show oldest first in the story sequence
 
-      const statusDoc = statusSnapshot.docs[0];
-      const statusData = statusDoc.data();
-      const status: UserStatus = {
-        id: statusDoc.id,
-        text: statusData.text,
-        itemId: statusData.itemId,
-        createdAt: convertTimestampToISO(statusData.createdAt),
-        updatedAt: convertTimestampToISO(statusData.updatedAt),
-      };
-
-      let itemData: Item | null = null;
-      if (status.itemId) {
-        itemData = await getItemByIdFromFirestore(status.itemId);
-      }
       return {
-        status: status,
         user: {
           uid: user.uid,
           name: user.name,
           avatarUrl: user.avatarUrl,
         },
-        item: itemData ? {
-          id: itemData.id,
-          name: itemData.name,
-          price: itemData.price,
-          imageUrls: itemData.imageUrls,
-        } : null,
-      } as StatusFeedItem;
+        stories: statuses,
+      } as UserStory;
     });
 
-    const feedItemsUnfiltered = await Promise.all(statusPromises);
-    const feedItems = feedItemsUnfiltered.filter((item): item is StatusFeedItem => item !== null);
+    const feedItemsUnfiltered = await Promise.all(userStoryPromises);
+    const feedItems = feedItemsUnfiltered.filter((item): item is UserStory => item !== null && item.stories.length > 0);
 
-    // Sort by status creation time, newest first
-    const sortedFeed = feedItems.sort((a, b) =>
-      new Date(b.status.updatedAt).getTime() - new Date(a.status.updatedAt).getTime()
-    );
+    // Sort users by the latest status update time, newest first
+    const sortedFeed = feedItems.sort((a, b) => {
+       const lastUpdateA = new Date(a.stories[a.stories.length - 1].updatedAt).getTime();
+       const lastUpdateB = new Date(b.stories[b.stories.length - 1].updatedAt).getTime();
+       return lastUpdateB - lastUpdateA;
+    });
 
     return sortedFeed;
-  } catch (error) {
-    console.error(`Error fetching status feed for user ${userId}:`, error);
+  } catch (error: any) {
+    // Check if the error is a Firestore index error
+    if (error.code === 'failed-precondition') {
+      console.warn(
+        "Firestore index missing for `getFollowingStatusFeed`. " +
+        "This query requires a composite index on `statuses` collection: `updatedAt` ascending and `createdAt` descending. " +
+        "Firestore should prompt to create it in the console error logs. Query will fail until the index is built. " +
+        "Original Error:", error.message
+      );
+    } else {
+       console.error(`Error fetching status feed for user ${userId}:`, error);
+    }
     return [];
   }
 }
