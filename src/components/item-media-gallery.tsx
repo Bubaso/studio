@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -127,7 +128,7 @@ export function ItemMediaGallery({ item }: ItemMediaGalleryProps) {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-0 bg-transparent flex items-center justify-center border-none">
+        <DialogContent className="w-[95vw] max-w-[1200px] h-[90vh] p-0 bg-transparent flex items-center justify-center border-none [&>button]:bg-black/50 [&>button]:text-white [&>button]:hover:bg-black/70 [&>button]:opacity-100 [&>button]:h-10 [&>button]:w-10 [&>button]:rounded-full">
           <DialogHeader className="sr-only">
             <DialogTitle>Aperçu des médias pour {item.name}</DialogTitle>
           </DialogHeader>
