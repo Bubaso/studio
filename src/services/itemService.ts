@@ -454,7 +454,8 @@ export async function getViewCount(itemId: string): Promise<number> {
   }
   try {
     const viewsCollectionRef = collection(db, 'items', itemId, 'views');
-    const snapshot = await getDocs(viewsCollectionRef);
+    const q = query(viewsCollectionRef);
+    const snapshot = await getDocs(q);
     return snapshot.size;
   } catch (error) {
     console.error(`Error fetching view count for item ${itemId}:`, error);
