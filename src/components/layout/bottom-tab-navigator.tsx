@@ -4,10 +4,8 @@
 import Link from 'next/link';
 import { ShoppingCart, Plus } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 export function BottomTabNavigator() {
-    const t = useTranslations('HomePage');
     const pathname = usePathname();
 
     // Hide the navigator on certain pages for a cleaner interface
@@ -20,14 +18,14 @@ export function BottomTabNavigator() {
             {/* Use a relative container to position the buttons */}
             <div className="relative h-full">
                 {/* Absolutely positioned container for the buttons */}
-                <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-start gap-8">
+                <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 flex items-start gap-16">
                     
                     {/* Explorer Button */}
                     <Link href="/browse" className="flex flex-col items-center justify-center text-center">
                         <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg border-4 border-background">
                             <ShoppingCart className="h-8 w-8 text-primary-foreground" />
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1">Explorer</span>
+                        <span className="text-xs text-muted-foreground mt-1">Jënd</span>
                     </Link>
 
                     {/* Vendre Button */}
@@ -35,7 +33,7 @@ export function BottomTabNavigator() {
                         <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-lg border-4 border-background">
                             <Plus className="h-8 w-8 text-primary-foreground" />
                         </div>
-                        <span className="text-xs text-muted-foreground mt-1">Vendre</span>
+                        <span className="text-xs text-muted-foreground mt-1">Jaay</span>
                     </Link>
                     
                 </div>
