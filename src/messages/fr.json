@@ -376,6 +376,10 @@
     "deleteConfirmation": "Cette action est irréversible. Votre annonce et ses images associées seront définitivement supprimées.",
     "cancel": "Annuler",
     "yesDelete": "Oui, supprimer",
+    "deleteDialogTitle": "Avant de supprimer...",
+    "deleteDialogDescription": "Si la raison de la suppression est que l'article a été vendu, veuillez le marquer comme « Vendu » au lieu de le supprimer. Cela aide à garder la plateforme fiable et vous permet de recevoir des évaluations.",
+    "continueDeleteButton": "Supprimer quand même",
+    "markAsSoldButton": "Marquer comme vendu",
     "toast": {
       "error": "Erreur",
       "unauthorized": "Vous n'êtes pas autorisé à effectuer cette action.",

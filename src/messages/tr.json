@@ -376,6 +376,10 @@
     "deleteConfirmation": "Bu işlem geri alınamaz. İlanınız ve ilgili resimleri kalıcı olarak silinecektir.",
     "cancel": "İptal",
     "yesDelete": "Evet, sil",
+    "deleteDialogTitle": "Silmeden Önce...",
+    "deleteDialogDescription": "Bu ilanı silme nedeniniz ürünün satılmış olması ise, lütfen silmek yerine \"Satıldı\" olarak işaretleyin. Bu, platformun güvenilir kalmasına yardımcı olur ve alıcıdan bir değerlendirme almanızı sağlar.",
+    "continueDeleteButton": "Yine de Sil",
+    "markAsSoldButton": "Satıldı Olarak İşaretle",
     "toast": {
       "error": "Hata",
       "unauthorized": "Bu işlemi yapma yetkiniz yok.",

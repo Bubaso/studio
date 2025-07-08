@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
   const t = useTranslations('SellerActions');
   const [isMarkingSold, startMarkingSold] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
@@ -37,6 +38,8 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
         router.refresh();
       } catch (error: any) {
          toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.markAsSoldError') });
+      } finally {
+        setIsDialogOpen(false);
       }
     });
   };
@@ -54,6 +57,8 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
         router.refresh();
       } catch (error: any) {
         toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.deleteError') });
+      } finally {
+        setIsDialogOpen(false);
       }
     });
   };
@@ -85,7 +90,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
         {item.isSold ? t('alreadySold') : t('markAsSold')}
       </Button>
 
-      <AlertDialog>
+      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" disabled={isDeleting} className="flex-1">
             {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash className="mr-2 h-4 w-4" />}
@@ -94,17 +99,25 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('areYouSure')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('deleteConfirmation')}
+              {t('deleteDialogDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {t('yesDelete')}
-            </AlertDialogAction>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2">
+            <AlertDialogCancel className="mt-0">{t('cancel')}</AlertDialogCancel>
+            <Button onClick={handleDelete} disabled={isDeleting || isMarkingSold} className="bg-destructive hover:bg-destructive/90">
+                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash className="mr-2 h-4 w-4" />}
+                {t('continueDeleteButton')}
+            </Button>
+            <Button 
+                onClick={handleMarkAsSold} 
+                disabled={isMarkingSold || item.isSold || isDeleting} 
+                variant="outline"
+            >
+                {isMarkingSold ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                {t('markAsSoldButton')}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

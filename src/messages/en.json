@@ -376,6 +376,10 @@
     "deleteConfirmation": "This action is irreversible. Your listing and its associated images will be permanently deleted.",
     "cancel": "Cancel",
     "yesDelete": "Yes, delete",
+    "deleteDialogTitle": "Before You Delete...",
+    "deleteDialogDescription": "If you're deleting this listing because the item has been sold, please mark it as \"sold\" instead. This helps keep the platform reliable and allows you to receive reviews.",
+    "continueDeleteButton": "Delete Anyway",
+    "markAsSoldButton": "Mark as Sold",
     "toast": {
       "error": "Error",
       "unauthorized": "You are not authorized to perform this action.",
