@@ -97,7 +97,7 @@ export function StatusViewer({ items, startIndex, open, onOpenChange }: StatusVi
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onMouseLeave={handlePointerUp}
-        className="p-0 bg-black/95 border-none w-screen h-screen max-w-full max-h-full sm:h-[95vh] sm:w-auto sm:max-w-md sm:aspect-[9/16] sm:rounded-2xl flex flex-col gap-0 overflow-hidden"
+        className="p-0 bg-black border-none w-screen h-screen max-w-full max-h-full sm:h-[95vh] sm:w-auto sm:max-w-md sm:aspect-[9/16] sm:rounded-2xl flex flex-col gap-0 overflow-hidden"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Statut de {currentUserStoryGroup.user.name}</DialogTitle>
@@ -133,15 +133,15 @@ export function StatusViewer({ items, startIndex, open, onOpenChange }: StatusVi
             </div>
         </div>
 
-        {/* Background Image */}
-        {mainImage && (
+        {/* Background Image / Gradient */}
+        {mainImage ? (
             <Image src={mainImage} alt={currentStory.itemPreview?.name || "Status Image"} fill className="object-cover z-0" data-ai-hint="product photo"/>
-        )}
-         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/50 z-10" />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/50 z-10" />
         
         {/* Main Content */}
-        <div className="relative z-20 flex-1 flex flex-col justify-end p-6 text-white text-center">
-            <p className="text-lg font-medium drop-shadow-lg">{currentStory.text}</p>
+        <div className="relative z-20 flex-1 flex flex-col justify-center items-center p-6 text-white text-center">
+             <p className={cn("font-medium drop-shadow-lg", mainImage ? 'text-lg' : 'text-2xl')}>{currentStory.text}</p>
         </div>
 
         {/* Footer Link */}

@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
 import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Added updateDoc and runTransaction
@@ -326,13 +319,17 @@ export async function addUserStatus(uid: string, text: string, itemId: string | 
       return { success: false, error: "You can only feature your own items in your status." };
     }
     statusData.itemId = itemId;
-    // Denormalize item data for efficient feed loading
-    statusData.itemPreview = { 
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      imageUrl: item.imageUrls[0] || '',
-    };
+
+    if (item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]) {
+      statusData.itemPreview = { 
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        imageUrl: item.imageUrls[0],
+      };
+    } else {
+      statusData.itemPreview = null;
+    }
   } else {
      statusData.itemPreview = deleteField();
   }
