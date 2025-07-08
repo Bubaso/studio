@@ -49,13 +49,15 @@ function SignUpPageContent() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setAuthLoading(false);
-      if (user) {
-        // If user is already logged in (e.g. signed up via OAuth or had a session), redirect
+      // Only redirect if a login process is NOT active.
+      // This prevents the race condition where the redirect happens
+      // before createUserDocument can run.
+      if (user && !isLoading) {
         router.push(redirectTo);
       }
     });
     return () => unsubscribe();
-  }, [router, redirectTo]);
+  }, [router, redirectTo, isLoading]);
 
   useEffect(() => {
     // This effect should run only once on mount to check for a redirect result.
@@ -111,7 +113,7 @@ function SignUpPageContent() {
         title: t('toast.successTitle'), 
         description: t('toast.welcome')
       });
-      router.push(redirectTo);
+      // The useEffect hook will handle the redirect now.
     } catch (error: any) {
       console.error("Error signing up with email/password:", error);
       

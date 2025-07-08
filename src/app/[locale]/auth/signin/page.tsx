@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ShoppingBag, LogIn, Mail, Lock, Loader2 } from "lucide-react";
@@ -46,14 +47,16 @@ function SignInPageContent() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setAuthLoading(false);
-      if (user) {
+      // Only redirect if a login process is NOT active.
+      // This prevents the race condition.
+      if (user && !isLoading) {
         router.push(redirectTo);
       }
     });
     return () => {
       unsubscribe();
     };
-  }, [router, redirectTo]);
+  }, [router, redirectTo, isLoading]);
 
   useEffect(() => {
     // This effect should run only once on mount to check for a redirect result.
