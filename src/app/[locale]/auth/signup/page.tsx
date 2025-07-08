@@ -165,12 +165,17 @@ function SignUpPageContent() {
         });
       }
     } catch (error: any) {
+      // Gracefully handle the user closing the popup, which is not an application error.
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        setIsLoading(false);
+        return; // Exit without showing an error toast.
+      }
+      
+      // For all other errors, log them and show a toast.
       console.error("OAuth Sign-up Error:", error);
       let errorMessage = tSignIn('toast.oauthErrorTitle');
       if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = tSignIn('toast.oauthAccountExists');
-      } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        errorMessage = tSignIn('toast.popupClosed');
       } else if (error.code === 'auth/operation-not-allowed') {
           errorMessage = tSignIn('toast.providerNotEnabled');
       } else if (error.code === 'auth/network-request-failed') {
