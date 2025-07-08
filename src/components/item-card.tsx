@@ -98,7 +98,7 @@ export function ItemCard({ item }: ItemCardProps) {
         </CardContent>
         <CardFooter className="p-3 pt-2">
           <div className="w-full">
-            <Badge variant={item.isSold ? "outline" : "secondary"} className="w-full justify-center py-1.5 text-xs hover:bg-accent hover:text-accent-foreground transition-colors">
+            <Badge variant={item.isSold ? "outline" : "default"} className="w-full justify-center py-1.5 text-xs">
               {item.isSold ? t('viewSoldListing') : t('viewDetails')}
             </Badge>
           </div>
