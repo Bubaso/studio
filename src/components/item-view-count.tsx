@@ -24,7 +24,6 @@ export function ItemViewCount({ itemId, className }: ItemViewCountProps) {
 
   useEffect(() => {
     if (itemId) {
-      if(itemId.length < 5) return; 
       getViewCount(itemId)
         .then(setViewCount)
         .catch(err => {
@@ -34,7 +33,8 @@ export function ItemViewCount({ itemId, className }: ItemViewCountProps) {
     }
   }, [itemId]);
   
-  if (viewCount === null || viewCount === 0) {
+  // Return null only while loading, so the badge shows for 0 views as well.
+  if (viewCount === null) {
     return null;
   }
 
