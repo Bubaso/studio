@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -7,15 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import type { UserStory } from '@/lib/types';
 import { StatusViewer } from './status-viewer';
-import { useTranslations } from 'next-intl';
-import { Users } from 'lucide-react';
 
 interface StatusStoriesProps {
     items: UserStory[];
 }
 
 export function StatusStories({ items }: StatusStoriesProps) {
-    const t = useTranslations('StatusFeed');
     const [viewerOpen, setViewerOpen] = useState(false);
     const [startIndex, setStartIndex] = useState(0);
 
@@ -30,10 +26,6 @@ export function StatusStories({ items }: StatusStoriesProps) {
 
     return (
         <section className="py-4 md:py-6">
-            <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1 flex items-center gap-2">
-                 <Users className="h-6 w-6" />
-                {t('title')}
-            </h2>
             <ScrollArea className="w-full whitespace-nowrap">
                 <div className="flex space-x-4 p-2">
                 {items.map((storyGroup, index) => (
