@@ -140,8 +140,6 @@ export const getItemsFromFirestore = async (filters?: {
 
     let items = querySnapshot.docs.map(mapDocToItem);
 
-    items = items.filter(item => !(item.isSold === true));
-
 
     // Client-side query text filtering, if any
     if (filters?.query) {

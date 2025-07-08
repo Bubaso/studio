@@ -228,10 +228,9 @@ function ItemGrid() {
             });
         }
 
-        const finalItems = (currentUser
+        const finalItems = currentUser
           ? processedItems.filter((item) => item.sellerId !== currentUser.uid)
-          : processedItems
-        ).filter(item => !item.isSold); // Filter out sold items
+          : processedItems;
 
         setPageData({ items: finalItems, lastItemId: result.lastItemId, hasMore: result.hasMore && !latParam });
 
