@@ -75,7 +75,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
 
   if (isLoadingAuth) {
     return (
-      <Button variant="outline" className={cn("w-full flex-1", className)} disabled>
+      <Button variant="secondary" className={cn("w-full flex-1", className)} disabled>
         <Loader2 className="mr-2 h-6 w-6 animate-spin" /> {t('contactSeller')}
       </Button>
     );
@@ -89,7 +89,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
     const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
     const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
-      <Button variant="outline" className={cn("w-full flex-1", className)} onClick={() => router.push(redirectTo)}>
+      <Button variant="secondary" className={cn("w-full flex-1", className)} onClick={() => router.push(redirectTo)}>
         <MessageSquare className="mr-2 h-6 w-6" /> {t('contactSellerLoginRequired')}
       </Button>
     );
@@ -98,7 +98,7 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
   return (
     <Button 
         onClick={handleContactSeller} 
-        variant="outline" 
+        variant="secondary" 
         className={cn("w-full flex-1", className)}
         disabled={isPending}
     >
