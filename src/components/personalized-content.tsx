@@ -3,15 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import type { Item, UserStory } from '@/lib/types';
-import { getFollowingStatusFeed } from '@/services/userService';
+import type { Item } from '@/lib/types';
 import { PersonalizedRecommendations } from './personalized-recommendations';
 import { FeaturedItemsGrid } from './featured-items-grid';
 import { Skeleton } from './ui/skeleton';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useTranslations } from 'next-intl';
-import { StatusStories } from './status-stories';
 
 interface PersonalizedContentProps {
   latestItems: Item[];
@@ -45,9 +43,8 @@ function CardSkeleton() {
 
 export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
   const t = useTranslations('HomePage');
-  const { firebaseUser, authLoading } = useAuth();
+  const { authLoading } = useAuth();
   const [recommendedItems, setRecommendedItems] = useState<Item[]>([]);
-  const [statusFeed, setStatusFeed] = useState<UserStory[]>([]);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
 
   useEffect(() => {
@@ -55,23 +52,14 @@ export function PersonalizedContent({ latestItems }: PersonalizedContentProps) {
       return; // Wait until auth state is resolved
     }
 
-    if (firebaseUser) {
-      setIsLoadingContent(true);
-      getFollowingStatusFeed(firebaseUser.uid)
-        .then(setStatusFeed)
-        .finally(() => {
-          setIsLoadingContent(false);
-        });
-    } else {
-      // Not logged in, no personalized content to load
-      setIsLoadingContent(false);
-    }
-  }, [firebaseUser, authLoading]);
+    // In the future, logic to fetch recommendations would go here.
+    // For now, we just set loading to false.
+    setIsLoadingContent(false);
+    
+  }, [authLoading]);
 
   return (
     <>
-      <StatusStories items={statusFeed} />
-      
       {isLoadingContent ? (
         <RecommendationsSkeleton />
       ) : recommendedItems.length > 0 ? (

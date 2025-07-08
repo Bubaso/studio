@@ -9,6 +9,7 @@ import { HeroOnboarding } from '@/components/hero-onboarding';
 import { PersonalizedContent } from '@/components/personalized-content';
 import admin from '@/lib/firebaseAdmin';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { HomeStatusFeed } from '@/components/home-status-feed';
 
 
 const categoryHints: { [key in ItemCategory]?: string } = {
@@ -67,12 +68,14 @@ export default async function HomePage({ params: { locale } }: { params: { local
       
       <HeroOnboarding />
 
+      <HomeStatusFeed />
+
       <section className="py-4 md:py-8">
         <h2 className="text-xl sm:text-2xl font-bold font-headline text-primary mb-3 md:mb-4 px-1">{t('exploreByCategory')}</h2>
         <CategoryCarousel categories={categoriesWithData} />
       </section>
 
-      {/* The PersonalizedContent component will handle fetching user-specific data on the client */}
+      {/* This component now only shows recommendations or latest items */}
       <PersonalizedContent latestItems={latestItems} />
       
     </div>
