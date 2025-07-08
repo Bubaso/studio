@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -15,7 +14,7 @@ export function BottomTabNavigator() {
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-40">
-            <div className="flex justify-around items-center h-full">
+            <div className="flex justify-center items-center h-full gap-8">
                 
                 {/* Explorer Button */}
                 <Link href="/browse" className="flex flex-col items-center justify-center text-center -mt-8">
