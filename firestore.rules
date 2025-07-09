@@ -3,146 +3,89 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =================================
-    // Helper Functions
-    // =================================
-    function isSignedIn() {
-      return request.auth != null;
+    // --- Counters for app-wide stats ---
+    match /_counters/{counterId} {
+      // Allow authenticated users to perform the transaction for creating a user account.
+      // This is a trade-off for simplicity. For higher security, this should be a backend-only operation.
+      allow read, write: if request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    // --- Items: Publicly readable, only owners can write ---
+    match /items/{itemId} {
+      allow read: if true;
+      allow create: if request.auth.uid == request.resource.data.sellerId;
+      allow update: if request.auth.uid == resource.data.sellerId;
+      allow delete: if request.auth.uid == resource.data.sellerId;
+
+      // --- Subcollection for Views ---
+      match /views/{viewId} {
+        allow create: if request.auth != null;
+        allow read, list: if true; // Anyone can read/list view counts
+      }
     }
 
-    // =================================
-    // Users Collection
-    // =================================
+    // --- Users: Publicly readable, only owners can write ---
     match /users/{userId} {
-      // Anyone can view a user's public profile
-      allow get: if true;
+      allow read: if true;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if request.auth.uid == userId;
       
-      // Only the owner can create or update their own profile document.
-      // `create` is needed for first-time sign-up.
-      // `update` is for profile edits.
-      allow create, update: if isOwner(userId);
-      
-      // Users can only be deleted via a secure backend function.
-      allow delete: if false;
-
       // --- User Subcollections ---
       match /viewHistory/{historyId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /notifications/{notificationId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
       match /subscriptions/{subscriptionId} {
-         allow read: if true;
-         allow write: if isOwner(userId);
+        allow read, write: if request.auth.uid == userId;
       }
       match /subscribers/{subscriberId} {
-         allow read: if true;
-         allow write: if isOwner(userId) || isOwner(subscriberId);
+        allow read, write: if request.auth != null; // Allow checking/listing subscribers
+      }
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth.uid == userId;
       }
       match /statuses/{statusId} {
-         allow read: if true;
-         allow create, delete: if isOwner(userId);
-         allow update: if false; // Statuses are immutable
+          allow read: if true;
+          allow create, update, delete: if request.auth.uid == userId;
       }
     }
     
-    // =================================
-    // Items Collection
-    // =================================
-    match /items/{itemId} {
-      // Anyone can view an item listing
-      allow get, list: if true;
-      
-      // Only signed-in users can create items.
-      // Further checks (e.g., credits) are done in backend/transactions.
-      allow create: if isSignedIn();
-      
-      // Only the seller can update or delete their own item.
-      allow update, delete: if isOwner(resource.data.sellerId);
-
-      // --- Item Subcollections ---
-      match /views/{viewId} {
-        // A user can log a view if they are signed in and not the seller.
-        allow create: if isSignedIn() && request.auth.uid != get(/databases/$(database)/documents/items/$(itemId)).data.sellerId;
-        
-        // Anyone should be able to count the views.
-        // `list` is needed for `getDocs` to work on the client.
-        allow list: if true;
-        
-        // No one should be able to read individual view documents to protect privacy.
-        allow get: if false; 
-      }
-    }
-    
-    // =================================
-    // Message Threads Collection
-    // =================================
+    // --- Message Threads: Only participants can access ---
     match /messageThreads/{threadId} {
-      // Only participants can read or write to a thread.
-      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-      
+      // Participants can read/write thread document
+      allow read, write: if request.auth.uid in resource.data.participantIds;
+
+      // --- Messages Subcollection ---
       match /messages/{messageId} {
-        // Only participants can read or write messages within the thread.
-        allow read, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        // Participants can read/write messages
+        allow read, write: if request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
       }
     }
-
-    // =================================
-    // Product Reports Collection
-    // =================================
+    
+    // --- Product Reports ---
     match /productReports/{itemId} {
-        // Only signed-in users can create/read reports, but can only write their own.
         match /reports/{userId} {
-            allow read, create: if isOwner(userId);
-            allow update, delete: if false;
+            allow create: if request.auth.uid == userId;
+            allow read: if request.auth != null; // Allow checking if user has reported
         }
     }
 
-    // =================================
-    // Reviews Collection
-    // =================================
+    // --- Reviews ---
     match /reviews/{reviewId} {
-        // Anyone can read reviews.
-        allow get, list: if true;
-        // Only signed-in users can create reviews.
-        allow create: if isSignedIn();
-        // Reviews are immutable once created.
-        allow update, delete: if false; 
+      allow read: if true;
+      allow create: if request.auth.uid == request.resource.data.reviewerId;
+      allow update, delete: if false; // Reviews are immutable
     }
 
-    // =================================
-    // Payment Intents Collection
-    // =================================
-    match /paymentIntents/{intentId} {
-        // Only the user who created the intent can read it.
-        // Only backend can write to it.
-        allow read: if isOwner(resource.data.userId);
-        allow write: if false;
-    }
-
-    // =================================
-    // Collections (Favorites)
-    // =================================
+    // --- Collections ---
     match /collections/{collectionId} {
-        allow get: if true; // Allow anyone to read collection info (e.g., if shared)
-        allow create, update, delete: if isOwner(resource.data.userId);
+      allow read: if true; // Collections can be public if needed
+      allow create, update, delete: if request.auth.uid == request.resource.data.userId;
 
-        match /items/{itemId} {
-            allow read, write: if isOwner(get(/databases/$(database)/documents/collections/$(collectionId)).data.userId);
-        }
-    }
-
-    // =================================
-    // Rate Limits Collection
-    // =================================
-    match /rateLimits/{docId} {
-      // Only backend functions can access this.
-      allow read, write: if false;
+      match /items/{itemId} {
+        allow read: if true;
+        allow write: if request.auth.uid == get(/databases/$(database)/documents/collections/$(collectionId)).data.userId;
+      }
     }
   }
 }
