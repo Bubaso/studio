@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { storage } from '@/lib/firebase';
@@ -89,6 +89,9 @@ export function PromotionalModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="p-0 bg-transparent border-none w-full max-w-lg shadow-none">
+        <DialogHeader className="sr-only">
+            <DialogTitle>Promotional Offer</DialogTitle>
+        </DialogHeader>
         <div className="relative aspect-[3/4] w-full bg-muted rounded-lg flex items-center justify-center">
            <Image
             src={activeImageUrl}
