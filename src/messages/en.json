@@ -364,7 +364,7 @@
       "contactError": "Could not contact seller. Please try again.",
       "communicationError": "Communication Error"
     },
-    "sellerActiveListings": "See seller's {count, plural, one {other active listing} other {{count} other active listings}}"
+    "sellerActiveListings": "{count, plural, one {See seller's other active listing} other {See seller's {count} other active listings}}"
   },
   "SellerActions": {
     "loading": "Loading...",
@@ -689,5 +689,9 @@
   },
   "StatusDisplay": {
     "title": "{name}'s Status"
+  },
+  "FoundingMemberNotifier": {
+    "title": "Founding Member Benefit!",
+    "description": "Congratulations! As one of our first 100 users, you have received 10 extra free listings. You now have a total of 15 free listings."
   }
 }

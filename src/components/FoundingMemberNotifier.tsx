@@ -6,10 +6,12 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getUserDocument } from '@/services/userService';
 import { Gem } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const NOTIFICATION_KEY = 'foundingMemberNotified';
 
 export function FoundingMemberNotifier() {
+  const t = useTranslations('FoundingMemberNotifier');
   const { firebaseUser } = useAuth();
   const { toast } = useToast();
 
@@ -28,10 +30,10 @@ export function FoundingMemberNotifier() {
               title: (
                 <div className="flex items-center gap-2">
                   <Gem className="h-5 w-5 text-primary" />
-                  Avantage Membre Fondateur !
+                  {t('title')}
                 </div>
               ),
-              description: "Félicitations ! En tant que l'un de nos 100 premiers utilisateurs, vous avez reçu 10 annonces gratuites supplémentaires. Vous avez maintenant un total de 15 annonces gratuites.",
+              description: t('description'),
               duration: 15000, // 15 seconds
             });
             sessionStorage.setItem(NOTIFICATION_KEY, 'true');
@@ -44,7 +46,7 @@ export function FoundingMemberNotifier() {
       // Delay slightly to ensure user document is created and to not overwhelm the user on login
       setTimeout(checkAndNotify, 2000); 
     }
-  }, [firebaseUser, toast]);
+  }, [firebaseUser, toast, t]);
 
   return null; // This component does not render anything
 }

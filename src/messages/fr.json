@@ -689,5 +689,9 @@
   },
   "StatusDisplay": {
     "title": "Statut de {name}"
+  },
+  "FoundingMemberNotifier": {
+    "title": "Avantage Membre Fondateur !",
+    "description": "Félicitations ! En tant que l'un de nos 100 premiers utilisateurs, vous avez reçu 10 annonces gratuites supplémentaires. Vous avez maintenant un total de 15 annonces gratuites."
   }
 }

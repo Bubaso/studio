@@ -689,5 +689,9 @@
   },
   "StatusDisplay": {
     "title": "{name} Kullanıcısının Durumu"
+  },
+  "FoundingMemberNotifier": {
+    "title": "Kurucu Üye Avantajı!",
+    "description": "Tebrikler! İlk 100 kullanıcımızdan biri olarak, 10 ek ücretsiz ilan hakkı kazandınız. Artık toplam 15 ücretsiz ilanınız var."
   }
 }
