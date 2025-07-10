@@ -2,7 +2,7 @@
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Added updateDoc and runTransaction
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where, onSnapshot, Unsubscribe } from 'firebase/firestore'; // Added onSnapshot, Unsubscribe
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -18,7 +18,6 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
     try {
       return (timestamp as Timestamp).toDate().toISOString();
     } catch (e) {
-      console.warn('Error converting timestamp toDate:', timestamp, e);
       return new Date().toISOString(); // Fallback on conversion error
     }
   }
@@ -26,6 +25,31 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
   console.warn('Invalid timestamp format encountered in userService:', timestamp);
   return new Date().toISOString(); // Fallback for malformed
 };
+
+const mapDocToProfile = (docSnap: import('firebase/firestore').DocumentSnapshot): UserProfile | null => {
+    if (!docSnap.exists()) {
+        console.log(`No such user document with UID: ${docSnap.id}`);
+        return null;
+    }
+    const data = docSnap.data();
+    const joinedDateISO = convertTimestampToISO(data.joinedDate);
+    const lastActiveAtISO = data.lastActiveAt ? convertTimestampToISO(data.lastActiveAt) : undefined;
+    return {
+        uid: docSnap.id,
+        email: data.email || null,
+        name: data.name || null,
+        avatarUrl: data.avatarUrl || null,
+        dataAiHint: data.dataAiHint || "profil personne",
+        joinedDate: joinedDateISO,
+        location: data.location || '',
+        lastActiveAt: lastActiveAtISO,
+        credits: data.credits ?? 0,
+        freeListingsRemaining: data.freeListingsRemaining ?? 0,
+        subscriberCount: data.subscriberCount || 0,
+        subscriptionCount: data.subscriptionCount || 0,
+        isFoundingMember: data.isFoundingMember || false,
+    } as UserProfile;
+}
 
 
 export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<void> => {
@@ -36,22 +60,15 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
   if (!firebaseUser) throw new Error("Firebase user object is required.");
 
   const userRef = doc(db, 'users', firebaseUser.uid);
-  const userSnapshot = await getDoc(userRef);
-
-  // If user document already exists, do nothing.
-  if (userSnapshot.exists()) {
-    console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-    return;
-  }
   
   // The user does not exist, so we proceed with creation.
   const counterRef = doc(db, '_counters', 'users');
 
   try {
     await runTransaction(db, async (transaction) => {
-        // We re-check for existence inside the transaction to prevent race conditions.
         const userInTransaction = await transaction.get(userRef);
         if (userInTransaction.exists()) {
+            console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation within transaction.`);
             return; 
         }
 
@@ -88,8 +105,7 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
             transaction.set(counterRef, { count: 1 });
         }
 
-        // Also ensure Firebase Auth profile is consistent if changed
-        if (auth.currentUser && (finalName !== displayName || finalAvatarUrl !== photoURL)) {
+        if (auth.currentUser && (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL)) {
              await updateProfile(auth.currentUser, { 
                 displayName: finalName,
                 photoURL: finalAvatarUrl
@@ -99,7 +115,6 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
     console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
     
-    // Send the welcome email after the transaction succeeds.
     if (firebaseUser.email) {
         sendWelcomeEmail({ to: firebaseUser.email, name: firebaseUser.displayName || firebaseUser.email.split('@')[0], locale });
     }
@@ -118,37 +133,37 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
   try {
     const userDocRef = doc(db, 'users', uid);
     const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      const data = userDocSnap.data();
-      // Ensure joinedDate is correctly converted, handling potential string format from older data
-      const joinedDateISO = convertTimestampToISO(data.joinedDate);
-      const lastActiveAtISO = data.lastActiveAt ? convertTimestampToISO(data.lastActiveAt) : undefined;
-
-      return {
-        uid: userDocSnap.id,
-        email: data.email || null,
-        name: data.name || null,
-        avatarUrl: data.avatarUrl || null,
-        dataAiHint: data.dataAiHint || "profil personne", // Provide a default if missing
-        joinedDate: joinedDateISO,
-        location: data.location || '', // Provide a default if missing
-        lastActiveAt: lastActiveAtISO,
-        credits: data.credits ?? 0,
-        freeListingsRemaining: data.freeListingsRemaining ?? 0,
-        subscriberCount: data.subscriberCount || 0,
-        subscriptionCount: data.subscriptionCount || 0,
-        isFoundingMember: data.isFoundingMember || false,
-      } as UserProfile;
-    } else {
-      console.log(`No such user document with UID: ${uid}`);
-      return null;
-    }
+    return mapDocToProfile(userDocSnap);
   } catch (error) {
     console.error(`Error fetching user document for UID ${uid}: `, error);
     return null;
   }
 };
+
+/**
+ * Listens for real-time updates to a user's document.
+ * @param uid The user's ID.
+ * @param callback A function to be called with the user's profile data whenever it changes.
+ * @returns An unsubscribe function to stop listening to updates.
+ */
+export const listenToUserDocument = (uid: string, callback: (profile: UserProfile | null) => void): Unsubscribe => {
+  if (!uid) {
+    callback(null);
+    return () => {}; // Return a no-op unsubscribe function
+  }
+  const userDocRef = doc(db, 'users', uid);
+  
+  const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+    const profile = mapDocToProfile(docSnap);
+    callback(profile);
+  }, (error) => {
+    console.error(`Error listening to user document for UID ${uid}: `, error);
+    callback(null);
+  });
+
+  return unsubscribe;
+};
+
 
 export const uploadAvatarAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
   if (!userId) {
