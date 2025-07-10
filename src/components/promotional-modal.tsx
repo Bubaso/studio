@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { storage } from '@/lib/firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 
-const PROMO_SESSION_KEY = 'sellPagePromoShown';
+const getPromoSessionKey = (page: string) => `promoShown_${page}`;
 
 export function PromotionalModal() {
   const pathname = usePathname();
@@ -52,30 +52,33 @@ export function PromotionalModal() {
       return;
     }
 
-    const hasBeenShown = sessionStorage.getItem(PROMO_SESSION_KEY);
-    if (hasBeenShown) {
-      return;
+    let targetImage: string | undefined;
+    let pageKey: string | null = null;
+
+    if (pathname.includes('/sell')) {
+      pageKey = 'sell';
+      targetImage = imageMap.get('sell.jpg');
+    } else if (pathname.includes('/browse')) {
+      pageKey = 'browse';
+      targetImage = imageMap.get('browse.jpg');
     }
     
-    let targetImage: string | undefined;
-    if (pathname.includes('/sell')) {
-        targetImage = imageMap.get('sell.jpg');
-    } else if (pathname.includes('/browse')) {
-        targetImage = imageMap.get('browse.jpg');
+    if (pageKey) {
+        const sessionKey = getPromoSessionKey(pageKey);
+        const hasBeenShown = sessionStorage.getItem(sessionKey);
+        
+        if (!hasBeenShown && targetImage) {
+            setActiveImageUrl(targetImage);
+            const timer = setTimeout(() => {
+                setIsOpen(true);
+                sessionStorage.setItem(sessionKey, 'true');
+            }, 500);
+            return () => clearTimeout(timer);
+        }
     }
-
-    if (targetImage) {
-        setActiveImageUrl(targetImage);
-        const timer = setTimeout(() => {
-            setIsOpen(true);
-            sessionStorage.setItem(PROMO_SESSION_KEY, 'true');
-        }, 500);
-        return () => clearTimeout(timer);
-    } else {
-        // If the target image for the current page isn't found, close any potentially open dialog.
-        setIsOpen(false);
-        setActiveImageUrl(null);
-    }
+    
+    // Close modal if navigating away or no target image
+    setIsOpen(false);
     
   }, [pathname, imageMap, isLoading]);
 
