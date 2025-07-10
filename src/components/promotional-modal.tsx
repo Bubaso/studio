@@ -15,7 +15,8 @@ const PROMO_SESSION_KEY = 'sellPagePromoShown';
 export function PromotionalModal() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageMap, setImageMap] = useState<Map<string, string>>(new Map());
+  const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -29,10 +30,12 @@ export function PromotionalModal() {
         const galleryRef = ref(storage, 'motion-gallery');
         const res = await listAll(galleryRef);
         if (res.items.length > 0) {
-          // Fetch the URL of the first image in the folder
-          const firstItemRef = res.items[0];
-          const url = await getDownloadURL(firstItemRef);
-          setImageUrl(url);
+          const newImageMap = new Map<string, string>();
+          for (const itemRef of res.items) {
+            const url = await getDownloadURL(itemRef);
+            newImageMap.set(itemRef.name.toLowerCase(), url);
+          }
+          setImageMap(newImageMap);
         }
       } catch (error) {
         console.error("Error fetching promotional image from motion-gallery:", error);
@@ -45,30 +48,38 @@ export function PromotionalModal() {
   }, []);
 
   useEffect(() => {
-    // This logic runs after the image URL has been fetched
-    if (isLoading) {
-      return;
-    }
-
-    if (typeof window === 'undefined') {
+    if (isLoading || typeof window === 'undefined') {
       return;
     }
 
     const hasBeenShown = sessionStorage.getItem(PROMO_SESSION_KEY);
-
-    // Only show if we have an image, we are on the sell page, and it hasn't been shown
-    if (imageUrl && pathname.includes('/sell') && !hasBeenShown) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        sessionStorage.setItem(PROMO_SESSION_KEY, 'true');
-      }, 500);
-
-      return () => clearTimeout(timer);
+    if (hasBeenShown) {
+      return;
     }
-  }, [pathname, imageUrl, isLoading]);
+    
+    let targetImage: string | undefined;
+    if (pathname.includes('/sell')) {
+        targetImage = imageMap.get('sell.jpg');
+    } else if (pathname.includes('/browse')) {
+        targetImage = imageMap.get('browse.jpg');
+    }
 
-  // Don't render the dialog if there's no image to show
-  if (!imageUrl) {
+    if (targetImage) {
+        setActiveImageUrl(targetImage);
+        const timer = setTimeout(() => {
+            setIsOpen(true);
+            sessionStorage.setItem(PROMO_SESSION_KEY, 'true');
+        }, 500);
+        return () => clearTimeout(timer);
+    } else {
+        // If the target image for the current page isn't found, close any potentially open dialog.
+        setIsOpen(false);
+        setActiveImageUrl(null);
+    }
+    
+  }, [pathname, imageMap, isLoading]);
+
+  if (!activeImageUrl || !isOpen) {
     return null;
   }
 
@@ -77,7 +88,7 @@ export function PromotionalModal() {
       <DialogContent className="p-0 bg-transparent border-none w-full max-w-lg shadow-none">
         <div className="relative aspect-[3/4] w-full bg-muted rounded-lg flex items-center justify-center">
            <Image
-            src={imageUrl}
+            src={activeImageUrl}
             alt="Promotional Offer"
             fill
             className="object-cover rounded-lg"
