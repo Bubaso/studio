@@ -42,8 +42,8 @@ export function FoundingMemberNotifier() {
                 {t('title')}
               </div>
             ),
-            description: t('description'),
-            duration: 15000, // 15 seconds
+            description: <p className="text-base">{t('description')}</p>,
+            duration: 20000, // 20 seconds
           });
           // Mark as notified in this session to prevent repeats.
           sessionStorage.setItem(NOTIFICATION_KEY, 'true');
