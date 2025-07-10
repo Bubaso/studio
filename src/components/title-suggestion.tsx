@@ -46,10 +46,10 @@ export function TitleSuggestion({ itemDescription, onTitleSuggested }: TitleSugg
   };
 
   return (
-    <div className="space-y-4 rounded-lg border border-dashed p-4">
+    <div className="space-y-4 rounded-lg border p-4 bg-primary/5 border-primary/20">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <div className="flex items-center text-sm font-medium">
-          <Sparkles className="mr-2 h-4 w-4 text-primary" />
+        <div className="flex items-center text-sm font-medium text-primary">
+          <Sparkles className="mr-2 h-4 w-4" />
           {t('title')}
         </div>
         <Button

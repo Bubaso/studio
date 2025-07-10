@@ -66,37 +66,23 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center font-headline">
-          <Wand2 className="mr-2 h-5 w-5 text-primary" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>
-          {t('description', { currency: priceRange?.currency || 'FCFA' })}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-            <Label htmlFor="item-description-preview">{t('descriptionLabel')}</Label>
-            <Textarea
-                id="item-description-preview"
-                value={itemDescription || t('descriptionPlaceholder')}
-                readOnly
-                rows={3}
-                className="bg-muted"
-            />
+    <div className="space-y-4 rounded-lg border p-4 bg-primary/5 border-primary/20">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center text-sm font-medium text-primary">
+                <Wand2 className="mr-2 h-4 w-4" />
+                {t('title')}
+            </div>
+             <Button type="button" onClick={handleSuggestPrice} disabled={isLoading || !itemDescription.trim()} variant="outline" size="sm">
+                {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <Wand2 className="mr-2 h-4 w-4" />
+                )}
+                {t('button')}
+            </Button>
         </div>
-      </CardContent>
-      <CardFooter className="flex flex-col items-stretch gap-4">
-        <Button type="button" onClick={handleSuggestPrice} disabled={isLoading || !itemDescription.trim()}>
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
-          )}
-          {t('button')}
-        </Button>
+        <p className="text-sm text-muted-foreground">{t('description', { currency: priceRange?.currency || 'FCFA' })}</p>
+         
         {error && (
           <Alert variant="destructive">
             <AlertTitle>{t('errorTitle')}</AlertTitle>
@@ -125,7 +111,6 @@ export function PriceSuggestion({ itemDescription, onPriceSuggested }: PriceSugg
             </div>
           </Alert>
         )}
-      </CardFooter>
-    </Card>
+    </div>
   );
 }
