@@ -5,3 +5,11 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# Add a rewrite rule to direct all traffic to the Next.js server.
+# This is crucial for handling special paths like Firebase Authentication callbacks.
+rewrites:
+  - source: '**'
+    run:
+      serviceId: 'nextn' # Use the default service ID for the Next.js app
+      region: 'us-central1'
