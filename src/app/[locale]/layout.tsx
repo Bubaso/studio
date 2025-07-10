@@ -10,6 +10,7 @@ import { ScrollToTop } from '@/components/scroll-to-top';
 import {NextIntlClientProvider, useMessages} from 'next-intl';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { Chatbot } from '@/components/chatbot';
+import { PromotionalModal } from '@/components/promotional-modal';
 
 export default function LocaleLayout({
   children,
@@ -36,6 +37,7 @@ export default function LocaleLayout({
           <BottomTabNavigator />
           <Toaster />
           <Chatbot />
+          <PromotionalModal />
         </div>
       </AuthProvider>
     </NextIntlClientProvider>
