@@ -695,62 +695,62 @@
     "description": "Tebrikler! İlk 100 kullanıcımızdan biri olarak, 10 ek ücretsiz ilan hakkı kazandınız. Artık toplam 15 ücretsiz ilanınız var."
   },
   "PrivacyPolicyPage": {
-    "title": "Privacy Policy",
-    "lastUpdated": "Last Updated: July 23, 2024",
+    "title": "Gizlilik Politikası",
+    "lastUpdated": "Son Güncelleme: 23 Temmuz 2024",
     "introduction": {
-      "title": "1. Introduction",
-      "p1": "Welcome to JëndJaay. We respect your privacy and are committed to protecting it. This privacy policy explains how we collect, use, and safeguard your information."
+      "title": "1. Giriş",
+      "p1": "JëndJaay'a hoş geldiniz. Gizliliğinize saygı duyuyoruz ve onu korumayı taahhüt ediyoruz. Bu gizlilik politikası, bilgilerinizi nasıl topladığımızı, kullandığımızı ve koruduğumuzu açıklar."
     },
     "informationWeCollect": {
-      "title": "2. Information We Collect",
-      "p1": "We collect information you provide directly to us, such as:",
-      "listItem1": "Profile information (name, email, photo)",
-      "listItem2": "Content you create (listings, messages)",
-      "listItem3": "Transaction information"
+      "title": "2. Topladığımız Bilgiler",
+      "p1": "Doğrudan bize sağladığınız bilgileri toplarız, örneğin:",
+      "listItem1": "Profil bilgileri (isim, e-posta, fotoğraf)",
+      "listItem2": "Oluşturduğunuz içerik (ilanlar, mesajlar)",
+      "listItem3": "İşlem bilgileri"
     },
     "howWeUseInformation": {
-      "title": "3. How We Use Your Information",
-      "p1": "We use your information to provide and improve our services, communicate with you, and ensure the security of our platform."
+      "title": "3. Bilgilerinizi Nasıl Kullanırız",
+      "p1": "Bilgilerinizi hizmetlerimizi sağlamak ve iyileştirmek, sizinle iletişim kurmak ve platformumuzun güvenliğini sağlamak için kullanırız."
     },
     "sharingInformation": {
-      "title": "4. Sharing Your Information",
-      "p1": "We do not share your personal information with third parties except as required by law or to provide our services (e.g., with payment processors)."
+      "title": "4. Bilgilerinizi Paylaşma",
+      "p1": "Kişisel bilgilerinizi, yasal olarak gerekli olmadıkça veya hizmetlerimizi sağlamak için (örneğin ödeme işlemcileriyle) üçüncü taraflarla paylaşmayız."
     },
     "yourChoices": {
-      "title": "5. Your Choices",
-      "p1": "You can access and update your profile information at any time. You can also delete your account from your profile page."
+      "title": "5. Seçimleriniz",
+      "p1": "Profil bilgilerinize istediğiniz zaman erişebilir ve güncelleyebilirsiniz. Ayrıca profil sayfanızdan hesabınızı silebilirsiniz."
     },
     "contactUs": {
-      "title": "6. Contact Us",
-      "p1": "If you have any questions about this privacy policy, please contact us at [contact email]."
+      "title": "6. Bize Ulaşın",
+      "p1": "Bu gizlilik politikası hakkında herhangi bir sorunuz varsa, lütfen info@jendjaay.com adresinden bizimle iletişime geçin."
     }
   },
   "TermsOfUsePage": {
-    "title": "Terms of Use",
-    "lastUpdated": "Last Updated: July 23, 2024",
+    "title": "Kullanım Koşulları",
+    "lastUpdated": "Son Güncelleme: 23 Temmuz 2024",
     "acceptance": {
-      "title": "1. Acceptance of Terms",
-      "p1": "By accessing or using JëndJaay, you agree to be bound by these terms of use."
+      "title": "1. Koşulların Kabulü",
+      "p1": "JëndJaay'a erişerek veya kullanarak, bu kullanım koşullarına bağlı kalmayı kabul etmiş olursunuz."
     },
     "userConduct": {
-      "title": "2. User Conduct",
-      "p1": "You agree not to use the platform for any illegal or prohibited purpose. You are responsible for all content you post."
+      "title": "2. Kullanıcı Davranışı",
+      "p1": "Platformu yasa dışı veya yasaklanmış herhangi bir amaç için kullanmamayı kabul edersiniz. Yayınladığınız tüm içerikten siz sorumlusunuz."
     },
     "listings": {
-      "title": "3. Listings",
-      "p1": "Sellers are responsible for the accuracy of their listings. Prohibited items, including illegal or dangerous goods, are not allowed."
+      "title": "3. İlanlar",
+      "p1": "Satıcılar, ilanlarının doğruluğundan sorumludur. Yasa dışı veya tehlikeli mallar da dahil olmak üzere yasaklanmış ürünlere izin verilmez."
     },
     "intellectualProperty": {
-      "title": "4. Intellectual Property",
-      "p1": "The content on JëndJaay, including logos, text, and graphics, is our property and is protected by copyright laws."
+      "title": "4. Fikri Mülkiyet",
+      "p1": "Logolar, metinler ve grafikler de dahil olmak üzere JëndJaay'daki içerik bizim mülkiyetimizdedir ve telif hakkı yasalarıyla korunmaktadır."
     },
     "disclaimers": {
-      "title": "5. Disclaimers",
-      "p1": "The platform is provided \"as is.\" We are not responsible for transactions between users."
+      "title": "5. Sorumluluk Reddi",
+      "p1": "Platform \"olduğu gibi\" sağlanmaktadır. Kullanıcılar arasındaki işlemlerden sorumlu değiliz."
     },
     "contactUs": {
-      "title": "6. Contact Us",
-      "p1": "If you have any questions about these terms, please contact us at [contact email]."
+      "title": "6. Bize Ulaşın",
+      "p1": "Bu koşullar hakkında herhangi bir sorunuz varsa, lütfen info@jendjaay.com adresinden bizimle iletişime geçin."
     }
   }
 }

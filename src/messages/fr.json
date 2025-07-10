@@ -722,7 +722,7 @@
     },
     "contactUs": {
       "title": "6. Contactez-nous",
-      "p1": "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à [email de contact]."
+      "p1": "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à info@jendjaay.com"
     }
   },
   "TermsOfUsePage": {
@@ -750,7 +750,7 @@
     },
     "contactUs": {
       "title": "6. Contactez-nous",
-      "p1": "Si vous avez des questions sur ces conditions, veuillez nous contacter à [email de contact]."
+      "p1": "Si vous avez des questions sur ces conditions, veuillez nous contacter à info@jendjaay.com"
     }
   }
 }
