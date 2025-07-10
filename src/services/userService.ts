@@ -1,4 +1,5 @@
 
+
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
 import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Added updateDoc and runTransaction
@@ -35,46 +36,40 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
   if (!firebaseUser) throw new Error("Firebase user object is required.");
 
   const userRef = doc(db, 'users', firebaseUser.uid);
+  const userSnapshot = await getDoc(userRef);
+
+  // If user document already exists, do nothing.
+  if (userSnapshot.exists()) {
+    console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
+    return;
+  }
+  
+  // The user does not exist, so we proceed with creation.
   const counterRef = doc(db, '_counters', 'users');
 
   try {
-    let userJustCreated = false;
     await runTransaction(db, async (transaction) => {
-        const userSnapshot = await transaction.get(userRef);
-
-        if (userSnapshot.exists()) {
-            console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-            return; // Exit transaction if user exists
+        // We re-check for existence inside the transaction to prevent race conditions.
+        const userInTransaction = await transaction.get(userRef);
+        if (userInTransaction.exists()) {
+            return; 
         }
 
         const counterSnap = await transaction.get(counterRef);
         const userCount = counterSnap.exists() ? counterSnap.data().count : 0;
 
-        let isFoundingMember = false;
-        let freeListings = 5; // Default free listings
+        let isFoundingMember = userCount < 100;
+        let freeListings = isFoundingMember ? 15 : 5;
 
-        if (userCount < 100) {
-            isFoundingMember = true;
-            freeListings = 15; // 5 default + 10 bonus
-        }
-        
         const { email, displayName, photoURL } = firebaseUser;
-        let finalName: string;
-        if (additionalData.name && additionalData.name.trim() !== '') {
-          finalName = additionalData.name;
-        } else if (displayName && displayName.trim() !== '') {
-          finalName = displayName;
-        } else if (email) {
-          finalName = email.split('@')[0];
-        } else {
-          finalName = 'Utilisateur Anonyme';
-        }
+        const finalName = additionalData.name || displayName || email?.split('@')[0] || 'Utilisateur Anonyme';
+        const finalAvatarUrl = additionalData.avatarUrl || photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
 
         const newUserDocData = {
           email,
           name: finalName,
-          avatarUrl: photoURL || additionalData.avatarUrl || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`,
-          dataAiHint: additionalData.dataAiHint || "profil personne",
+          avatarUrl: finalAvatarUrl,
+          dataAiHint: "profil personne",
           joinedDate: serverTimestamp(),
           location: additionalData.location || '',
           lastActiveAt: serverTimestamp(),
@@ -85,23 +80,28 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
           isFoundingMember: isFoundingMember,
         };
         
-        // Perform the writes within the transaction
         transaction.set(userRef, newUserDocData);
+
         if (counterSnap.exists()) {
             transaction.update(counterRef, { count: increment(1) });
         } else {
             transaction.set(counterRef, { count: 1 });
         }
-        userJustCreated = true;
-    });
-    
-    // After the transaction succeeds, send the welcome email if a new user was created.
-    if (userJustCreated) {
-        console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
-        const { email, displayName } = firebaseUser;
-        if (email) {
-            sendWelcomeEmail({ to: email, name: displayName || email.split('@')[0], locale });
+
+        // Also ensure Firebase Auth profile is consistent if changed
+        if (auth.currentUser && (finalName !== displayName || finalAvatarUrl !== photoURL)) {
+             await updateProfile(auth.currentUser, { 
+                displayName: finalName,
+                photoURL: finalAvatarUrl
+            }).catch(e => console.warn("Could not sync Auth profile on user creation:", e));
         }
+    });
+
+    console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
+    
+    // Send the welcome email after the transaction succeeds.
+    if (firebaseUser.email) {
+        sendWelcomeEmail({ to: firebaseUser.email, name: firebaseUser.displayName || firebaseUser.email.split('@')[0], locale });
     }
 
   } catch (error) {
