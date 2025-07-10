@@ -2,7 +2,7 @@
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where, onSnapshot, Unsubscribe } from 'firebase/firestore'; // Added onSnapshot, Unsubscribe
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Removed onSnapshot, Unsubscribe
 import type { User as FirebaseUser } from 'firebase/auth';
 import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -18,6 +18,7 @@ const convertTimestampToISO = (timestamp: Timestamp | undefined | string): strin
     try {
       return (timestamp as Timestamp).toDate().toISOString();
     } catch (e) {
+      console.warn("Error converting timestamp toDate in userService:", e, timestamp);
       return new Date().toISOString(); // Fallback on conversion error
     }
   }
@@ -139,31 +140,6 @@ export const getUserDocument = async (uid: string): Promise<UserProfile | null> 
     return null;
   }
 };
-
-/**
- * Listens for real-time updates to a user's document.
- * @param uid The user's ID.
- * @param callback A function to be called with the user's profile data whenever it changes.
- * @returns An unsubscribe function to stop listening to updates.
- */
-export const listenToUserDocument = (uid: string, callback: (profile: UserProfile | null) => void): Unsubscribe => {
-  if (!uid) {
-    callback(null);
-    return () => {}; // Return a no-op unsubscribe function
-  }
-  const userDocRef = doc(db, 'users', uid);
-  
-  const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-    const profile = mapDocToProfile(docSnap);
-    callback(profile);
-  }, (error) => {
-    console.error(`Error listening to user document for UID ${uid}: `, error);
-    callback(null);
-  });
-
-  return unsubscribe;
-};
-
 
 export const uploadAvatarAndGetURL = async (imageFile: File, userId: string): Promise<string> => {
   if (!userId) {

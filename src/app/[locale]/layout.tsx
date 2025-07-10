@@ -7,7 +7,6 @@ import { BottomTabNavigator } from '@/components/layout/bottom-tab-navigator';
 import { UserActivityLogger } from '@/components/user-activity-logger';
 import { AuthProvider } from '@/context/AuthContext';
 import { ScrollToTop } from '@/components/scroll-to-top';
-import { FoundingMemberNotifier } from '@/components/FoundingMemberNotifier';
 import {NextIntlClientProvider, useMessages} from 'next-intl';
 import { unstable_setRequestLocale } from 'next-intl/server';
 import { Chatbot } from '@/components/chatbot';
@@ -26,7 +25,6 @@ export default function LocaleLayout({
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <AuthProvider>
-        <FoundingMemberNotifier />
         <ScrollToTop />
         <div className="flex flex-col min-h-screen">
           <Header />
