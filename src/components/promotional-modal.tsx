@@ -5,26 +5,59 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { storage } from '@/lib/firebase';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
 
 const PROMO_SESSION_KEY = 'sellPagePromoShown';
 
 export function PromotionalModal() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // We only want this logic to run on the client side
+    const fetchPromoImage = async () => {
+      if (!storage) {
+        console.warn("Firebase Storage is not initialized.");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const galleryRef = ref(storage, 'motion-gallery');
+        const res = await listAll(galleryRef);
+        if (res.items.length > 0) {
+          // Fetch the URL of the first image in the folder
+          const firstItemRef = res.items[0];
+          const url = await getDownloadURL(firstItemRef);
+          setImageUrl(url);
+        }
+      } catch (error) {
+        console.error("Error fetching promotional image from motion-gallery:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPromoImage();
+  }, []);
+
+  useEffect(() => {
+    // This logic runs after the image URL has been fetched
+    if (isLoading) {
+      return;
+    }
+
     if (typeof window === 'undefined') {
       return;
     }
 
     const hasBeenShown = sessionStorage.getItem(PROMO_SESSION_KEY);
 
-    // Check if the current path is the sell page and the promo hasn't been shown yet
-    if (pathname.includes('/sell') && !hasBeenShown) {
-      // Open the modal after a short delay to ensure the page is visible
+    // Only show if we have an image, we are on the sell page, and it hasn't been shown
+    if (imageUrl && pathname.includes('/sell') && !hasBeenShown) {
       const timer = setTimeout(() => {
         setIsOpen(true);
         sessionStorage.setItem(PROMO_SESSION_KEY, 'true');
@@ -32,14 +65,19 @@ export function PromotionalModal() {
 
       return () => clearTimeout(timer);
     }
-  }, [pathname]);
+  }, [pathname, imageUrl, isLoading]);
+
+  // Don't render the dialog if there's no image to show
+  if (!imageUrl) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="p-0 bg-transparent border-none w-full max-w-lg shadow-none">
-        <div className="relative aspect-[3/4] w-full">
+        <div className="relative aspect-[3/4] w-full bg-muted rounded-lg flex items-center justify-center">
            <Image
-            src="https://placehold.co/600x800.png"
+            src={imageUrl}
             alt="Promotional Offer"
             fill
             className="object-cover rounded-lg"
