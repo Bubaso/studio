@@ -42,7 +42,8 @@ export function FoundingMemberNotifier() {
                 {t('title')}
               </div>
             ),
-            description: <p className="text-base">{t('description')}</p>,
+            description: t('description'),
+            className: 'text-base', // Increase font size safely
             duration: 20000, // 20 seconds
           });
           // Mark as notified in this session to prevent repeats.
