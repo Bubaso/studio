@@ -693,5 +693,64 @@
   "FoundingMemberNotifier": {
     "title": "Avantage Membre Fondateur !",
     "description": "Félicitations ! En tant que l'un de nos 100 premiers utilisateurs, vous avez reçu 10 annonces gratuites supplémentaires. Vous avez maintenant un total de 15 annonces gratuites."
+  },
+  "PrivacyPolicyPage": {
+    "title": "Politique de confidentialité",
+    "lastUpdated": "Dernière mise à jour : 23 juillet 2024",
+    "introduction": {
+      "title": "1. Introduction",
+      "p1": "Bienvenue sur JëndJaay. Nous respectons votre vie privée et nous nous engageons à la protéger. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations."
+    },
+    "informationWeCollect": {
+      "title": "2. Informations que nous collectons",
+      "p1": "Nous collectons les informations que vous nous fournissez directement, telles que :",
+      "listItem1": "Informations de profil (nom, email, photo)",
+      "listItem2": "Contenu que vous créez (annonces, messages)",
+      "listItem3": "Informations de transaction"
+    },
+    "howWeUseInformation": {
+      "title": "3. Comment nous utilisons vos informations",
+      "p1": "Nous utilisons vos informations pour fournir et améliorer nos services, communiquer avec vous et assurer la sécurité de notre plateforme."
+    },
+    "sharingInformation": {
+      "title": "4. Partage de vos informations",
+      "p1": "Nous ne partageons pas vos informations personnelles avec des tiers, sauf si la loi l'exige ou pour fournir nos services (par exemple, avec des processeurs de paiement)."
+    },
+    "yourChoices": {
+      "title": "5. Vos choix",
+      "p1": "Vous pouvez accéder et mettre à jour vos informations de profil à tout moment. Vous pouvez également supprimer votre compte depuis votre page de profil."
+    },
+    "contactUs": {
+      "title": "6. Contactez-nous",
+      "p1": "Si vous avez des questions sur cette politique de confidentialité, veuillez nous contacter à [email de contact]."
+    }
+  },
+  "TermsOfUsePage": {
+    "title": "Conditions d'utilisation",
+    "lastUpdated": "Dernière mise à jour : 23 juillet 2024",
+    "acceptance": {
+      "title": "1. Acceptation des conditions",
+      "p1": "En accédant ou en utilisant JëndJaay, vous acceptez d'être lié par ces conditions d'utilisation."
+    },
+    "userConduct": {
+      "title": "2. Conduite de l'utilisateur",
+      "p1": "Vous acceptez de ne pas utiliser la plateforme à des fins illégales ou interdites. Vous êtes responsable de tout le contenu que vous publiez."
+    },
+    "listings": {
+      "title": "3. Annonces",
+      "p1": "Les vendeurs sont responsables de l'exactitude de leurs annonces. Les articles interdits, y compris les produits illégaux ou dangereux, ne sont pas autorisés."
+    },
+    "intellectualProperty": {
+      "title": "4. Propriété intellectuelle",
+      "p1": "Le contenu de JëndJaay, y compris les logos, textes et graphiques, est notre propriété et est protégé par les lois sur le droit d'auteur."
+    },
+    "disclaimers": {
+      "title": "5. Avertissements",
+      "p1": "La plateforme est fournie \"telle quelle\". Nous ne sommes pas responsables des transactions entre utilisateurs."
+    },
+    "contactUs": {
+      "title": "6. Contactez-nous",
+      "p1": "Si vous avez des questions sur ces conditions, veuillez nous contacter à [email de contact]."
+    }
   }
 }

@@ -693,5 +693,64 @@
   "FoundingMemberNotifier": {
     "title": "Kurucu Üye Avantajı!",
     "description": "Tebrikler! İlk 100 kullanıcımızdan biri olarak, 10 ek ücretsiz ilan hakkı kazandınız. Artık toplam 15 ücretsiz ilanınız var."
+  },
+  "PrivacyPolicyPage": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last Updated: July 23, 2024",
+    "introduction": {
+      "title": "1. Introduction",
+      "p1": "Welcome to JëndJaay. We respect your privacy and are committed to protecting it. This privacy policy explains how we collect, use, and safeguard your information."
+    },
+    "informationWeCollect": {
+      "title": "2. Information We Collect",
+      "p1": "We collect information you provide directly to us, such as:",
+      "listItem1": "Profile information (name, email, photo)",
+      "listItem2": "Content you create (listings, messages)",
+      "listItem3": "Transaction information"
+    },
+    "howWeUseInformation": {
+      "title": "3. How We Use Your Information",
+      "p1": "We use your information to provide and improve our services, communicate with you, and ensure the security of our platform."
+    },
+    "sharingInformation": {
+      "title": "4. Sharing Your Information",
+      "p1": "We do not share your personal information with third parties except as required by law or to provide our services (e.g., with payment processors)."
+    },
+    "yourChoices": {
+      "title": "5. Your Choices",
+      "p1": "You can access and update your profile information at any time. You can also delete your account from your profile page."
+    },
+    "contactUs": {
+      "title": "6. Contact Us",
+      "p1": "If you have any questions about this privacy policy, please contact us at [contact email]."
+    }
+  },
+  "TermsOfUsePage": {
+    "title": "Terms of Use",
+    "lastUpdated": "Last Updated: July 23, 2024",
+    "acceptance": {
+      "title": "1. Acceptance of Terms",
+      "p1": "By accessing or using JëndJaay, you agree to be bound by these terms of use."
+    },
+    "userConduct": {
+      "title": "2. User Conduct",
+      "p1": "You agree not to use the platform for any illegal or prohibited purpose. You are responsible for all content you post."
+    },
+    "listings": {
+      "title": "3. Listings",
+      "p1": "Sellers are responsible for the accuracy of their listings. Prohibited items, including illegal or dangerous goods, are not allowed."
+    },
+    "intellectualProperty": {
+      "title": "4. Intellectual Property",
+      "p1": "The content on JëndJaay, including logos, text, and graphics, is our property and is protected by copyright laws."
+    },
+    "disclaimers": {
+      "title": "5. Disclaimers",
+      "p1": "The platform is provided \"as is.\" We are not responsible for transactions between users."
+    },
+    "contactUs": {
+      "title": "6. Contact Us",
+      "p1": "If you have any questions about these terms, please contact us at [contact email]."
+    }
   }
 }
