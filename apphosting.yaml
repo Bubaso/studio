@@ -6,7 +6,7 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 
-# Add a rewrite rule to direct all traffic to the Next.js server.
+# Add headers and a rewrite rule to direct all traffic to the Next.js server.
 # This is crucial for handling special paths like Firebase Authentication callbacks.
 headers:
   - source: /__/auth/**
