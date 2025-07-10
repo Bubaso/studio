@@ -208,10 +208,10 @@ export default async function ItemPage({ params }: ItemPageProps) {
             />
           </div>
           
-          <Separator className="my-4" />
+           <Separator className="my-4" />
 
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="text-sm py-1 px-3">
+            <Badge variant="default" className="text-sm py-1 px-3">
               <Package className="h-4 w-4 mr-2" />
               {item.category}
             </Badge>
@@ -230,7 +230,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           
            <Separator className="my-4" />
           
-          <Card>
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('itemDescription')}</CardTitle>
             </CardHeader>
@@ -239,7 +239,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-primary/5 border-primary/20">
             <CardHeader>
               <CardTitle className="font-headline text-xl">{t('deliveryDetails')}</CardTitle>
             </CardHeader>
