@@ -264,13 +264,13 @@ function SignUpPageContent() {
           </Button>
         </form>
 
-        <div className="my-6 flex items-center">
+        <div className="my-6 flex items-center hidden">
           <div className="flex-grow border-t border-muted-foreground/30"></div>
           <span className="mx-4 text-xs text-muted-foreground">{t('orSeparator')}</span>
           <div className="flex-grow border-t border-muted-foreground/30"></div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 hidden">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignUp')}
