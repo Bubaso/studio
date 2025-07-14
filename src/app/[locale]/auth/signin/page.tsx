@@ -234,13 +234,13 @@ function SignInPageContent() {
           </Button>
         </form>
 
-        <div className="my-6 flex items-center hidden">
+        <div className="my-6 flex items-center">
           <div className="flex-grow border-t border-muted-foreground/30"></div>
           <span className="mx-4 text-xs text-muted-foreground">{t('orSeparator')}</span>
           <div className="flex-grow border-t border-muted-foreground/30"></div>
         </div>
 
-        <div className="space-y-3 hidden">
+        <div className="space-y-3">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn(googleProvider)} disabled={isLoading}>
             {/* TODO: Add Google Icon */}
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

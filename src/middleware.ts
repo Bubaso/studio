@@ -19,7 +19,13 @@ export default async function middleware(request: NextRequest) {
 }
  
 export const config = {
-  // This matcher is intentionally broad to catch all requests,
-  // so the bypass logic inside the middleware function can work effectively.
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
+  // Match only internationalized pathnames
+  matcher: [
+    // Match all pathnames except for
+    // - … if they start with `/api`, `/_next` or `/_vercel`
+    // - … the ones containing a dot (e.g. `favicon.ico`)
+    '/((?!api|_next|_vercel|.*\\..*).*)',
+    // Match all pathnames within `/` (e.g. `/(tr)/`, `/(en)/`)
+    '/(tr|en)/:path*'
+  ]
 };
