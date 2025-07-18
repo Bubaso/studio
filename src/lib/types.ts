@@ -1,9 +1,5 @@
 
-
-
-
-
-
+export const locales = ['fr', 'en', 'tr'];
 
 export interface ViewHistoryItem {
   itemId: string;
