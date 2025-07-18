@@ -79,21 +79,22 @@
     "emailPlaceholder": "siz@ornek.com",
     "passwordLabel": "Şifre",
     "passwordPlaceholder": "En az 6 karakter",
-    "createAccountButton": "Hesap Oluştur",
+    "signUpButton": "Hesap Oluştur",
     "orSeparator": "VEYA",
     "googleSignUp": "Google ile kaydol",
     "facebookSignUp": "Facebook ile kaydol",
     "appleSignUp": "Apple ile kaydol",
-    "alreadyHaveAccountPrompt": "Zaten bir hesabınız var mı?",
+    "hasAccountPrompt": "Zaten bir hesabınız var mı?",
     "signInLink": "Giriş Yap",
     "toast": {
       "successTitle": "Hesap Oluşturuldu!",
       "welcome": "Hoş geldiniz! Hesabınız başarıyla oluşturuldu.",
       "emailInUseTitle": "E-posta Zaten Kullanılıyor",
-      "emailInUseDesc": "Bu e-posta zaten bir hesapla ilişkili.",
+      "emailInUse": "Bu e-posta zaten bir hesapla ilişkili.",
       "errorTitle": "Kayıt Hatası",
       "genericError": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
       "weakPassword": "Şifreniz en az 6 karakter uzunluğunda olmalıdır.",
+      "invalidEmail": "Lütfen geçerli bir e-posta adresi girin.",
       "configError": "Bir yapılandırma hatası oluştu. Lütfen daha sonra tekrar deneyin veya destekle iletişime geçin."
     }
   },
@@ -788,5 +789,7 @@
     "noUsers": "Görüntülenecek kullanıcı yok."
   }
 }
+
+    
 
     

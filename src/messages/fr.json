@@ -79,21 +79,22 @@
     "emailPlaceholder": "vous@exemple.com",
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "Au moins 6 caractères",
-    "createAccountButton": "Créer le compte",
+    "signUpButton": "Créer le compte",
     "orSeparator": "OU",
     "googleSignUp": "S'inscrire avec Google",
     "facebookSignUp": "S'inscrire avec Facebook",
     "appleSignUp": "S'inscrire avec Apple",
-    "alreadyHaveAccountPrompt": "Vous avez déjà un compte ?",
+    "hasAccountPrompt": "Vous avez déjà un compte ?",
     "signInLink": "Se connecter",
     "toast": {
       "successTitle": "Compte créé !",
       "welcome": "Bienvenue ! Votre compte a été créé avec succès.",
       "emailInUseTitle": "E-mail déjà utilisé",
-      "emailInUseDesc": "Cet e-mail est déjà associé à un compte.",
+      "emailInUse": "Cet e-mail est déjà associé à un compte.",
       "errorTitle": "Erreur d'inscription",
       "genericError": "Une erreur inattendue est survenue. Veuillez réessayer.",
       "weakPassword": "Votre mot de passe doit contenir au moins 6 caractères.",
+      "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
       "configError": "Une erreur de configuration est survenue. Veuillez réessayer plus tard ou contacter le support."
     }
   },
@@ -788,5 +789,7 @@
     "noUsers": "Aucun utilisateur à afficher."
   }
 }
+
+    
 
     

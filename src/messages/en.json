@@ -79,21 +79,22 @@
     "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
     "passwordPlaceholder": "At least 6 characters",
-    "createAccountButton": "Create Account",
+    "signUpButton": "Create Account",
     "orSeparator": "OR",
     "googleSignUp": "Sign up with Google",
     "facebookSignUp": "Sign up with Facebook",
     "appleSignUp": "Sign up with Apple",
-    "alreadyHaveAccountPrompt": "Already have an account?",
+    "hasAccountPrompt": "Already have an account?",
     "signInLink": "Sign In",
     "toast": {
       "successTitle": "Account Created!",
       "welcome": "Welcome! Your account has been successfully created.",
       "emailInUseTitle": "Email Already in Use",
-      "emailInUseDesc": "This email is already associated with an account.",
+      "emailInUse": "This email is already associated with an account.",
       "errorTitle": "Sign-up Error",
       "genericError": "An unexpected error occurred. Please try again.",
       "weakPassword": "Your password must be at least 6 characters long.",
+      "invalidEmail": "Please enter a valid email address.",
       "configError": "A configuration error occurred. Please try again later or contact support."
     }
   },
@@ -788,5 +789,7 @@
     "noUsers": "No users to display."
   }
 }
+
+    
 
     
