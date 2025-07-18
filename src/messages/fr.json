@@ -752,5 +752,41 @@
       "title": "6. Contactez-nous",
       "p1": "Si vous avez des questions sur ces conditions, veuillez nous contacter à info@jendjaay.com"
     }
+  },
+  "ProfilePage": {
+    "toast": {
+      "accountDeletedTitle": "Compte supprimé",
+      "accountDeletedDesc": "Votre compte a été supprimé avec succès.",
+      "errorTitle": "Erreur",
+      "deleteAccountError": "Impossible de supprimer le compte."
+    },
+    "loginRequiredTitle": "Connexion requise",
+    "loginRequiredDesc": "Pour voir cette page, veuillez",
+    "signInLink": "vous connecter",
+    "user": "Utilisateur",
+    "subscribers": "Abonnés",
+    "subscriptions": "Abonnements",
+    "joinedOn": "Inscrit(e) le {date, date, long}",
+    "addStatus": "Ajouter un statut",
+    "edit": "Modifier",
+    "dashboard": "Tableau de bord",
+    "myListings": "Mes annonces ({count})",
+    "noListings": "Vous n'avez aucune annonce pour le moment.",
+    "postFirstItem": "Poster votre premier article",
+    "myReviews": "Mes évaluations ({count})",
+    "noReviews": "Vous n'avez pas encore reçu d'évaluations.",
+    "dangerZone": "Zone de danger",
+    "dangerZoneDesc": "Ces actions sont irréversibles. Soyez prudent.",
+    "deleteAccount": "Supprimer le compte",
+    "confirmDeleteTitle": "Êtes-vous absolument sûr(e) ?",
+    "confirmDeleteDesc": "Cette action ne peut pas être annulée. Cela supprimera définitivement votre compte et toutes vos données de nos serveurs.",
+    "cancel": "Annuler",
+    "confirmDeleteButton": "Oui, supprimer mon compte"
+  },
+  "SubscriptionDialog": {
+    "view": "Voir",
+    "noUsers": "Aucun utilisateur à afficher."
   }
 }
+
+    

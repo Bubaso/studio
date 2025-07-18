@@ -691,8 +691,8 @@
     "title": "{name}'s Status"
   },
   "FoundingMemberNotifier": {
-    "title": "Avantage Membre Fondateur !",
-    "description": "Félicitations ! En tant que l'un de nos 100 premiers utilisateurs, vous avez reçu 10 annonces gratuites supplémentaires. Vous avez maintenant un total de 15 annonces gratuites."
+    "title": "Founding Member Benefit!",
+    "description": "Congratulations! As one of our first 100 users, you have received an additional 10 free listings. You now have a total of 15 free listings."
   },
   "PrivacyPolicyPage": {
     "title": "Privacy Policy",
@@ -752,5 +752,41 @@
       "title": "6. Contact Us",
       "p1": "If you have any questions about these terms, please contact us at info@jendjaay.com"
     }
+  },
+  "ProfilePage": {
+    "toast": {
+      "accountDeletedTitle": "Account Deleted",
+      "accountDeletedDesc": "Your account has been successfully deleted.",
+      "errorTitle": "Error",
+      "deleteAccountError": "Could not delete account."
+    },
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredDesc": "To view this page, please",
+    "signInLink": "sign in",
+    "user": "User",
+    "subscribers": "Subscribers",
+    "subscriptions": "Subscriptions",
+    "joinedOn": "Joined on {date, date, long}",
+    "addStatus": "Add Status",
+    "edit": "Edit",
+    "dashboard": "Dashboard",
+    "myListings": "My Listings ({count})",
+    "noListings": "You don't have any listings yet.",
+    "postFirstItem": "Post your first item",
+    "myReviews": "My Reviews ({count})",
+    "noReviews": "You haven't received any reviews yet.",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDesc": "These actions are irreversible. Please be careful.",
+    "deleteAccount": "Delete Account",
+    "confirmDeleteTitle": "Are you absolutely sure?",
+    "confirmDeleteDesc": "This action cannot be undone. This will permanently delete your account and remove all your data from our servers.",
+    "cancel": "Cancel",
+    "confirmDeleteButton": "Yes, delete my account"
+  },
+  "SubscriptionDialog": {
+    "view": "View",
+    "noUsers": "No users to display."
   }
 }
+
+    

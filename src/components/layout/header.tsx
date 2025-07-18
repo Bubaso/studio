@@ -242,7 +242,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            <Link href={`/${locale}/auth/signin`}>
+            <Link href="/auth/signin">
               <Button variant="ghost" size="sm">
                 <LogIn className="h-4 w-4 mr-1 md:mr-2" />
                 {t('userMenu.signIn')}

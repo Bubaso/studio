@@ -752,5 +752,41 @@
       "title": "6. Bize Ulaşın",
       "p1": "Bu koşullar hakkında herhangi bir sorunuz varsa, lütfen info@jendjaay.com adresinden bizimle iletişime geçin."
     }
+  },
+  "ProfilePage": {
+    "toast": {
+      "accountDeletedTitle": "Hesap Silindi",
+      "accountDeletedDesc": "Hesabınız başarıyla silindi.",
+      "errorTitle": "Hata",
+      "deleteAccountError": "Hesap silinemedi."
+    },
+    "loginRequiredTitle": "Giriş Gerekli",
+    "loginRequiredDesc": "Bu sayfayı görüntülemek için lütfen",
+    "signInLink": "giriş yapın",
+    "user": "Kullanıcı",
+    "subscribers": "Aboneler",
+    "subscriptions": "Abonelikler",
+    "joinedOn": "Katılım tarihi: {date, date, long}",
+    "addStatus": "Durum Ekle",
+    "edit": "Düzenle",
+    "dashboard": "Panel",
+    "myListings": "İlanlarım ({count})",
+    "noListings": "Henüz hiç ilanınız yok.",
+    "postFirstItem": "İlk ürününüzü gönderin",
+    "myReviews": "Değerlendirmelerim ({count})",
+    "noReviews": "Henüz hiç değerlendirme almadınız.",
+    "dangerZone": "Tehlikeli Bölge",
+    "dangerZoneDesc": "Bu eylemler geri alınamaz. Lütfen dikkatli olun.",
+    "deleteAccount": "Hesabı Sil",
+    "confirmDeleteTitle": "Kesinlikle emin misiniz?",
+    "confirmDeleteDesc": "Bu eylem geri alınamaz. Bu, hesabınızı kalıcı olarak silecek ve tüm verilerinizi sunucularımızdan kaldıracaktır.",
+    "cancel": "İptal",
+    "confirmDeleteButton": "Evet, hesabımı sil"
+  },
+  "SubscriptionDialog": {
+    "view": "Görüntüle",
+    "noUsers": "Görüntülenecek kullanıcı yok."
   }
 }
+
+    
