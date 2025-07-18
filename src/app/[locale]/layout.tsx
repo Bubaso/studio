@@ -7,21 +7,20 @@ import { BottomTabNavigator } from '@/components/layout/bottom-tab-navigator';
 import { UserActivityLogger } from '@/components/user-activity-logger';
 import { AuthProvider } from '@/context/AuthContext';
 import { ScrollToTop } from '@/components/scroll-to-top';
-import {NextIntlClientProvider, useMessages} from 'next-intl';
-import { unstable_setRequestLocale } from 'next-intl/server';
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages, unstable_setRequestLocale} from 'next-intl/server';
 import { Chatbot } from '@/components/chatbot';
 import { PromotionalModal } from '@/components/promotional-modal';
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
-  params
+  params: {locale}
 }: {
   children: React.ReactNode;
   params: {locale: string};
 }) {
-  const locale = params.locale;
   unstable_setRequestLocale(locale);
-  const messages = useMessages();
+  const messages = await getMessages();
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>

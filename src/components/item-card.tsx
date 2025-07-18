@@ -9,7 +9,7 @@ import { Package, MapPin, Flag, TrendingDown, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButtonClient } from './favorite-button-client';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ItemViewCount } from './item-view-count';
 
 interface ItemCardProps {
@@ -21,6 +21,7 @@ const genericBlurDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAA
 
 export function ItemCard({ item }: ItemCardProps) {
   const t = useTranslations('ItemCard');
+  const locale = useLocale();
   const primaryImageUrl = (item.imageUrls && item.imageUrls.length > 0) ? item.imageUrls[0] : 'https://placehold.co/600x400.png';
   const imageHint = item.dataAiHint || `${item.category} ${item.name.split(' ')[0]}`.toLowerCase();
 
@@ -30,7 +31,7 @@ export function ItemCard({ item }: ItemCardProps) {
         item.lowActivity && "opacity-85 hover:opacity-100",
         item.isSold && "opacity-70 grayscale-[50%] hover:opacity-80"
     )}>
-      <Link href={`/items/${item.id}`} className="flex flex-col h-full group">
+      <Link href={`/${locale}/items/${item.id}`} className="flex flex-col h-full group">
         <CardHeader className="p-0 relative">
           <div className="aspect-[4/3] relative w-full overflow-hidden">
             <Image
@@ -83,7 +84,7 @@ export function ItemCard({ item }: ItemCardProps) {
         <CardContent className="p-3 flex-grow flex flex-col">
           <div className="flex-grow">
             <CardTitle className="text-md font-semibold mb-1 hover:text-primary transition-colors line-clamp-2" title={item.name}>{item.name}</CardTitle>
-            <p className={cn("text-lg font-bold text-primary mb-1.5", item.isSold && "text-muted-foreground line-through")}>{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+            <p className={cn("text-lg font-bold text-primary mb-1.5", item.isSold && "text-muted-foreground line-through")}>{item.price.toLocaleString(locale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             <div className="flex items-center text-xs text-muted-foreground mb-0.5">
               <Package className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
               <span className="truncate" title={item.category}>{item.category}</span>

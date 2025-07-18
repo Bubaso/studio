@@ -124,7 +124,7 @@ function SignUpPageContent() {
           variant: "destructive",
           action: (
             <Button asChild variant="secondary" size="sm">
-              <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
+              <Link href={`/${locale}/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
                 {t('signInLink')}
               </Link>
             </Button>
@@ -281,7 +281,7 @@ function SignUpPageContent() {
       <CardFooter className="flex flex-col items-center pt-6">
         <p className="text-sm text-muted-foreground">
           {t('alreadyHaveAccountPrompt')}{" "}
-          <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
+          <Link href={`/${locale}/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
              {t('signInLink')} <LogIn className="inline ml-1 h-4 w-4" />
           </Link>
         </p>

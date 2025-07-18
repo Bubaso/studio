@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Folder } from 'lucide-react';
 import type { UserCollection } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface CollectionCardProps {
   collection: UserCollection;
@@ -17,10 +17,11 @@ const genericBlurDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAA
 
 export function CollectionCard({ collection }: CollectionCardProps) {
   const t = useTranslations('FavoritesPage.collectionCard');
+  const locale = useLocale();
   const previews = collection.previewImageUrls || [];
 
   return (
-    <Link href={`/favorites/${collection.id}`} className="block group">
+    <Link href={`/${locale}/favorites/${collection.id}`} className="block group">
       <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.015] active:scale-[0.98]">
         <CardHeader className="p-0 relative">
           <div className="aspect-video w-full bg-muted overflow-hidden">

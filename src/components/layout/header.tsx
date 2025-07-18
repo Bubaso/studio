@@ -1,10 +1,9 @@
 
 "use client";
-import Link from 'next/link';
+import {Link, usePathname, useRouter} from '@/navigation';
 import { ShoppingBag, Search, PlusCircle, MessageSquare, User as UserIcon, LogIn, LogOut, Heart, Circle, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { auth, db } from '@/lib/firebase'; 
 import { signOut } from 'firebase/auth'; 
@@ -14,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { cn } from '@/lib/utils';
 import { NotificationCenter } from '../NotificationCenter';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useToast } from '@/hooks/use-toast';
 
 interface NavLink {
@@ -31,6 +30,7 @@ export function Header() {
   const tNotifier = useTranslations('FoundingMemberNotifier');
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -242,7 +242,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            <Link href="/auth/signin">
+            <Link href={`/${locale}/auth/signin`}>
               <Button variant="ghost" size="sm">
                 <LogIn className="h-4 w-4 mr-1 md:mr-2" />
                 {t('userMenu.signIn')}

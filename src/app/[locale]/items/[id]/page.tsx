@@ -120,7 +120,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <div className="font-semibold text-lg group-hover:text-primary transition-colors break-words">
               {seller.name || t('anonymousSeller')}
             </div>
-             <p className="text-sm text-muted-foreground">{t('joinedOn', { date: new Date(seller.joinedDate).toLocaleDateString('fr-FR') })}</p>
+             <p className="text-sm text-muted-foreground">{t('joinedOn', { date: new Date(seller.joinedDate).toLocaleDateString(params.locale) })}</p>
           </div>
         </CardContent>
       </Card>
@@ -175,18 +175,18 @@ export default async function ItemPage({ params }: ItemPageProps) {
           <div className="text-sm text-muted-foreground space-y-1">
               <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                  <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString('fr-FR')}</span>
+                  <span>{t('publishedOn')} {new Date(item.postedDate).toLocaleDateString(params.locale)}</span>
               </div>
               {item.lastUpdated && !item.isSold && (
                    <div className="flex items-center">
                       <Clock className="h-4 w-4 mr-2 text-muted-foreground/70" />
-                      <span>{t('lastModified')} {new Date(item.lastUpdated).toLocaleDateString('fr-FR')} à {new Date(item.lastUpdated).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                      <span>{t('lastModified')} {new Date(item.lastUpdated).toLocaleDateString(params.locale)} à {new Date(item.lastUpdated).toLocaleTimeString(params.locale, {hour: '2-digit', minute: '2-digit'})}</span>
                   </div>
               )}
                {item.isSold && item.soldAt && (
                    <div className="flex items-center text-green-600">
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      <span>{t('soldOn')} {new Date(item.soldAt).toLocaleDateString('fr-FR')} à {new Date(item.soldAt).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                      <span>{t('soldOn')} {new Date(item.soldAt).toLocaleDateString(params.locale)} à {new Date(item.soldAt).toLocaleTimeString(params.locale, {hour: '2-digit', minute: '2-digit'})}</span>
                   </div>
               )}
             </div>
@@ -195,7 +195,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold font-headline text-primary break-words">{item.name}</h1>
           
           <div className="flex justify-between items-center gap-4">
-            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl lg:text-3xl font-bold text-foreground whitespace-nowrap">{item.price.toLocaleString(params.locale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
             <WhatsAppShareButton item={item} />
           </div>
 

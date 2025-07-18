@@ -1,7 +1,9 @@
 
-import Link from 'next/link';
+import {Link} from '@/navigation';
+import { useLocale } from 'next-intl';
 
 export function Footer() {
+  const locale = useLocale();
   return (
     <footer className="border-t">
       <div className="container py-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">

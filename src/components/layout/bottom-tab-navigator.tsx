@@ -1,13 +1,14 @@
 
 "use client";
 
-import Link from 'next/link';
+import {Link, usePathname} from '@/navigation';
 import { ShoppingCart, PlusCircle } from 'lucide-react';
-import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useLocale } from 'next-intl';
 
 export function BottomTabNavigator() {
     const pathname = usePathname();
+    const locale = useLocale();
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {

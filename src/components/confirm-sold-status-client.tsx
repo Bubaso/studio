@@ -2,7 +2,7 @@
 "use client";
 
 import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";

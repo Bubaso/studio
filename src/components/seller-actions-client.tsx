@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import {Link} from '@/navigation';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash, CheckCircle, Edit3 } from 'lucide-react';
@@ -11,7 +12,6 @@ import { markItemAsSold, deleteItem } from '@/services/itemService';
 import type { Item } from '@/lib/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/context/AuthContext';
-import { useTranslations } from 'next-intl';
 
 interface SellerActionsClientProps {
   item: Item;
@@ -19,6 +19,7 @@ interface SellerActionsClientProps {
 
 export function SellerActionsClient({ item }: SellerActionsClientProps) {
   const t = useTranslations('SellerActions');
+  const locale = useLocale();
   const [isMarkingSold, startMarkingSold] = useTransition();
   const [isDeleting, startDeleting] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -53,7 +54,7 @@ export function SellerActionsClient({ item }: SellerActionsClientProps) {
       try {
         await deleteItem(item.id);
         toast({ title: t('toast.deleteSuccess'), description: t('toast.deleteSuccessDesc') });
-        router.push(`/profile`);
+        router.push(`/${locale}/profile`);
         router.refresh();
       } catch (error: any) {
         toast({ variant: "destructive", title: t('toast.error'), description: error.message || t('toast.deleteError') });

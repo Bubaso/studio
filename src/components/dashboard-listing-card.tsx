@@ -11,7 +11,7 @@ import { Skeleton } from './ui/skeleton';
 import { getViewCount } from '@/services/itemService';
 import { Badge } from './ui/badge';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -37,6 +37,7 @@ function StatDisplay({ icon: Icon, value, label, isLoading }: { icon: React.Elem
 
 export function DashboardListingCard({ item }: DashboardListingCardProps) {
   const t = useTranslations('Dashboard');
+  const locale = useLocale();
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
@@ -61,7 +62,7 @@ export function DashboardListingCard({ item }: DashboardListingCardProps) {
         </div>
         <div className="flex-grow">
           <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
-          <p className="text-primary font-bold">{item.price.toLocaleString('fr-FR')} XOF</p>
+          <p className="text-primary font-bold">{item.price.toLocaleString(locale)} XOF</p>
           <div className="flex items-center gap-4 mt-2">
             <StatDisplay icon={Eye} value={viewCount} label={t('views')} isLoading={isLoadingStats} />
             {/* Favorite count can be added here later */}
@@ -69,11 +70,11 @@ export function DashboardListingCard({ item }: DashboardListingCardProps) {
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-shrink-0">
           <Button asChild variant="secondary" size="sm">
-            <Link href={`/items/${item.id}`}><ArrowUpRight className="mr-2 h-4 w-4" />{t('view')}</Link>
+            <Link href={`/${locale}/items/${item.id}`}><ArrowUpRight className="mr-2 h-4 w-4" />{t('view')}</Link>
           </Button>
           {!item.isSold && (
             <Button asChild variant="outline" size="sm">
-              <Link href={`/items/${item.id}/edit`}><Edit className="mr-2 h-4 w-4" />{t('edit')}</Link>
+              <Link href={`/${locale}/items/${item.id}/edit`}><Edit className="mr-2 h-4 w-4" />{t('edit')}</Link>
             </Button>
           )}
         </div>

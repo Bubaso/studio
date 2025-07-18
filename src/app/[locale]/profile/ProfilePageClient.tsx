@@ -1,9 +1,10 @@
 
-
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import {Link} from '@/navigation';
 import { auth } from '@/lib/firebase';
 import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import type { UserProfile, Item, Review, UserStatus } from '@/lib/types';
@@ -15,7 +16,6 @@ import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2, LayoutDashbo
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteUserAccount, getSubscribersForUser, getSubscriptionsForUser, getUserStatuses } from '@/services/userService';
 import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
@@ -23,6 +23,8 @@ import { SetStatusDialog } from '@/components/set-status-dialog';
 import { StatusDisplay } from '@/components/status-display';
 
 export default function ProfilePageClient() {
+  const t = useTranslations('ProfilePage');
+  const locale = useLocale();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const { toast } = useToast();
@@ -75,8 +77,8 @@ export default function ProfilePageClient() {
     const result = await deleteUserAccount();
     if(result.success) {
       toast({
-        title: "Compte supprimé",
-        description: "Votre compte a été supprimé. Vous êtes déconnecté.",
+        title: t('toast.accountDeletedTitle'),
+        description: t('toast.accountDeletedDesc'),
       });
       // The backend has deleted the user. Signing out clears the client state.
       await signOut(auth);
@@ -85,8 +87,8 @@ export default function ProfilePageClient() {
     } else {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: result.error || "Impossible de supprimer le compte.",
+        title: t('toast.errorTitle'),
+        description: result.error || t('toast.deleteAccountError'),
       });
       setIsDeleting(false);
     }
@@ -113,10 +115,10 @@ export default function ProfilePageClient() {
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <LogIn className="h-4 w-4" />
-          <AlertTitle>Veuillez vous connecter</AlertTitle>
+          <AlertTitle>{t('loginRequiredTitle')}</AlertTitle>
           <AlertDescription>
-            Vous devez être connecté pour voir votre profil.
-            <Link href="/auth/signin" className="font-bold text-primary hover:underline ml-1">Se connecter</Link>
+            {t('loginRequiredDesc')}
+            <Link href="/auth/signin" className="font-bold text-primary hover:underline ml-1">{t('signInLink')}</Link>
           </AlertDescription>
         </Alert>
       </div>
@@ -152,24 +154,24 @@ export default function ProfilePageClient() {
             <AvatarFallback className="text-4xl">{(userProfile.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 text-center md:text-left w-full">
-            <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{userProfile.name || 'Utilisateur'}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold font-headline text-primary mb-2">{userProfile.name || t('user')}</h1>
             
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-2 text-sm space-x-4">
                 <SubscriptionListDialog
-                    title="Abonnés"
+                    title={t('subscribers')}
                     users={subscribers}
                     trigger={
                         <button className="hover:text-primary transition-colors">
-                            <strong>{userProfile.subscriberCount || 0}</strong> Abonnés
+                            <strong>{userProfile.subscriberCount || 0}</strong> {t('subscribers')}
                         </button>
                     }
                 />
                 <SubscriptionListDialog
-                    title="Abonnements"
+                    title={t('subscriptions')}
                     users={subscriptions}
                     trigger={
                         <button className="hover:text-primary transition-colors">
-                              <strong>{userProfile.subscriptionCount || 0}</strong> Abonnements
+                              <strong>{userProfile.subscriptionCount || 0}</strong> {t('subscriptions')}
                         </button>
                     }
                 />
@@ -181,23 +183,23 @@ export default function ProfilePageClient() {
               </div>
             )}
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
-              <CalendarDays className="h-4 w-4 mr-2" /> Inscrit(e) le {new Date(userProfile.joinedDate).toLocaleDateString('fr-FR')}
+              <CalendarDays className="h-4 w-4 mr-2" /> {t('joinedOn', {date: new Date(userProfile.joinedDate)})}
             </div>
             
             <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
               <Button variant="outline" onClick={() => setIsStatusDialogOpen(true)} className="w-full">
                   <PenSquare className="mr-2 h-4 w-4" />
-                  Ajouter un statut
+                  {t('addStatus')}
               </Button>
               <div className="flex w-full gap-2">
                   <Link href="/profile/edit" className="w-1/2">
                       <Button variant="outline" className="w-full">
-                      <Edit3 className="mr-2 h-4 w-4" /> Modifier
+                      <Edit3 className="mr-2 h-4 w-4" /> {t('edit')}
                       </Button>
                   </Link>
                   <Link href="/dashboard" className="w-1/2">
                       <Button className="w-full">
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> {t('dashboard')}
                       </Button>
                   </Link>
               </div>
@@ -208,7 +210,7 @@ export default function ProfilePageClient() {
       </Card>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">Mes annonces ({listings.length})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">{t('myListings', {count: listings.length})}</h2>
         {listings.length > 0 ? (
           <div className="grid grid-cols-2 gap-6"> {/* Updated grid classes */}
             {listings.map((item) => (
@@ -218,9 +220,9 @@ export default function ProfilePageClient() {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>Vous n'avez pas encore mis d'articles en vente.</p>
+              <p>{t('noListings')}</p>
               <Link href="/sell" className="mt-4 inline-block">
-                <Button variant="secondary">Publiez votre premier article !</Button>
+                <Button variant="secondary">{t('postFirstItem')}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -228,7 +230,7 @@ export default function ProfilePageClient() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold font-headline mb-4">Mes évaluations ({[]?.length || 0})</h2>
+        <h2 className="text-2xl font-bold font-headline mb-4">{t('myReviews', {count: 0})}</h2>
         {[]?.length > 0 ? (
           <div className="space-y-4">
             {/* Reviews mapping would go here */}
@@ -236,7 +238,7 @@ export default function ProfilePageClient() {
         ) : (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              <p>Vous n'avez pas encore d'évaluations.</p>
+              <p>{t('noReviews')}</p>
             </CardContent>
           </Card>
         )}
@@ -245,9 +247,9 @@ export default function ProfilePageClient() {
       {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>
-          <CardTitle className="text-destructive">Zone de Danger</CardTitle>
+          <CardTitle className="text-destructive">{t('dangerZone')}</CardTitle>
           <CardDescription>
-            Cette action est permanente et ne peut pas être annulée.
+            {t('dangerZoneDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -255,21 +257,21 @@ export default function ProfilePageClient() {
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer mon compte définitivement
+                {t('deleteAccount')}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous absolument sûr(e) ?</AlertDialogTitle>
+                <AlertDialogTitle>{t('confirmDeleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Cette action ne peut pas être annulée. Votre compte, vos annonces, vos images et toutes vos données associées seront définitivement supprimés.
+                  {t('confirmDeleteDesc')}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteAccount} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Oui, supprimer mon compte
+                  {t('confirmDeleteButton')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

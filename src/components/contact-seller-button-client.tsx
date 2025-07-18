@@ -2,13 +2,13 @@
 "use client";
 
 import { useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
@@ -19,14 +19,15 @@ interface ContactSellerButtonClientProps {
 export function ContactSellerButtonClient({ sellerId, itemId, className }: ContactSellerButtonClientProps) {
   const t = useTranslations('ItemDetailPage');
   const router = useRouter();
+  const locale = useLocale();
   const { toast } = useToast();
   const { firebaseUser: currentUser, authLoading: isLoadingAuth } = useAuth();
   const [isPending, startTransition] = useTransition();
 
   const handleContactSeller = () => {
     if (!currentUser) {
-      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
-      const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
+      const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/items/${itemId}`;
+      const redirectTo = `/${locale}/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
       router.push(redirectTo);
       return;
     }
@@ -86,8 +87,8 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
   }
 
   if (!currentUser) {
-    const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/items/${itemId}`;
-    const redirectTo = `/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
+    const currentPath = typeof window !== "undefined" ? window.location.pathname + window.location.search : `/${locale}/items/${itemId}`;
+    const redirectTo = `/${locale}/auth/signin?redirect=${encodeURIComponent(currentPath)}`;
     return (
       <Button variant="secondary" className={cn("w-full flex-1", className)} onClick={() => router.push(redirectTo)}>
         <MessageSquare className="mr-2 h-6 w-6" /> {t('contactSellerLoginRequired')}

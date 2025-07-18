@@ -11,8 +11,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { UserProfile } from "@/lib/types"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import Link from "next/link";
+import {Link} from '@/navigation';
 import { Button } from "./ui/button";
+import { useLocale, useTranslations } from "next-intl";
 
 interface SubscriptionListDialogProps {
   trigger: React.ReactNode;
@@ -21,6 +22,8 @@ interface SubscriptionListDialogProps {
 }
 
 export function SubscriptionListDialog({ trigger, title, users }: SubscriptionListDialogProps) {
+  const t = useTranslations('SubscriptionDialog');
+  const locale = useLocale();
   return (
     <Dialog>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -41,13 +44,13 @@ export function SubscriptionListDialog({ trigger, title, users }: SubscriptionLi
                                 <span className="font-semibold group-hover:text-primary">{user.name}</span>
                             </Link>
                              <Button asChild variant="secondary" size="sm">
-                                <Link href={`/profile/${user.uid}`}>Voir</Link>
+                                <Link href={`/profile/${user.uid}`}>{t('view')}</Link>
                             </Button>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="py-8 text-center text-muted-foreground">Aucun utilisateur à afficher.</p>
+                <p className="py-8 text-center text-muted-foreground">{t('noUsers')}</p>
             )}
         </ScrollArea>
       </DialogContent>

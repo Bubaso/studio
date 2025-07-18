@@ -7,7 +7,7 @@ import { Heart, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { getCollectionsForItem } from '@/services/favoriteService';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { AddToCollectionDialog } from './add-to-collection-dialog';
 import { useTranslations } from 'next-intl';

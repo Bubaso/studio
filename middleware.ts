@@ -5,10 +5,15 @@ export default createMiddleware({
   locales: ['fr', 'en', 'tr'],
  
   // Used when no locale matches
-  defaultLocale: 'fr'
+  defaultLocale: 'fr',
 });
  
 export const config = {
-  // Match only internationalized pathnames
-  matcher: ['/', '/(fr|en|tr)/:path*']
+  // Match all request paths except for the ones starting with:
+  // - api (API routes)
+  // - _next/static (static files)
+  // - _next/image (image optimization files)
+  // - favicon.ico (favicon file)
+  // - __/auth (Firebase Authentication)
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|__/auth).*)']
 };
