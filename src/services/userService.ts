@@ -105,14 +105,19 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
         } else {
             transaction.set(counterRef, { count: 1 });
         }
+    });
 
-        if (auth.currentUser && (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL)) {
-             await updateProfile(auth.currentUser, { 
+    // Sync the profile information back to Firebase Auth after the transaction
+    if (auth.currentUser) {
+        const finalName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Utilisateur Anonyme';
+        const finalAvatarUrl = firebaseUser.photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
+        if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
+            await updateProfile(auth.currentUser, { 
                 displayName: finalName,
                 photoURL: finalAvatarUrl
             }).catch(e => console.warn("Could not sync Auth profile on user creation:", e));
         }
-    });
+    }
 
     console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
     

@@ -1,40 +1,43 @@
-// src/lib/firebaseAdmin.ts
-import * as admin from 'firebase-admin';
 
-let adminDb: admin.firestore.Firestore | null = null;
-let adminAuth: admin.auth.Auth | null = null;
+import * as admin from 'firebase-admin';
+import { getApps } from 'firebase-admin/app';
+import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+
+let adminDb: Firestore | null = null;
+let adminAuth: Auth | null = null;
 let initializedAdmin: typeof admin | null = null;
 
-const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+// Use a new environment variable to hold the JSON content directly
+const serviceAccountJson = process.env.FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON;
 
-const isConfigValid = serviceAccountPath && !serviceAccountPath.includes('REPLACE_WITH_');
+const isConfigValid = serviceAccountJson && serviceAccountJson.trim() !== '' && !serviceAccountJson.includes('REPLACE_WITH');
 
 if (!isConfigValid) {
-  console.error("CRITICAL FIREBASE ADMIN ERROR: GOOGLE_APPLICATION_CREDENTIALS is not set or is a placeholder. Server-side Firebase features will be disabled.");
-} else if (admin.apps.length === 0) {
+  console.error("CRITICAL FIREBASE ADMIN ERROR: FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON is not set or is a placeholder. Server-side Firebase features will be disabled.");
+} else if (getApps().length === 0) {
   try {
+    const serviceAccount = JSON.parse(serviceAccountJson);
     const app = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccountPath),
+      credential: admin.credential.cert(serviceAccount),
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     });
-    adminDb = admin.firestore(app);
-    adminAuth = admin.auth(app);
+    adminDb = getFirestore(app);
+    adminAuth = getAuth(app);
     initializedAdmin = admin;
     console.log('Firebase Admin SDK initialized successfully.');
   } catch (error: any) {
-    console.error('CRITICAL FIREBASE ADMIN INIT ERROR: Firebase Admin SDK initialization error:', error.message);
+    console.error('CRITICAL FIREBASE ADMIN INIT ERROR: Could not parse FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON or initialize app:', error.message);
     console.error(
-        'Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable points to a valid service account JSON file and that the file is correctly formatted.'
+        'Ensure the FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON environment variable contains a valid, non-stringified service account JSON object.'
     );
     // Keep services as null
   }
 } else {
   const app = admin.app();
-  adminDb = admin.firestore(app);
-  adminAuth = admin.auth(app);
+  adminDb = getFirestore(app);
+  adminAuth = getAuth(app);
   initializedAdmin = admin;
-  console.log('Using existing Firebase Admin SDK app instance.');
 }
 
-export { adminDb, adminAuth };
-export default initializedAdmin;
+export { adminDb, adminAuth, initializedAdmin };

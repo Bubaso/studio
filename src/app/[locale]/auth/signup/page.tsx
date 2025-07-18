@@ -1,29 +1,27 @@
 
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { ShoppingBag, UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import {
   Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShoppingBag, UserPlus, LogIn, Loader2 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
-import { createUserDocument } from "@/services/userService"; 
-import { useIsMobile } from "@/hooks/use-mobile";
+import { createUserWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, updateProfile } from "firebase/auth";
+import { createUserDocument } from "@/services/userService";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
-// Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
@@ -34,178 +32,104 @@ function SignUpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
-  const isMobile = useIsMobile();
-  
+
   const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setAuthLoading(false);
-      // Only redirect if a login process is NOT active.
-      // This prevents the race condition where the redirect happens
-      // before createUserDocument can run.
-      if (user && !isLoading) {
+      if (user) {
         router.push(redirectTo);
+      } else {
+        setAuthLoading(false);
       }
     });
     return () => unsubscribe();
-  }, [router, redirectTo, isLoading]);
+  }, [router, redirectTo]);
 
-  useEffect(() => {
-    // This effect should run only once on mount to check for a redirect result.
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          // User has successfully signed in via redirect.
-          // Now create their user document in Firestore.
-          const user = result.user;
-          await createUserDocument(user, {
-            name: user.displayName,
-            avatarUrl: user.photoURL,
-          }, locale);
-          toast({
-            title: t('toast.successTitle'),
-            description: t('toast.welcome'),
-          });
-          // The onAuthStateChanged listener will handle the final redirect.
-        }
-      })
-      .catch((error) => {
-        // Handle errors from the redirect result
-        console.error("OAuth Redirect Error:", error);
-        let errorMessage = tSignIn('toast.oauthErrorTitle');
-        if (error.code === 'auth/account-exists-with-different-credential') {
-          errorMessage = tSignIn('toast.oauthAccountExists');
-        }
-        toast({
-          title: tSignIn('toast.errorTitle'),
-          description: errorMessage,
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        // Whether there was a result or not, the check is complete.
-        setIsProcessingRedirect(false);
-      });
-  }, [toast, router, redirectTo, t, tSignIn, locale]);
+  const performRedirect = () => {
+    router.push(redirectTo);
+  };
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 6) {
+        toast({ title: t('toast.errorTitle'), description: t('toast.weakPassword'), variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
-    
     try {
-      auth.languageCode = 'fr';
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const fbUser = userCredential.user;
+      const user = userCredential.user;
+      
+      await updateProfile(user, { displayName: name });
+      
+      await createUserDocument(user, { name }, locale);
 
-      await updateProfile(fbUser, { displayName: name });
-      await createUserDocument(fbUser, { name }, locale); 
+      toast({ title: t('toast.successTitle'), description: t('toast.welcome', { name }) });
       
-      toast({ 
-        title: t('toast.successTitle'), 
-        description: t('toast.welcome')
-      });
-      // The useEffect hook will handle the redirect now.
+      performRedirect();
+
     } catch (error: any) {
-      console.error("Error signing up with email/password:", error);
-      
-      if (error.code === 'auth/email-already-in-use') {
-        toast({
-          title: t('toast.emailInUseTitle'),
-          description: t('toast.emailInUseDesc'),
-          variant: "destructive",
-          action: (
-            <Button asChild variant="secondary" size="sm">
-              <Link href={`/${locale}/auth/signin?redirect=${encodeURIComponent(redirectTo)}`}>
-                {t('signInLink')}
-              </Link>
-            </Button>
-          ),
-        });
-      } else {
-        let errorMessage = t('toast.genericError');
-        if (error.code === 'auth/weak-password') {
-          errorMessage = t('toast.weakPassword');
-        } else if (error.code === 'auth/invalid-email') {
-          errorMessage = tSignIn('toast.invalidEmail');
-        } else if (error.code === 'auth/operation-not-allowed' || (error.message && error.message.includes("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) || error.code === 'auth/configuration-not-found' || (error.name === 'FirebaseError' && error.message.includes('HTTP Rsp Error: 400'))) {
-          errorMessage = t('toast.configError');
-        }
-        toast({ title: t('toast.errorTitle'), description: errorMessage, variant: "destructive" });
-      }
-    } finally {
       setIsLoading(false);
+      let errorMessage = t('toast.genericError');
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = t('toast.emailInUse');
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = t('toast.invalidEmail');
+      }
+      toast({ title: t('toast.errorTitle'), description: errorMessage, variant: "destructive" });
     }
   };
 
-  const handleOAuthSignUp = async (provider: GoogleAuthProvider) => {
+  const handleOAuthSignIn = async (provider: GoogleAuthProvider) => {
     setIsLoading(true);
     try {
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        await createUserDocument(user, {
-          name: user.displayName,
-          avatarUrl: user.photoURL,
-        }, locale);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-        toast({
-          title: t('toast.successTitle'),
-          description: t('toast.welcome'),
-        });
-      }
+      await createUserDocument(user, {
+        name: user.displayName,
+        avatarUrl: user.photoURL,
+      }, locale);
+
+      toast({
+        title: tSignIn('toast.successTitle'),
+        description: tSignIn('toast.welcome', { name: user.displayName || user.email }),
+      });
+      
+      performRedirect();
+
     } catch (error: any) {
-      // Gracefully handle the user closing the popup, which is not an application error.
+      setIsLoading(false);
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        setIsLoading(false);
-        return; // Exit without showing an error toast.
+        return; 
       }
       
-      // For all other errors, log them and show a toast.
       console.error("OAuth Sign-up Error:", error);
       let errorMessage = tSignIn('toast.oauthErrorTitle');
-      if (error.code === 'auth/account-exists-with-different-credential') {
+       if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = tSignIn('toast.oauthAccountExists');
-      } else if (error.code === 'auth/operation-not-allowed') {
-          errorMessage = tSignIn('toast.providerNotEnabled');
-      } else if (error.code === 'auth/network-request-failed') {
-          errorMessage = tSignIn('toast.networkError');
       } else if (error.code === 'auth/unauthorized-domain') {
-          errorMessage = tSignIn('toast.unauthorizedDomain');
+        errorMessage = tSignIn('toast.unauthorizedDomain');
       }
       toast({
         title: tSignIn('toast.oauthErrorTitle'),
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-        setIsLoading(false);
     }
   };
-  
-  if (authLoading || isProcessingRedirect) {
+      
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
         <p className="ml-4">{tSignIn('verifyingSession')}</p>
-      </div>
-    );
-  }
-
-  if (firebaseUser && !authLoading) { 
-     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>{tSignIn('alreadyLoggedIn')}</p>
       </div>
     );
   }
@@ -221,46 +145,57 @@ function SignUpPageContent() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
-          <div className="space-y-2">
+           <div className="space-y-2">
             <Label htmlFor="name">{t('nameLabel')}</Label>
-            <Input 
-              id="name" 
-              type="text" 
-              placeholder={t('namePlaceholder')} 
-              required 
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="name"
+                type="text"
+                placeholder={t('namePlaceholder')}
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">{t('emailLabel')}</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder={t('emailPlaceholder')} 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder={t('emailPlaceholder')}
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t('passwordLabel')}</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              placeholder={t('passwordPlaceholder')}
-              required 
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                placeholder={t('passwordPlaceholder')}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="pl-10"
+              />
+            </div>
           </div>
           <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
-            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-ping" /> : <UserPlus className="mr-2 h-4 w-4" />}
-            {t('createAccountButton')}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+            {t('signUpButton')}
           </Button>
         </form>
 
@@ -271,24 +206,25 @@ function SignUpPageContent() {
         </div>
 
         <div className="space-y-3">
-          <Button variant="outline" className="w-full" onClick={() => handleOAuthSignUp(googleProvider)} disabled={isLoading}>
+          <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn(googleProvider)} disabled={isLoading}>
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignUp')}
           </Button>
         </div>
 
       </CardContent>
-      <CardFooter className="flex flex-col items-center pt-6">
+      <CardFooter className="flex flex-col items-center space-y-2 pt-6">
         <p className="text-sm text-muted-foreground">
-          {t('alreadyHaveAccountPrompt')}{" "}
-          <Link href={`/${locale}/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
-             {t('signInLink')} <LogIn className="inline ml-1 h-4 w-4" />
+          {t('hasAccountPrompt')}{" "}
+          <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
+             {t('signInLink')}
           </Link>
         </p>
       </CardFooter>
     </Card>
   );
 }
+
 
 function LoadingFallback() {
     return (

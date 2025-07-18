@@ -7,7 +7,7 @@ import { CategoryCarousel } from '@/components/category-carousel';
 import { FeaturedItemsGrid } from '@/components/featured-items-grid';
 import { HeroOnboarding } from '@/components/hero-onboarding';
 import { PersonalizedContent } from '@/components/personalized-content';
-import admin from '@/lib/firebaseAdmin';
+import { adminDb } from '@/lib/firebaseAdmin';
 import { getTranslations, unstable_setRequestLocale } from 'next-intl/server';
 import { HomeStatusFeed } from '@/components/home-status-feed';
 
@@ -35,16 +35,15 @@ const categoryHints: { [key in ItemCategory]?: string } = {
 export default async function HomePage({ params: { locale } }: { params: { locale: string } }) {
   unstable_setRequestLocale(locale);
   const t = await getTranslations('HomePage');
-  const db = admin?.firestore();
-
+  
   // Fetch data that does not depend on the user
   const { items: latestItems } = await getItemsFromFirestore({ pageSize: 8 });
 
   const carouselCategoriesPromises = ItemCategories.map(async (categoryName) => {
     let itemCount = 0;
-    if (db) {
+    if (adminDb) {
         try {
-            const itemsRef = db.collection('items');
+            const itemsRef = adminDb.collection('items');
             const snapshot = await itemsRef.where('category', '==', categoryName).get();
             itemCount = snapshot.size;
         } catch (error) {

@@ -17,13 +17,11 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
-import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { createUserDocument } from "@/services/userService";
-import { useIsMobile } from "@/hooks/use-mobile";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
-// Initialize OAuth providers
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
@@ -36,65 +34,27 @@ function SignInPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
-  const isMobile = useIsMobile();
 
   const redirectTo = searchParams.get('redirect') || '/';
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setAuthLoading(false);
-      // Only redirect if a login process is NOT active.
-      // This prevents the race condition.
-      if (user && !isLoading) {
+      if (user) {
+        // If a user is already signed in when they visit the page, redirect them.
+        // This is safe because no login action is in progress.
         router.push(redirectTo);
+      } else {
+        // Otherwise, we're sure there's no user, so show the form.
+        setAuthLoading(false);
       }
     });
-    return () => {
-      unsubscribe();
-    };
-  }, [router, redirectTo, isLoading]);
+    return () => unsubscribe();
+  }, [router, redirectTo]);
 
-  useEffect(() => {
-    // This effect should run only once on mount to check for a redirect result.
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result) {
-          // User has successfully signed in via redirect.
-          // Now create their user document in Firestore if it doesn't exist.
-          const user = result.user;
-          await createUserDocument(user, {
-            name: user.displayName,
-            avatarUrl: user.photoURL,
-          }, locale);
-          toast({
-            title: t('toast.successTitle'),
-            description: t('toast.welcome', { name: user.displayName || user.email }),
-          });
-          // The onAuthStateChanged listener will handle the final redirect.
-        }
-      })
-      .catch((error) => {
-        // Handle errors from the redirect result
-        console.error("OAuth Redirect Error:", error);
-        let errorMessage = t('toast.oauthErrorTitle');
-        if (error.code === 'auth/account-exists-with-different-credential') {
-          errorMessage = t('toast.oauthAccountExists');
-        }
-        toast({
-          title: t('toast.errorTitle'),
-          description: errorMessage,
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        // Whether there was a result or not, the check is complete.
-        setIsProcessingRedirect(false);
-      });
-  }, [toast, router, redirectTo, t, locale]);
+  const performRedirect = () => {
+    router.push(redirectTo);
+  };
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,7 +62,7 @@ function SignInPageContent() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: t('toast.successTitle'), description: t('toast.redirecting') });
-      // The useEffect hook will handle the redirect
+      // The onAuthStateChanged listener will catch this and redirect.
     } catch (error: any) {
       let errorMessage = t('toast.genericError');
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -115,7 +75,6 @@ function SignInPageContent() {
         errorMessage = t('toast.networkError');
       }
       toast({ title: t('toast.errorTitle'), description: errorMessage, variant: "destructive" });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -123,38 +82,32 @@ function SignInPageContent() {
   const handleOAuthSignIn = async (provider: GoogleAuthProvider) => {
     setIsLoading(true);
     try {
-      if (isMobile) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
 
-        await createUserDocument(user, {
-          name: user.displayName,
-          avatarUrl: user.photoURL,
-        }, locale);
+      // **THE FIX**: Wait for the user document to be created BEFORE redirecting.
+      await createUserDocument(user, {
+        name: user.displayName,
+        avatarUrl: user.photoURL,
+      }, locale);
 
-        toast({
-          title: t('toast.successTitle'),
-          description: t('toast.welcome', { name: user.displayName || user.email }),
-        });
-      }
+      toast({
+        title: t('toast.successTitle'),
+        description: t('toast.welcome', { name: user.displayName || user.email }),
+      });
+      
+      performRedirect();
+
     } catch (error: any) {
-      // Gracefully handle the user closing the popup, which is not an application error.
+      setIsLoading(false);
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        setIsLoading(false);
-        return; // Exit without showing an error toast.
+        return;
       }
       
-      // For all other errors, log them and show a toast.
       console.error("OAuth Sign-in Error:", error);
       let errorMessage = t('toast.oauthErrorTitle');
       if (error.code === 'auth/account-exists-with-different-credential') {
         errorMessage = t('toast.oauthAccountExists');
-      } else if (error.code === 'auth/operation-not-allowed') {
-          errorMessage = t('toast.providerNotEnabled');
-      } else if (error.code === 'auth/network-request-failed') {
-          errorMessage = t('toast.networkError');
       } else if (error.code === 'auth/unauthorized-domain') {
           errorMessage = t('toast.unauthorizedDomain');
       }
@@ -163,24 +116,14 @@ function SignInPageContent() {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-        setIsLoading(false);
     }
   };
 
-  if (authLoading || isProcessingRedirect) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ShoppingBag className="h-12 w-12 text-primary animate-pulse" />
         <p className="ml-4">{t('verifyingSession')}</p>
-      </div>
-    );
-  }
-
-  if (firebaseUser && !authLoading) { 
-     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>{t('alreadyLoggedIn')}</p>
       </div>
     );
   }
@@ -242,7 +185,6 @@ function SignInPageContent() {
 
         <div className="space-y-3">
           <Button variant="outline" className="w-full" onClick={() => handleOAuthSignIn(googleProvider)} disabled={isLoading}>
-            {/* TODO: Add Google Icon */}
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {t('googleSignIn')}
           </Button>
