@@ -1,16 +1,20 @@
 
 import ProfilePageClient from './ProfilePageClient';
-import {NextIntlClientProvider, useMessages} from 'next-intl';
-import {pick} from 'lodash';
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages, unstable_setRequestLocale} from 'next-intl/server';
+
+interface ProfilePageProps {
+  params: { locale: string };
+}
 
 export const dynamic = 'force-dynamic';
 
-// This is now a Server Component that ensures the route is handled dynamically.
-export default function ProfilePage() {
-  const messages = useMessages();
-  // We can add server-side logic here in the future if needed.
+export default async function ProfilePage({ params: { locale } }: ProfilePageProps) {
+  unstable_setRequestLocale(locale);
+  const messages = await getMessages();
+
   return (
-    <NextIntlClientProvider messages={pick(messages, 'ProfilePage', 'SubscriptionDialog')}>
+    <NextIntlClientProvider messages={messages}>
       <ProfilePageClient />
     </NextIntlClientProvider>
   );
