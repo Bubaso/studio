@@ -73,6 +73,8 @@ function SignUpPageContent() {
         errorMessage = t('toast.emailInUse');
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = t('toast.invalidEmail');
+      } else if (error.code) { // Handle other specific Firebase auth errors if needed
+          errorMessage = error.message;
       }
       toast({ title: t('toast.errorTitle'), description: errorMessage, variant: "destructive" });
     }
@@ -110,6 +112,8 @@ function SignUpPageContent() {
         errorMessage = tSignIn('toast.oauthAccountExists');
       } else if (error.code === 'auth/unauthorized-domain') {
         errorMessage = tSignIn('toast.unauthorizedDomain');
+      } else if (error.code) {
+          errorMessage = error.message;
       }
       toast({
         title: tSignIn('toast.oauthErrorTitle'),

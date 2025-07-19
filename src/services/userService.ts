@@ -72,17 +72,19 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
     // Call the API route to increment the counter and get founding member status
     const idToken = await firebaseUser.getIdToken();
-    const counterResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/user/increment-counter`, {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const counterResponse = await fetch(`${appUrl}/api/user/increment-counter`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${idToken}` }
     });
     
     if (!counterResponse.ok) {
         const errorData = await counterResponse.json();
-        throw new Error(errorData.error || "Failed to update user count.");
+        console.error("Failed to update user count:", errorData.error);
+        // We can choose to continue user creation even if counter fails, to not block sign-up.
     }
 
-    const { isFoundingMember, userCount } = await counterResponse.json();
+    const { isFoundingMember = false, userCount = 0 } = await counterResponse.json().catch(() => ({}));
     
     let freeListings = isFoundingMember ? 15 : 5;
 
@@ -109,14 +111,16 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
     console.log(`Successfully created user document for ${firebaseUser.uid}. Total users: ${userCount}`);
     
-    if (auth.currentUser) {
-        if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
-            await updateProfile(auth.currentUser, { 
-                displayName: finalName,
-                photoURL: finalAvatarUrl
-            }).catch(e => console.warn("Could not sync Auth profile on user creation:", e));
-        }
-    }
+    // This part might fail on the server if auth.currentUser is not available.
+    // It's safer to handle this on the client after sign-in if needed.
+    // if (auth.currentUser) {
+    //     if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
+    //         await updateProfile(auth.currentUser, { 
+    //             displayName: finalName,
+    //             photoURL: finalAvatarUrl
+    //         }).catch(e => console.warn("Could not sync Auth profile on user creation:", e));
+    //     }
+    // }
 
     if (firebaseUser.email) {
         sendWelcomeEmail({ to: firebaseUser.email, name: finalName, locale });
