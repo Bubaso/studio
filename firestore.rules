@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -35,6 +36,11 @@ service cloud.firestore {
         allow read: if true;
         allow write, delete: if request.auth != null && request.auth.uid == userId;
       }
+    }
+    
+    // COUNTERS collection (for server-side admin use only)
+    match /_counters/{counterId} {
+        allow read, write: if false; // No client access
     }
 
     // ITEMS collection

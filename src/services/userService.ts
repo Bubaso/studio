@@ -9,7 +9,6 @@ import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth pro
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { sendWelcomeEmail } from './emailService';
 import { getItemByIdFromFirestore } from './itemService';
-import { incrementUserCounter } from '@/lib/firebaseAdmin';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
@@ -71,8 +70,20 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
       return;
     }
 
-    const { userCount, isFoundingMember } = await incrementUserCounter();
+    // Call the API route to increment the counter and get founding member status
+    const idToken = await firebaseUser.getIdToken();
+    const counterResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/user/increment-counter`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    
+    if (!counterResponse.ok) {
+        const errorData = await counterResponse.json();
+        throw new Error(errorData.error || "Failed to update user count.");
+    }
 
+    const { isFoundingMember, userCount } = await counterResponse.json();
+    
     let freeListings = isFoundingMember ? 15 : 5;
 
     const { email, displayName, photoURL } = firebaseUser;
@@ -98,7 +109,6 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
     console.log(`Successfully created user document for ${firebaseUser.uid}. Total users: ${userCount}`);
     
-    // Sync the profile information back to Firebase Auth after creation
     if (auth.currentUser) {
         if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
             await updateProfile(auth.currentUser, { 
@@ -114,8 +124,6 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
 
   } catch (error) {
     console.error("Error in createUserDocument: ", error);
-    // If user document creation fails, we should ideally delete the auth user to allow retry,
-    // but that's a more complex flow. For now, we throw to signal failure.
     throw error;
   }
 };

@@ -1,5 +1,4 @@
 
-
 import * as admin from 'firebase-admin';
 import { getApps, initializeApp, getApp, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
@@ -37,8 +36,7 @@ function initializeAdmin() {
       console.log("Firebase Admin SDK initialized successfully.");
     } catch (error: any) {
       console.error('CRITICAL FIREBASE ADMIN INIT ERROR:', error.message);
-      // Let subsequent calls fail gracefully.
-      return;
+      throw new Error(`Could not initialize Firebase Admin SDK. Check service account credentials. Original error: ${error.message}`);
     }
   } else {
     app = getApp();
