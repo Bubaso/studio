@@ -4,6 +4,8 @@ import type { UserProfile, Item } from '@/lib/types';
 import { getUserDocument } from '@/services/userService';
 import { getUserListingsFromFirestore } from '@/services/itemService';
 
+// This hook is now deprecated in favor of server-side data fetching on the profile page.
+// It is kept here in case it is needed for other client-side profile fetching scenarios.
 export function useUserProfile(userId: string | null) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [listings, setListings] = useState<Item[]>([]);
