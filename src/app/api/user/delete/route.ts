@@ -1,4 +1,5 @@
 
+import 'dotenv/config'; // Explicitly load environment variables
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminDb, adminAuth, initializedAdmin as admin } from '@/lib/firebaseAdmin';
 import { getStorage } from 'firebase-admin/storage';
