@@ -47,7 +47,7 @@ function SignInPageContent() {
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [redirectTo]);
 
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
