@@ -3,7 +3,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ItemCard } from '@/components/item-card';
 import type { Item, ItemCategory, ItemCondition, SortByOption } from '@/lib/types';
@@ -159,8 +159,17 @@ function ItemGrid() {
 
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
-  const queryParam = searchParams.get('q');
-  const sortParam = searchParams.get('sort') as SortByOption | null;
+  
+  const queryParam = useMemo(() => searchParams.get('q'), [searchParams]);
+  const sortParam = useMemo(() => searchParams.get('sort') as SortByOption | null, [searchParams]);
+  const categoriesParam = useMemo(() => searchParams.getAll('category'), [searchParams]);
+  const minPriceParam = useMemo(() => searchParams.get('minPrice'), [searchParams]);
+  const maxPriceParam = useMemo(() => searchParams.get('maxPrice'), [searchParams]);
+  const locationParam = useMemo(() => searchParams.get('location'), [searchParams]);
+  const conditionParam = useMemo(() => searchParams.get('condition') as ItemCondition | null, [searchParams]);
+  const latParam = useMemo(() => searchParams.get('lat'), [searchParams]);
+  const lngParam = useMemo(() => searchParams.get('lng'), [searchParams]);
+  const radiusParam = useMemo(() => searchParams.get('radius'), [searchParams]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -174,6 +183,7 @@ function ItemGrid() {
   useEffect(() => {
     setPageNumber(1);
     setCursors([null]);
+    setPageData({ items: [], lastItemId: null, hasMore: false });
   }, [searchParamsString]);
 
   useEffect(() => {
@@ -182,16 +192,6 @@ function ItemGrid() {
     const fetchPageData = async () => {
         setIsLoading(true);
         const cursor = cursors[pageNumber - 1];
-
-        // Get params for the fetch call from the hook
-        const categoriesParam = searchParams.getAll('category');
-        const minPriceParam = searchParams.get('minPrice');
-        const maxPriceParam = searchParams.get('maxPrice');
-        const locationParam = searchParams.get('location');
-        const conditionParam = searchParams.get('condition') as ItemCondition | null;
-        const latParam = searchParams.get('lat');
-        const lngParam = searchParams.get('lng');
-        const radiusParam = searchParams.get('radius');
 
         const result = await getItemsFromFirestore({
             query: queryParam || undefined,
@@ -255,7 +255,16 @@ function ItemGrid() {
     pageNumber,
     currentUser, 
     initialAuthCheckDone, 
-    searchParamsString // The primary dependency for filter changes
+    queryParam,
+    sortParam,
+    categoriesParam,
+    minPriceParam,
+    maxPriceParam,
+    locationParam,
+    conditionParam,
+    latParam,
+    lngParam,
+    radiusParam
   ]);
 
   const { items, hasMore } = pageData;
