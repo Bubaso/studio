@@ -136,6 +136,12 @@ function SignInPageContent() {
         </Link>
         <CardTitle className="text-3xl font-headline">{t('title')}</CardTitle>
         <CardDescription>{t('description')}</CardDescription>
+        <p className="text-sm text-muted-foreground pt-2">
+          {t('noAccountPrompt')}{" "}
+          <Link href={`/auth/signup?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
+             {t('signUpLink')}
+          </Link>
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
@@ -195,12 +201,6 @@ function SignInPageContent() {
          <p className="text-sm text-muted-foreground">
           {t('forgotPasswordPrompt')}{" "}
           <Link href="/auth/forgot-password" className="font-semibold text-primary hover:underline">{t('resetLink')}</Link>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t('noAccountPrompt')}{" "}
-          <Link href={`/auth/signup?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
-             {t('signUpLink')}
-          </Link>
         </p>
       </CardFooter>
     </Card>
