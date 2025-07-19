@@ -99,6 +99,7 @@ function SignUpPageContent() {
 
     } catch (error: any) {
       setIsLoading(false);
+      // Popup closed by user is not an error, so we just return.
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         return; 
       }
