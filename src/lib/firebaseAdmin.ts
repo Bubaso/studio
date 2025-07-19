@@ -1,8 +1,9 @@
 
+
 import * as admin from 'firebase-admin';
 import { getApps, initializeApp, getApp, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getFirestore, Firestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 let app: App;
@@ -21,7 +22,6 @@ function initializeAdmin() {
   if (getApps().length === 0) {
     try {
       if (serviceAccountJson && serviceAccountJson.length > 10) {
-        // Attempt to initialize with the provided JSON credentials
         console.log("Attempting to initialize Firebase Admin with provided service account JSON...");
         const serviceAccount = JSON.parse(serviceAccountJson);
         app = initializeApp({
@@ -29,7 +29,6 @@ function initializeAdmin() {
           storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
       } else {
-        // Fallback to Application Default Credentials, which is standard for App Hosting
         console.log("Attempting to initialize Firebase Admin with Application Default Credentials...");
         app = initializeApp({
             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -38,8 +37,7 @@ function initializeAdmin() {
       console.log("Firebase Admin SDK initialized successfully.");
     } catch (error: any) {
       console.error('CRITICAL FIREBASE ADMIN INIT ERROR:', error.message);
-      // Do not throw here, as it can crash the server process on a non-critical error.
-      // Let the exports be undefined so that subsequent calls fail gracefully.
+      // Let subsequent calls fail gracefully.
       return;
     }
   } else {
@@ -55,11 +53,13 @@ function initializeAdmin() {
 // Initialize on first import.
 initializeAdmin();
 
-// Export the initialized instances directly.
+// Deprecated original exports for backward compatibility during transition.
+const initializedAdmin = admin;
+const adminDb = db;
+const adminAuth = auth;
 export { initializedAdmin, adminDb, adminAuth };
 
-// For API routes that need a guaranteed fresh instance, they can call this function.
-// This is a more advanced pattern and not typically needed.
+
 export function getAdminInstances() {
     if (!initialized) {
         initializeAdmin();
@@ -70,8 +70,26 @@ export function getAdminInstances() {
     return { app, auth, db, storage };
 }
 
-// Deprecated original exports for backward compatibility during transition.
-const initializedAdmin = admin;
-const adminDb = db;
-const adminAuth = auth;
+// New server-side function to handle user counter
+export async function incrementUserCounter(): Promise<{ userCount: number, isFoundingMember: boolean }> {
+  const { db: firestore } = getAdminInstances();
+  const counterRef = firestore.collection('_counters').doc('users');
+  
+  let newCount = 0;
+  
+  await firestore.runTransaction(async (transaction) => {
+    const counterSnap = await transaction.get(counterRef);
+    if (!counterSnap.exists) {
+      newCount = 1;
+      transaction.set(counterRef, { count: newCount });
+    } else {
+      newCount = (counterSnap.data()?.count || 0) + 1;
+      transaction.update(counterRef, { count: newCount });
+    }
+  });
 
+  return {
+    userCount: newCount,
+    isFoundingMember: newCount <= 100,
+  };
+}

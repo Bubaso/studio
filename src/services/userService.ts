@@ -1,4 +1,5 @@
 
+'use server';
 
 import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
@@ -8,6 +9,7 @@ import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth pro
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { sendWelcomeEmail } from './emailService';
 import { getItemByIdFromFirestore } from './itemService';
+import { incrementUserCounter } from '@/lib/firebaseAdmin';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
@@ -61,56 +63,43 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
   if (!firebaseUser) throw new Error("Firebase user object is required.");
 
   const userRef = doc(db, 'users', firebaseUser.uid);
-  
-  // The user does not exist, so we proceed with creation.
-  const counterRef = doc(db, '_counters', 'users');
 
   try {
-    await runTransaction(db, async (transaction) => {
-        const userInTransaction = await transaction.get(userRef);
-        if (userInTransaction.exists()) {
-            console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation within transaction.`);
-            return; 
-        }
+    const userDoc = await getDoc(userRef);
+    if (userDoc.exists()) {
+      console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
+      return;
+    }
 
-        const counterSnap = await transaction.get(counterRef);
-        const userCount = counterSnap.exists() ? counterSnap.data().count : 0;
+    const { userCount, isFoundingMember } = await incrementUserCounter();
 
-        let isFoundingMember = userCount < 100;
-        let freeListings = isFoundingMember ? 15 : 5;
+    let freeListings = isFoundingMember ? 15 : 5;
 
-        const { email, displayName, photoURL } = firebaseUser;
-        const finalName = additionalData.name || displayName || email?.split('@')[0] || 'Utilisateur Anonyme';
-        const finalAvatarUrl = additionalData.avatarUrl || photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
+    const { email, displayName, photoURL } = firebaseUser;
+    const finalName = additionalData.name || displayName || email?.split('@')[0] || 'Utilisateur Anonyme';
+    const finalAvatarUrl = additionalData.avatarUrl || photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
 
-        const newUserDocData = {
-          email,
-          name: finalName,
-          avatarUrl: finalAvatarUrl,
-          dataAiHint: "profil personne",
-          joinedDate: serverTimestamp(),
-          location: additionalData.location || '',
-          lastActiveAt: serverTimestamp(),
-          credits: 0,
-          freeListingsRemaining: freeListings,
-          subscriberCount: 0,
-          subscriptionCount: 0,
-          isFoundingMember: isFoundingMember,
-        };
-        
-        transaction.set(userRef, newUserDocData);
+    const newUserDocData = {
+      email,
+      name: finalName,
+      avatarUrl: finalAvatarUrl,
+      dataAiHint: "profil personne",
+      joinedDate: serverTimestamp(),
+      location: additionalData.location || '',
+      lastActiveAt: serverTimestamp(),
+      credits: 0,
+      freeListingsRemaining: freeListings,
+      subscriberCount: 0,
+      subscriptionCount: 0,
+      isFoundingMember: isFoundingMember,
+    };
 
-        if (counterSnap.exists()) {
-            transaction.update(counterRef, { count: increment(1) });
-        } else {
-            transaction.set(counterRef, { count: 1 });
-        }
-    });
+    await setDoc(userRef, newUserDocData);
 
-    // Sync the profile information back to Firebase Auth after the transaction
+    console.log(`Successfully created user document for ${firebaseUser.uid}. Total users: ${userCount}`);
+    
+    // Sync the profile information back to Firebase Auth after creation
     if (auth.currentUser) {
-        const finalName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Utilisateur Anonyme';
-        const finalAvatarUrl = firebaseUser.photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
         if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
             await updateProfile(auth.currentUser, { 
                 displayName: finalName,
@@ -119,14 +108,14 @@ export const createUserDocument = async (firebaseUser: FirebaseUser, additionalD
         }
     }
 
-    console.log(`Transaction successfully committed for creating user ${firebaseUser.uid}.`);
-    
     if (firebaseUser.email) {
-        sendWelcomeEmail({ to: firebaseUser.email, name: firebaseUser.displayName || firebaseUser.email.split('@')[0], locale });
+        sendWelcomeEmail({ to: firebaseUser.email, name: finalName, locale });
     }
 
   } catch (error) {
-    console.error("Error in createUserDocument transaction: ", error);
+    console.error("Error in createUserDocument: ", error);
+    // If user document creation fails, we should ideally delete the auth user to allow retry,
+    // but that's a more complex flow. For now, we throw to signal failure.
     throw error;
   }
 };
