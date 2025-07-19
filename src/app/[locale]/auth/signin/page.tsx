@@ -18,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { createUserDocument } from "@/services/userService";
+import { createUserAction } from "@/actions/userActions";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
@@ -79,10 +79,17 @@ function SignInPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      await createUserDocument(user, {
+      // This action creates the user document only if it doesn't already exist.
+      const creationResult = await createUserAction(user, {
         name: user.displayName,
         avatarUrl: user.photoURL,
       }, locale);
+      
+      if (!creationResult.success) {
+        // Even if creation fails (e.g., user already exists), we can still proceed with sign-in.
+        // But we should log the error for debugging.
+        console.warn("User document creation might have failed, but sign-in continues. Error:", creationResult.error);
+      }
 
       toast({
         title: t('toast.successTitle'),
