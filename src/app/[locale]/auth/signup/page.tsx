@@ -42,18 +42,14 @@ function SignUpPageContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user && !isLoading) {
         router.push(redirectTo);
       } else {
         setAuthLoading(false);
       }
     });
     return () => unsubscribe();
-  }, [router, redirectTo]);
-
-  const performRedirect = () => {
-    router.push(redirectTo);
-  };
+  }, [router, redirectTo, isLoading]);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +68,7 @@ function SignUpPageContent() {
 
       toast({ title: t('toast.successTitle'), description: t('toast.welcome', { name }) });
       
-      performRedirect();
+      // Let the onAuthStateChanged listener handle the redirect
 
     } catch (error: any) {
       setIsLoading(false);
@@ -102,7 +98,7 @@ function SignUpPageContent() {
         description: tSignIn('toast.welcome', { name: user.displayName || user.email }),
       });
       
-      performRedirect();
+      // Let the onAuthStateChanged listener handle the redirect
 
     } catch (error: any) {
       setIsLoading(false);

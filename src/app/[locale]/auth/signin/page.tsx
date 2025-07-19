@@ -40,21 +40,15 @@ function SignInPageContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // If a user is already signed in when they visit the page, redirect them.
-        // This is safe because no login action is in progress.
+      if (user && !isLoading) { // Ensure isLoading is false before redirecting
         router.push(redirectTo);
       } else {
-        // Otherwise, we're sure there's no user, so show the form.
         setAuthLoading(false);
       }
     });
     return () => unsubscribe();
-  }, [router, redirectTo]);
+  }, [router, redirectTo, isLoading]);
 
-  const performRedirect = () => {
-    router.push(redirectTo);
-  };
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +79,6 @@ function SignInPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // **THE FIX**: Wait for the user document to be created BEFORE redirecting.
       await createUserDocument(user, {
         name: user.displayName,
         avatarUrl: user.photoURL,
@@ -96,7 +89,8 @@ function SignInPageContent() {
         description: t('toast.welcome', { name: user.displayName || user.email }),
       });
       
-      performRedirect();
+      // We don't need setIsLoading(false) here because the onAuthStateChanged listener will handle the redirect
+      // once loading is complete.
 
     } catch (error: any) {
       setIsLoading(false);
