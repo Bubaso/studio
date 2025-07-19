@@ -100,6 +100,12 @@ service cloud.firestore {
     match /productReports/{itemId}/reports/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
     }
+    
+    // COUNTERS collection
+    // - Authenticated users can update the user counter during sign-up.
+    match /_counters/users {
+      allow update, create: if request.auth != null;
+    }
 
   }
 }
