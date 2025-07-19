@@ -1,6 +1,3 @@
-
-'use server';
-
 import { getTranslations } from 'next-intl/server';
 import { Resend } from 'resend';
 

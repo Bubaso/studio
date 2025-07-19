@@ -60,7 +60,10 @@ function SignUpPageContent() {
       
       await updateProfile(user, { displayName: name });
       
-      await createUserDocument(user, { name }, locale);
+      const creationResult = await createUserDocument(user, { name }, locale);
+      if (!creationResult.success) {
+        throw new Error(creationResult.error || t('toast.genericError'));
+      }
 
       toast({ title: t('toast.successTitle'), description: t('toast.welcome', { name }) });
       
@@ -73,7 +76,7 @@ function SignUpPageContent() {
         errorMessage = t('toast.emailInUse');
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = t('toast.invalidEmail');
-      } else if (error.code) { // Handle other specific Firebase auth errors if needed
+      } else if (error.message) {
           errorMessage = error.message;
       }
       toast({ title: t('toast.errorTitle'), description: errorMessage, variant: "destructive" });
@@ -86,11 +89,14 @@ function SignUpPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // This is the key change: ensure createUserDocument completes before redirecting
-      await createUserDocument(user, {
+      const creationResult = await createUserDocument(user, {
         name: user.displayName,
         avatarUrl: user.photoURL,
       }, locale);
+
+      if (!creationResult.success) {
+        throw new Error(creationResult.error || tSignIn('toast.oauthErrorTitle'));
+      }
 
       toast({
         title: tSignIn('toast.successTitle'),
@@ -101,7 +107,6 @@ function SignUpPageContent() {
 
     } catch (error: any) {
       setIsLoading(false);
-      // Popup closed by user is not an error, so we just return.
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
         return; 
       }
@@ -112,7 +117,7 @@ function SignUpPageContent() {
         errorMessage = tSignIn('toast.oauthAccountExists');
       } else if (error.code === 'auth/unauthorized-domain') {
         errorMessage = tSignIn('toast.unauthorizedDomain');
-      } else if (error.code) {
+      } else if (error.message) {
           errorMessage = error.message;
       }
       toast({

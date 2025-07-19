@@ -1,31 +1,25 @@
-
-'use server';
-
-import { db, storage, auth } from '@/lib/firebase'; // Added storage and auth
+import { db, storage, auth } from '@/lib/firebase';
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
-import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore'; // Removed onSnapshot, Unsubscribe
+import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { updateProfile } from 'firebase/auth'; // For updating Firebase Auth profile
+import { updateProfile } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { sendWelcomeEmail } from './emailService';
 import { getItemByIdFromFirestore } from './itemService';
 
 // Helper to convert Firestore Timestamp to ISO string
 const convertTimestampToISO = (timestamp: Timestamp | undefined | string): string => {
-  if (!timestamp) return new Date().toISOString(); // Default for missing
-  if (typeof timestamp === 'string') return timestamp; // Already a string
-  // Check if it's a Firestore Timestamp-like object with a toDate method
+  if (!timestamp) return new Date().toISOString(); 
+  if (typeof timestamp === 'string') return timestamp; 
   if (timestamp && typeof (timestamp as Timestamp).toDate === 'function') {
     try {
       return (timestamp as Timestamp).toDate().toISOString();
     } catch (e) {
       console.warn("Error converting timestamp toDate in userService:", e, timestamp);
-      return new Date().toISOString(); // Fallback on conversion error
+      return new Date().toISOString(); 
     }
   }
-  // If it's not a string, not undefined, and not a valid Timestamp, it's malformed.
   console.warn('Invalid timestamp format encountered in userService:', timestamp);
-  return new Date().toISOString(); // Fallback for malformed
+  return new Date().toISOString(); 
 };
 
 const mapDocToProfile = (docSnap: import('firebase/firestore').DocumentSnapshot): UserProfile | null => {
@@ -53,84 +47,41 @@ const mapDocToProfile = (docSnap: import('firebase/firestore').DocumentSnapshot)
     } as UserProfile;
 }
 
-
-export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<void> => {
-  if (!db) {
-      console.error("Firestore (db) is not initialized. Cannot create user document.");
-      throw new Error("Database service is not available.");
+export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<{ success: boolean; error?: string }> => {
+  if (!firebaseUser) {
+    return { success: false, error: "Firebase user object is required." };
   }
-  if (!firebaseUser) throw new Error("Firebase user object is required.");
-
-  const userRef = doc(db, 'users', firebaseUser.uid);
 
   try {
-    const userDoc = await getDoc(userRef);
-    if (userDoc.exists()) {
-      console.log(`User document for ${firebaseUser.uid} already exists. Skipping creation.`);
-      return;
-    }
-
-    // Call the API route to increment the counter and get founding member status
     const idToken = await firebaseUser.getIdToken();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const counterResponse = await fetch(`${appUrl}/api/user/increment-counter`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}` }
+    
+    const response = await fetch(`${appUrl}/api/user/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        additionalData,
+        locale,
+      }),
     });
-    
-    if (!counterResponse.ok) {
-        const errorData = await counterResponse.json();
-        console.error("Failed to update user count:", errorData.error);
-        // We can choose to continue user creation even if counter fails, to not block sign-up.
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create user document via API.');
     }
 
-    const { isFoundingMember = false, userCount = 0 } = await counterResponse.json().catch(() => ({}));
-    
-    let freeListings = isFoundingMember ? 15 : 5;
+    const result = await response.json();
+    return { success: result.success };
 
-    const { email, displayName, photoURL } = firebaseUser;
-    const finalName = additionalData.name || displayName || email?.split('@')[0] || 'Utilisateur Anonyme';
-    const finalAvatarUrl = additionalData.avatarUrl || photoURL || `https://placehold.co/100x100.png?text=${finalName.substring(0,2).toUpperCase()}`;
-
-    const newUserDocData = {
-      email,
-      name: finalName,
-      avatarUrl: finalAvatarUrl,
-      dataAiHint: "profil personne",
-      joinedDate: serverTimestamp(),
-      location: additionalData.location || '',
-      lastActiveAt: serverTimestamp(),
-      credits: 0,
-      freeListingsRemaining: freeListings,
-      subscriberCount: 0,
-      subscriptionCount: 0,
-      isFoundingMember: isFoundingMember,
-    };
-
-    await setDoc(userRef, newUserDocData);
-
-    console.log(`Successfully created user document for ${firebaseUser.uid}. Total users: ${userCount}`);
-    
-    // This part might fail on the server if auth.currentUser is not available.
-    // It's safer to handle this on the client after sign-in if needed.
-    // if (auth.currentUser) {
-    //     if (finalName !== auth.currentUser.displayName || finalAvatarUrl !== auth.currentUser.photoURL) {
-    //         await updateProfile(auth.currentUser, { 
-    //             displayName: finalName,
-    //             photoURL: finalAvatarUrl
-    //         }).catch(e => console.warn("Could not sync Auth profile on user creation:", e));
-    //     }
-    // }
-
-    if (firebaseUser.email) {
-        sendWelcomeEmail({ to: firebaseUser.email, name: finalName, locale });
-    }
-
-  } catch (error) {
-    console.error("Error in createUserDocument: ", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Error in createUserDocument service:", error);
+    return { success: false, error: error.message };
   }
 };
+
 
 export const getUserDocument = async (uid: string): Promise<UserProfile | null> => {
   if (!uid || typeof uid !== 'string' || uid.length === 0 || uid.includes('/')) {
@@ -181,7 +132,7 @@ export const updateUserProfile = async (
   const authProfileUpdate: { displayName?: string; photoURL?: string } = {};
   const firestoreUpdateData: Partial<UserProfile> = {};
 
-  if (data.name !== undefined) { // Check for undefined to allow setting empty string if intended
+  if (data.name !== undefined) { 
     authProfileUpdate.displayName = data.name;
     firestoreUpdateData.name = data.name;
   }
