@@ -1,3 +1,4 @@
+
 import { db, storage, auth } from '@/lib/firebase';
 import type { UserProfile, ViewHistoryItem, UserStory, Item, UserStatus } from '@/lib/types';
 import { doc, setDoc, getDoc, updateDoc, Timestamp, serverTimestamp, collection, query, orderBy, limit, getDocs, runTransaction, increment, deleteField, addDoc, deleteDoc, where } from 'firebase/firestore';
@@ -46,42 +47,6 @@ const mapDocToProfile = (docSnap: import('firebase/firestore').DocumentSnapshot)
         isFoundingMember: data.isFoundingMember || false,
     } as UserProfile;
 }
-
-export const createUserDocument = async (firebaseUser: FirebaseUser, additionalData: Partial<UserProfile> = {}, locale: string): Promise<{ success: boolean; error?: string }> => {
-  if (!firebaseUser) {
-    return { success: false, error: "Firebase user object is required." };
-  }
-
-  try {
-    const idToken = await firebaseUser.getIdToken();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    
-    const response = await fetch(`${appUrl}/api/user/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({
-        additionalData,
-        locale,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create user document via API.');
-    }
-
-    const result = await response.json();
-    return { success: result.success };
-
-  } catch (error: any) {
-    console.error("Error in createUserDocument service:", error);
-    return { success: false, error: error.message };
-  }
-};
-
 
 export const getUserDocument = async (uid: string): Promise<UserProfile | null> => {
   if (!uid || typeof uid !== 'string' || uid.length === 0 || uid.includes('/')) {

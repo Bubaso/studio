@@ -18,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
 import { createUserWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, updateProfile } from "firebase/auth";
-import { createUserDocument } from "@/services/userService";
+import { createUserAction } from "@/actions/userActions";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
@@ -60,7 +60,7 @@ function SignUpPageContent() {
       
       await updateProfile(user, { displayName: name });
       
-      const creationResult = await createUserDocument(user, { name }, locale);
+      const creationResult = await createUserAction(user, { name }, locale);
       if (!creationResult.success) {
         throw new Error(creationResult.error || t('toast.genericError'));
       }
@@ -89,7 +89,7 @@ function SignUpPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      const creationResult = await createUserDocument(user, {
+      const creationResult = await createUserAction(user, {
         name: user.displayName,
         avatarUrl: user.photoURL,
       }, locale);
@@ -145,6 +145,12 @@ function SignUpPageContent() {
         </Link>
         <CardTitle className="text-3xl font-headline">{t('title')}</CardTitle>
         <CardDescription>{t('description')}</CardDescription>
+        <p className="text-sm text-muted-foreground pt-2">
+          {t('hasAccountPrompt')}{" "}
+          <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
+             {t('signInLink')}
+          </Link>
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleEmailPasswordSubmit} className="space-y-4">
@@ -217,10 +223,10 @@ function SignUpPageContent() {
 
       </CardContent>
       <CardFooter className="flex flex-col items-center space-y-2 pt-6">
-        <p className="text-sm text-muted-foreground">
-          {t('hasAccountPrompt')}{" "}
+         <p className="text-sm text-muted-foreground">
+           {tSignIn('noAccountPrompt')}{" "}
           <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
-             {t('signInLink')}
+             {tSignIn('signInLink')}
           </Link>
         </p>
       </CardFooter>
