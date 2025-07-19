@@ -42,14 +42,10 @@ function SignUpPageContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && !isLoading) {
-        router.push(redirectTo);
-      } else {
         setAuthLoading(false);
-      }
     });
     return () => unsubscribe();
-  }, [router, redirectTo, isLoading]);
+  }, []);
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +64,7 @@ function SignUpPageContent() {
 
       toast({ title: t('toast.successTitle'), description: t('toast.welcome', { name }) });
       
-      // Let the onAuthStateChanged listener handle the redirect
+      router.push(redirectTo);
 
     } catch (error: any) {
       setIsLoading(false);
@@ -88,6 +84,7 @@ function SignUpPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      // This is the key change: ensure createUserDocument completes before redirecting
       await createUserDocument(user, {
         name: user.displayName,
         avatarUrl: user.photoURL,
@@ -98,7 +95,7 @@ function SignUpPageContent() {
         description: tSignIn('toast.welcome', { name: user.displayName || user.email }),
       });
       
-      // Let the onAuthStateChanged listener handle the redirect
+      router.push(redirectTo);
 
     } catch (error: any) {
       setIsLoading(false);

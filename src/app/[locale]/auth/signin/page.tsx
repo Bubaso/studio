@@ -40,14 +40,14 @@ function SignInPageContent() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && !isLoading) { // Ensure isLoading is false before redirecting
-        router.push(redirectTo);
+      if (user) {
+        setAuthLoading(false);
       } else {
         setAuthLoading(false);
       }
     });
     return () => unsubscribe();
-  }, [router, redirectTo, isLoading]);
+  }, []);
 
 
   const handleEmailPasswordSubmit = async (e: React.FormEvent) => {
@@ -56,7 +56,7 @@ function SignInPageContent() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: t('toast.successTitle'), description: t('toast.redirecting') });
-      // The onAuthStateChanged listener will catch this and redirect.
+      router.push(redirectTo);
     } catch (error: any) {
       let errorMessage = t('toast.genericError');
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -89,8 +89,7 @@ function SignInPageContent() {
         description: t('toast.welcome', { name: user.displayName || user.email }),
       });
       
-      // We don't need setIsLoading(false) here because the onAuthStateChanged listener will handle the redirect
-      // once loading is complete.
+      router.push(redirectTo);
 
     } catch (error: any) {
       setIsLoading(false);
