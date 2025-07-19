@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import admin, { adminDb, adminAuth } from '@/lib/firebaseAdmin';
+import { adminDb, adminAuth, initializedAdmin as admin } from '@/lib/firebaseAdmin';
 import { getStorage } from 'firebase-admin/storage';
 
 // Helper function to extract storage path from a Firebase Storage URL
