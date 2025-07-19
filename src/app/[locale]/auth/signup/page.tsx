@@ -224,9 +224,9 @@ function SignUpPageContent() {
       </CardContent>
       <CardFooter className="flex flex-col items-center space-y-2 pt-6">
          <p className="text-sm text-muted-foreground">
-           {tSignIn('noAccountPrompt')}{" "}
+           {t('hasAccountPrompt')}{" "}
           <Link href={`/auth/signin?redirect=${encodeURIComponent(redirectTo)}`} className="font-semibold text-primary hover:underline">
-             {tSignIn('signInLink')}
+             {t('signInLink')}
           </Link>
         </p>
       </CardFooter>
