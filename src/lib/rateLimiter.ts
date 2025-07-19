@@ -1,4 +1,5 @@
-import { adminDb } from '@/lib/firebaseAdmin';
+
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Define limits for different actions.
@@ -22,7 +23,10 @@ export type RateLimitAction = keyof typeof limits;
  * @returns {Promise<void>} Resolves if the user is within the limit, otherwise rejects with an error.
  */
 export async function checkRateLimit(userId: string, action: RateLimitAction): Promise<void> {
-  if (!adminDb) {
+  let adminDb;
+  try {
+      ({ db: adminDb } = getAdminInstances());
+  } catch (e) {
     // This might happen if Admin SDK is not configured. Log a warning but don't block.
     // In production, this should be considered a critical configuration error.
     console.warn('Rate Limiter: Firebase Admin DB not initialized. Bypassing rate limit check.');
@@ -76,3 +80,4 @@ export async function checkRateLimit(userId: string, action: RateLimitAction): P
     throw new Error('Could not verify rate limit status. Please try again.');
   }
 }
+

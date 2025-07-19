@@ -1,20 +1,25 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import admin, { adminDb } from '@/lib/firebaseAdmin';
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import { createHash } from 'crypto';
+import * as admin from 'firebase-admin';
 
 const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
 const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
 
 export async function POST(request: NextRequest) {
+    let adminDb;
+    try {
+        ({ db: adminDb } = getAdminInstances());
+    } catch (error: any) {
+        console.error("CRITICAL FIREBASE ADMIN IPN ERROR: Firebase Admin SDK could not be initialized.", error.message);
+        return NextResponse.json({ error: "Configuration du serveur de base de données IPN manquante." }, { status: 500 });
+    }
+
     // --- Configuration Checks ---
     if (!PAYTECH_API_KEY || !PAYTECH_API_SECRET) {
         console.error("CRITICAL PAYTECH IPN ERROR: PayTech API Key or Secret is not defined in environment variables.");
         return NextResponse.json({ error: "Configuration du serveur de paiement IPN manquante." }, { status: 500 });
-    }
-    if (!admin || !adminDb) {
-        console.error("CRITICAL FIREBASE ADMIN IPN ERROR: Firebase Admin SDK is not initialized.");
-        return NextResponse.json({ error: "Configuration du serveur de base de données IPN manquante." }, { status: 500 });
     }
 
     try {
@@ -101,3 +106,4 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Erreur interne du serveur lors du traitement IPN." }, { status: 500 });
     }
 }
+

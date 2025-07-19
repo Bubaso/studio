@@ -1,6 +1,7 @@
+
 // src/app/api/messages/create-thread/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
+import { getAdminInstances } from '@/lib/firebaseAdmin'; // Import adminDb and adminAuth
 import type { UserProfile, Item, MessageThread } from '@/lib/types';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore'; // Use Admin SDK Timestamp
 import { checkRateLimit } from '@/lib/rateLimiter';
@@ -25,6 +26,7 @@ const generateThreadIdInternal = (uid1: string, uid2: string): string => {
 };
 
 async function getAdminUserProfile(uid: string): Promise<UserProfile | null> {
+  const { db: adminDb } = getAdminInstances();
   if (!uid) return null;
   const userDoc = await adminDb.collection('users').doc(uid).get();
   if (!userDoc.exists) return null;
@@ -37,6 +39,7 @@ async function getAdminUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 async function getAdminItemDetails(itemId: string): Promise<Item | null> {
+  const { db: adminDb } = getAdminInstances();
   if (!itemId) return null;
   const itemDoc = await adminDb.collection('items').doc(itemId).get();
   if (!itemDoc.exists) return null;
@@ -51,10 +54,12 @@ async function getAdminItemDetails(itemId: string): Promise<Item | null> {
 
 
 export async function POST(request: NextRequest) {
-  console.log('API_ROUTE: POST /api/messages/create-thread invoked.');
-  if (!adminDb || !adminAuth) {
-    console.error('API_ROUTE_ERROR: Firebase Admin SDK (adminDb or adminAuth) is not initialized.');
-    return NextResponse.json({ error: "Erreur critique de configuration du serveur (Admin SDK). L'administrateur a été notifié." }, { status: 500 });
+  let adminAuth, adminDb;
+  try {
+      ({ auth: adminAuth, db: adminDb } = getAdminInstances());
+  } catch (error: any) {
+      console.error("API_ROUTE_ERROR: Firebase Admin SDK could not be initialized.", error.message);
+      return NextResponse.json({ error: "Erreur critique de configuration du serveur (Admin SDK). L'administrateur a été notifié." }, { status: 500 });
   }
 
   const authHeader = request.headers.get('authorization');
@@ -215,3 +220,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: clientErrorMessage }, { status: 500 });
   }
 }
+

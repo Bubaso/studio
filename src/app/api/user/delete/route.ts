@@ -1,7 +1,7 @@
 
 import 'dotenv/config'; // Explicitly load environment variables
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminDb, adminAuth, initializedAdmin as admin } from '@/lib/firebaseAdmin';
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import { getStorage } from 'firebase-admin/storage';
 
 // Helper function to extract storage path from a Firebase Storage URL
@@ -26,7 +26,8 @@ function getPathFromUrl(url: string): string | null {
 }
 
 // Helper to add all documents in a collection to a write batch for deletion.
-async function addCollectionDeletionsToBatch(collectionRef: admin.firestore.CollectionReference, batch: admin.firestore.WriteBatch) {
+async function addCollectionDeletionsToBatch(collectionRef: FirebaseFirestore.CollectionReference, batch: FirebaseFirestore.WriteBatch) {
+    const { db: adminDb } = getAdminInstances();
     if (!adminDb) return;
     const snapshot = await collectionRef.get();
     if (snapshot.empty) return;
@@ -37,8 +38,12 @@ async function addCollectionDeletionsToBatch(collectionRef: admin.firestore.Coll
 
 
 export async function POST(request: NextRequest) {
-  if (!admin || !adminAuth || !adminDb) {
-    return NextResponse.json({ error: "Configuration du serveur Firebase Admin manquante." }, { status: 500 });
+  let adminAuth, adminDb, app, storage;
+  try {
+      ({ auth: adminAuth, db: adminDb, app, storage } = getAdminInstances());
+  } catch (error: any) {
+      console.error("API DELETE USER - FAILED TO INIT ADMIN:", error.message);
+      return NextResponse.json({ error: "Configuration du serveur Firebase Admin manquante." }, { status: 500 });
   }
 
   const authHeader = request.headers.get('authorization');
@@ -56,7 +61,6 @@ export async function POST(request: NextRequest) {
   }
 
   const uid = decodedToken.uid;
-  const storage = getStorage(admin.app());
   const bucket = storage.bucket();
 
   try {
@@ -157,3 +161,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message || "Une erreur interne s'est produite lors de la suppression du compte." }, { status: 500 });
   }
 }
+

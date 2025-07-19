@@ -1,10 +1,14 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import type { UserProfile } from '@/lib/types';
+import * as admin from 'firebase-admin';
 
 export async function POST(request: NextRequest) {
-  if (!adminDb || !adminAuth || !admin) {
+  let adminAuth, adminDb;
+  try {
+      ({ auth: adminAuth, db: adminDb } = getAdminInstances());
+  } catch (error: any) {
     return NextResponse.json({ success: false, error: "Firebase Admin not configured." }, { status: 500 });
   }
 
@@ -87,3 +91,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "An error occurred. Please try again." }, { status: 500 });
   }
 }
+

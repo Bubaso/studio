@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb as db } from '@/lib/firebaseAdmin';
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import type { Notification } from '@/lib/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
@@ -25,6 +25,14 @@ const mapDocToNotification = (doc: FirebaseFirestore.DocumentSnapshot): Notifica
 }
 
 export async function createNotification(userId: string, notificationData: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'>) {
+    let db;
+    try {
+        ({ db } = getAdminInstances());
+    } catch (e) {
+        console.error("Could not create notification: Firebase Admin not initialized.");
+        return;
+    }
+
     if (!userId || !db) {
         console.error("User ID and db instance are required to create a notification.");
         return;
@@ -43,6 +51,14 @@ export async function createNotification(userId: string, notificationData: Omit<
 }
 
 export async function getNotificationsForUser(userId: string, count: number = 10): Promise<Notification[]> {
+    let db;
+    try {
+        ({ db } = getAdminInstances());
+    } catch (e) {
+        console.error("Could not get notifications: Firebase Admin not initialized.");
+        return [];
+    }
+
     if (!userId || !db) return [];
     try {
         const notificationsRef = db.collection('users').doc(userId).collection('notifications');
@@ -57,7 +73,12 @@ export async function getNotificationsForUser(userId: string, count: number = 10
 
 
 export async function markAllNotificationsAsRead(userId: string): Promise<{ success: boolean; error?: string }> {
-  if (!userId || !db) return { success: false, error: "L'ID utilisateur ou la base de données n'est pas disponible" };
+  let db;
+  try {
+    ({ db } = getAdminInstances());
+  } catch (e) {
+    return { success: false, error: "L'ID utilisateur ou la base de données n'est pas disponible" };
+  }
   
   const notificationsRef = db.collection('users').doc(userId).collection('notifications');
   
@@ -83,3 +104,4 @@ export async function markAllNotificationsAsRead(userId: string): Promise<{ succ
     return { success: false, error: "Impossible de marquer les notifications comme lues." };
   }
 }
+

@@ -1,7 +1,9 @@
+
 import { NextResponse, type NextRequest } from 'next/server';
-import admin, { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { getAdminInstances } from '@/lib/firebaseAdmin';
 import { randomBytes } from 'crypto';
 import { checkRateLimit } from '@/lib/rateLimiter';
+import * as admin from 'firebase-admin';
 
 const PAYTECH_API_KEY = process.env.PAYTECH_API_KEY;
 const PAYTECH_API_SECRET = process.env.PAYTECH_API_SECRET;
@@ -9,14 +11,18 @@ const PAYTECH_BASE_URL = 'https://paytech.sn';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
 export async function POST(request: NextRequest) {
+    let adminAuth, adminDb;
+    try {
+        ({ auth: adminAuth, db: adminDb } = getAdminInstances());
+    } catch (error: any) {
+        console.error("CRITICAL FIREBASE ADMIN ERROR: Firebase Admin SDK could not be initialized.", error.message);
+        return NextResponse.json({ error: "Configuration du serveur de base de données manquante. L'administrateur a été notifié." }, { status: 500 });
+    }
+
     // --- Configuration Checks ---
     if (!PAYTECH_API_KEY || !PAYTECH_API_SECRET) {
         console.error("CRITICAL PAYTECH ERROR: PayTech API Key or Secret is not defined in environment variables.");
         return NextResponse.json({ error: "Configuration du serveur de paiement manquante. L'administrateur a été notifié." }, { status: 500 });
-    }
-    if (!admin || !adminAuth || !adminDb) {
-        console.error("CRITICAL FIREBASE ADMIN ERROR: Firebase Admin SDK is not initialized. Check server logs.");
-        return NextResponse.json({ error: "Configuration du serveur de base de données manquante. L'administrateur a été notifié." }, { status: 500 });
     }
 
     try {
@@ -106,3 +112,4 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
+
