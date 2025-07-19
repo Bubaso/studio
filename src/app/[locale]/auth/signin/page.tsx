@@ -18,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
 import { signInWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { createUserAction } from "@/actions/userActions";
+import { createUserAction, type SerializableUser } from "@/actions/userActions";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
@@ -79,8 +79,15 @@ function SignInPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
+      const serializableUser: SerializableUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+      };
+
       // This action creates the user document only if it doesn't already exist.
-      const creationResult = await createUserAction(user, {
+      const creationResult = await createUserAction(serializableUser, {
         name: user.displayName,
         avatarUrl: user.photoURL,
       }, locale);

@@ -18,7 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase"; 
 import { createUserWithEmailAndPassword, onAuthStateChanged, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, updateProfile } from "firebase/auth";
-import { createUserAction } from "@/actions/userActions";
+import { createUserAction, type SerializableUser } from "@/actions/userActions";
 import Link from 'next/link';
 import { useLocale, useTranslations } from "next-intl";
 
@@ -60,7 +60,14 @@ function SignUpPageContent() {
       
       await updateProfile(user, { displayName: name });
       
-      const creationResult = await createUserAction(user, { name }, locale);
+      const serializableUser: SerializableUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: name,
+          photoURL: user.photoURL,
+      };
+
+      const creationResult = await createUserAction(serializableUser, { name }, locale);
       if (!creationResult.success) {
         throw new Error(creationResult.error || t('toast.genericError'));
       }
@@ -89,7 +96,14 @@ function SignUpPageContent() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      const creationResult = await createUserAction(user, {
+      const serializableUser: SerializableUser = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+      };
+
+      const creationResult = await createUserAction(serializableUser, {
         name: user.displayName,
         avatarUrl: user.photoURL,
       }, locale);
