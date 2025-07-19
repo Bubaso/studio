@@ -85,11 +85,18 @@ service cloud.firestore {
 
     // MESSAGE_THREADS collection
     // - Only participants can read/write messages in a thread.
+    // - FIX: Separated create from read/update to avoid recursive get() calls on list queries.
     match /messageThreads/{threadId} {
-      allow read, update, create: if request.auth != null && request.auth.uid in resource.data.participantIds;
-      
+      allow read, update: if request.auth.uid in resource.data.participantIds;
+      allow create: if request.auth.uid in request.resource.data.participantIds;
+
+      // - FIX: Simplified message rules to check auth against wildcard {threadId} instead of using get().
       match /messages/{messageId} {
-        allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/messageThreads/$(threadId)).data.participantIds;
+        function isParticipant() {
+          let uids = threadId.split('_');
+          return request.auth.uid == uids[0] || request.auth.uid == uids[1];
+        }
+        allow read, create: if request.auth != null && isParticipant();
       }
     }
     
