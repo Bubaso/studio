@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { auth } from '@/lib/firebase';
-import { signOut, type User as FirebaseUser } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import type { UserProfile, Item, Review, UserStatus } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,35 +16,71 @@ import { Edit3, MapPin, CalendarDays, Star, LogIn, Loader2, Trash2, LayoutDashbo
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { deleteUserAccount } from '@/services/userService';
+import { deleteUserAccount, getUserDocument, getUserStatuses, getSubscribersForUser, getSubscriptionsForUser } from '@/services/userService';
+import { getUserListingsFromFirestore } from '@/services/itemService';
 import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
 import { SetStatusDialog } from '@/components/set-status-dialog';
 import { StatusDisplay } from '@/components/status-display';
 import { useAuth } from '@/context/AuthContext';
 
 
-interface ProfilePageClientProps {
-  initialData: {
-    userProfile: UserProfile | null;
-    listings: Item[];
-    subscriptions: UserProfile[];
-    subscribers: UserProfile[];
-    statuses: UserStatus[];
-  } | null;
-}
-
-export default function ProfilePageClient({ initialData }: ProfilePageClientProps) {
+export default function ProfilePageClient() {
   const t = useTranslations('ProfilePage');
   const locale = useLocale();
   const { firebaseUser, authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [listings, setListings] = useState<Item[]>([]);
+  const [subscriptions, setSubscriptions] = useState<UserProfile[]>([]);
+  const [subscribers, setSubscribers] = useState<UserProfile[]>([]);
+  const [statuses, setStatuses] = useState<UserStatus[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
-  // Initialize state from server-provided props
-  const [statuses, setStatuses] = useState<UserStatus[]>(initialData?.statuses || []);
+  const fetchProfileData = useCallback(async () => {
+    if (!firebaseUser) {
+        setIsLoading(false);
+        return;
+    };
+    setIsLoading(true);
+
+    try {
+        const [profile, listings, subs, scribers, statuses] = await Promise.all([
+            getUserDocument(firebaseUser.uid),
+            getUserListingsFromFirestore(firebaseUser.uid),
+            getSubscriptionsForUser(firebaseUser.uid),
+            getSubscribersForUser(firebaseUser.uid),
+            getUserStatuses(firebaseUser.uid)
+        ]);
+        
+        setUserProfile(profile);
+        setListings(listings);
+        setSubscriptions(subs);
+        setSubscribers(scribers);
+        setStatuses(statuses);
+
+    } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+        toast({
+            title: t('toast.errorTitle'),
+            description: "Failed to load profile data.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [firebaseUser, t, toast]);
+
+  useEffect(() => {
+    if (!authLoading) {
+        fetchProfileData();
+    }
+  }, [authLoading, fetchProfileData]);
+
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -67,39 +103,33 @@ export default function ProfilePageClient({ initialData }: ProfilePageClientProp
     }
   };
   
-  // This function is no longer needed as we fetch data once on the server.
-  // We can add it back if we need client-side refetching.
   const handleStatusUpdate = () => {
     setIsStatusDialogOpen(false);
-    // Instead of a full refetch, we could optimistically update the state
-    // or simply reload the page for now.
-    router.refresh(); 
+    fetchProfileData();
   };
 
   const handleStatusDeleted = (deletedStatusId: string) => {
     setStatuses(prev => prev.filter(s => s.id !== deletedStatusId));
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
   
-  if (!firebaseUser || !initialData?.userProfile) {
+  if (!firebaseUser || !userProfile) {
     return (
       <div className="text-center py-10">
         <Alert variant="default" className="max-w-md mx-auto">
           <LogIn className="h-4 w-4" />
           <AlertTitle>{t('loginRequiredTitle')}</AlertTitle>
           <AlertDescription>
-            {t('loginRequiredDesc')}
-            <Link href="/auth/signin" className="font-bold text-primary hover:underline ml-1">{t('signInLink')}</Link>
+            {t('loginRequiredDesc')}{" "}
+            <Link href="/auth/signin" className="font-bold text-primary hover:underline">{t('signInLink')}</Link>
           </AlertDescription>
         </Alert>
       </div>
     );
   }
-
-  const { userProfile, listings, subscribers, subscriptions } = initialData;
 
   return (
     <div className="space-y-8">
@@ -159,7 +189,7 @@ export default function ProfilePageClient({ initialData }: ProfilePageClientProp
               </div>
             )}
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
-              <CalendarDays className="h-4 w-4 mr-2" /> {t('joinedOn', { date: new Date(userProfile.joinedDate) })}
+              <CalendarDays className="h-4 w-4 mr-2" /> {t('joinedOn', { date: new Date(userProfile.joinedDate).toLocaleDateString() })}
             </div>
 
             <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
