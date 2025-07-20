@@ -22,6 +22,53 @@ import { SubscriptionListDialog } from '@/components/subscription-list-dialog';
 import { SetStatusDialog } from '@/components/set-status-dialog';
 import { StatusDisplay } from '@/components/status-display';
 import { useAuth } from '@/context/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function CardSkeleton() {
+  return (
+    <div className="border rounded-lg p-4 space-y-3 shadow-sm bg-card">
+      <Skeleton className="h-40 w-full bg-muted/50" />
+      <Skeleton className="h-6 w-3/4 bg-muted/50" />
+      <Skeleton className="h-8 w-1/2 bg-muted/50" />
+      <Skeleton className="h-4 w-1/2 bg-muted/50" />
+      <Skeleton className="h-4 w-1/3 bg-muted/50" />
+      <Skeleton className="h-10 w-full mt-2 bg-muted/50" />
+    </div>
+  );
+}
+
+function ProfilePageSkeleton() {
+    return (
+        <div className="space-y-8">
+            <Card className="shadow-lg">
+                <CardContent className="p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+                <Skeleton className="h-32 w-32 md:h-40 md:w-40 rounded-full" />
+                <div className="flex-1 text-center md:text-left w-full space-y-3">
+                    <Skeleton className="h-8 w-1/2 mx-auto md:mx-0" />
+                    <Skeleton className="h-5 w-1/3 mx-auto md:mx-0" />
+                    <Skeleton className="h-4 w-1/4 mx-auto md:mx-0" />
+                    <Skeleton className="h-4 w-1/3 mx-auto md:mx-0" />
+                    <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
+                        <Skeleton className="h-10 w-full md:w-48" />
+                        <div className="flex w-full gap-2">
+                            <Skeleton className="h-10 w-1/2" />
+                            <Skeleton className="h-10 w-1/2" />
+                        </div>
+                    </div>
+                </div>
+                </CardContent>
+            </Card>
+
+            <section>
+                <Skeleton className="h-8 w-1/3 mb-4" />
+                <div className="grid grid-cols-2 gap-6">
+                    <CardSkeleton />
+                    <CardSkeleton />
+                </div>
+            </section>
+        </div>
+    );
+}
 
 
 export default function ProfilePageClient() {
@@ -113,7 +160,7 @@ export default function ProfilePageClient() {
   };
 
   if (authLoading || isLoading) {
-    return <div className="flex justify-center items-center h-[calc(100vh-200px)]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <ProfilePageSkeleton />;
   }
   
   if (!firebaseUser || !userProfile) {
