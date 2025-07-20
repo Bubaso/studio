@@ -363,6 +363,9 @@ export default function MessageThreadPage() {
   
   const handleSendMessage = async () => {
     if ((!newMessage.trim() && !imageToSend) || !currentUser || !threadInfo || !selectedItem) return;
+    const recipientId = threadInfo.participantIds.find(id => id !== currentUser.uid);
+    if (!recipientId) return;
+
     setIsSending(true);
     let uploadedImageUrl: string | undefined = undefined;
 
@@ -382,7 +385,13 @@ export default function MessageThreadPage() {
     }
 
     try {
-      await sendMessage(threadInfo.id, currentUser.uid, currentUser.displayName || currentUser.email || 'Moi', newMessage.trim(), selectedItem.id, uploadedImageUrl);
+      await sendMessage({
+          senderId: currentUser.uid,
+          recipientId,
+          itemId: selectedItem.id,
+          text: newMessage.trim(),
+          imageUrl: uploadedImageUrl
+      });
       setNewMessage('');
       clearImageAttachment();
     } catch (error: any) {
@@ -395,10 +404,19 @@ export default function MessageThreadPage() {
   
   const handleSendAudio = async () => {
     if (!audioBlob || !currentUser || !threadInfo || !selectedItem) return;
+    const recipientId = threadInfo.participantIds.find(id => id !== currentUser.uid);
+    if (!recipientId) return;
+
     setIsSending(true);
     try {
       const audioUrl = await uploadChatAudioAndGetURL(audioBlob, threadInfo.id, currentUser.uid);
-      await sendMessage(threadInfo.id, currentUser.uid, currentUser.displayName || "Moi", "", selectedItem.id, undefined, audioUrl);
+      await sendMessage({
+          senderId: currentUser.uid,
+          recipientId,
+          itemId: selectedItem.id,
+          text: "", // Audio messages have no text
+          audioUrl
+      });
       
       setAudioBlob(null);
       if (audioPreviewUrl) {
@@ -776,4 +794,3 @@ export default function MessageThreadPage() {
     </div>
   );
 }
-
