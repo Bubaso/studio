@@ -49,12 +49,13 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
 
         const data = await response.json();
 
-        if (response.ok && data.threadId) {
+        if (response.ok && data.threadId && data.threadData) {
             toast({
               title: t('toasts.discussionStarted'),
               description: t('toasts.redirectingToDiscussion'),
             });
-            router.push(`/messages/${data.threadId}`);
+            // Redirect with the itemId to ensure it's selected on the chat page
+            router.push(`/messages/${data.threadId}?item=${itemId}`);
         } else {
             console.error("Error from API:", data.error);
             toast({

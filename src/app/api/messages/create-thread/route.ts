@@ -175,13 +175,21 @@ export async function POST(request: NextRequest) {
       if (itemDetails && (!existingData.discussedItemIds || !existingData.discussedItemIds.includes(itemDetails.id))) {
         updatePayload.discussedItemIds = FieldValue.arrayUnion(itemDetails.id);
       }
-      // Potentially update participant names/avatars if they changed
-      // This requires fetching profiles even for existing threads, which can be added if necessary
+      
+      // Always update last message time to bring thread to top, even if no message is sent
+      updatePayload.lastMessageAt = Timestamp.now();
+      
+      if (itemDetails) {
+          updatePayload.itemId = itemDetails.id;
+          updatePayload.itemTitle = itemDetails.name;
+          updatePayload.itemImageUrl = itemDetails.imageUrls?.[0] || '';
+          updatePayload.itemSellerId = itemDetails.sellerId;
+      }
 
       if (Object.keys(updatePayload).length > 0) {
-        console.log(`API_ROUTE_ACTION: Updating item context for existing thread ${threadId} with payload:`, updatePayload);
+        console.log(`API_ROUTE_ACTION: Updating existing thread ${threadId} with payload:`, updatePayload);
         await threadRef.update(updatePayload);
-        console.log(`API_ROUTE_SUCCESS: Updated item context for thread ${threadId}.`);
+        console.log(`API_ROUTE_SUCCESS: Updated thread ${threadId}.`);
       }
       
       const finalThreadDataSnap = await threadRef.get(); // Re-fetch to get latest data
@@ -220,4 +228,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: clientErrorMessage }, { status: 500 });
   }
 }
-
