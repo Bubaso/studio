@@ -14,7 +14,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 import { cn } from '@/lib/utils';
 import { NotificationCenter } from '../NotificationCenter';
 import { useLocale, useTranslations } from 'next-intl';
-import { useToast } from '@/hooks/use-toast';
 
 interface NavLink {
   href: string;
@@ -23,11 +22,8 @@ interface NavLink {
   id?: string;
 }
 
-const NOTIFICATION_KEY = 'foundingMemberNotified';
-
 export function Header() {
   const t = useTranslations('Header');
-  const tNotifier = useTranslations('FoundingMemberNotifier');
   const pathname = usePathname();
   const router = useRouter();
   const locale = useLocale();
@@ -36,8 +32,6 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [hasNewMessageActivity, setHasNewMessageActivity] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const { toast } = useToast();
-  const notifierFiredRef = useRef(false);
 
   const mainLinks: NavLink[] = [
     { href: '/browse', label: t('nav.browse'), icon: <Search className="h-4 w-4" /> },
@@ -82,26 +76,6 @@ export function Header() {
           if (docSnap.exists()) {
               const profile = docSnap.data() as UserProfile;
               setUserProfile(profile);
-
-              // Check for founding member status here
-              if (profile.isFoundingMember && !notifierFiredRef.current) {
-                  const hasBeenNotified = sessionStorage.getItem(NOTIFICATION_KEY);
-                  if (!hasBeenNotified) {
-                    toast({
-                      title: (
-                        <div className="flex items-center gap-2">
-                          <Gem className="h-5 w-5 text-primary" />
-                          {tNotifier('title')}
-                        </div>
-                      ),
-                      description: tNotifier('description'),
-                      className: 'text-base',
-                      duration: 20000,
-                    });
-                    sessionStorage.setItem(NOTIFICATION_KEY, 'true');
-                  }
-                  notifierFiredRef.current = true;
-              }
           } else {
               setUserProfile(null);
           }
@@ -110,14 +84,13 @@ export function Header() {
     } else {
       setHasNewMessageActivity(false);
       setUserProfile(null);
-      notifierFiredRef.current = false;
     }
 
     return () => {
         unsubscribeThreads();
         unsubscribeProfile();
     };
-  }, [currentUser, pathname, tNotifier, toast]);
+  }, [currentUser, pathname]);
 
 
   const handleSignOut = async () => {

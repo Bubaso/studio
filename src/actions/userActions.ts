@@ -22,7 +22,7 @@ export async function createUserAction(
     serializableUser: SerializableUser,
     additionalData: { name?: string | null, avatarUrl?: string | null, location?: string | null } = {},
     locale: string = 'fr'
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string, isFoundingMember?: boolean }> {
     let adminAuth, adminDb;
     try {
         ({ auth: adminAuth, db: adminDb } = getAdminInstances());
@@ -38,7 +38,8 @@ export async function createUserAction(
         const userDoc = await userRef.get();
         if (userDoc.exists) {
             console.log(`User document for ${uid} already exists. Skipping creation.`);
-            return { success: true };
+            // A non-founding member who already exists is not a new founding member.
+            return { success: true, isFoundingMember: !!userDoc.data()?.isFoundingMember };
         }
 
         // Increment the user counter and determine if they are a founding member
@@ -83,7 +84,7 @@ export async function createUserAction(
         }
         
         revalidatePath('/');
-        return { success: true };
+        return { success: true, isFoundingMember };
 
     } catch (error: any) {
         console.error("Error in createUserAction:", error);

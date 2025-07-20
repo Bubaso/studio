@@ -74,7 +74,8 @@ function SignUpPageContent() {
 
       toast({ title: t('toast.successTitle'), description: t('toast.welcome', { name }) });
       
-      router.push(redirectTo);
+      const destination = creationResult.isFoundingMember ? `${redirectTo}?new_founding_member=true` : redirectTo;
+      router.push(destination);
 
     } catch (error: any) {
       setIsLoading(false);
@@ -117,7 +118,8 @@ function SignUpPageContent() {
         description: tSignIn('toast.welcome', { name: user.displayName || user.email }),
       });
       
-      router.push(redirectTo);
+      const destination = creationResult.isFoundingMember ? `${redirectTo}?new_founding_member=true` : redirectTo;
+      router.push(destination);
 
     } catch (error: any) {
       setIsLoading(false);
