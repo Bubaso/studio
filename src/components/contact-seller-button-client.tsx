@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import { useLocale, useTranslations } from 'next-intl';
+import { sendMessage } from '@/services/messageService';
 
 interface ContactSellerButtonClientProps {
   sellerId: string;
@@ -33,45 +34,33 @@ export function ContactSellerButtonClient({ sellerId, itemId, className }: Conta
     }
 
     startTransition(async () => {
-        try {
-        const idToken = await currentUser.getIdToken();
-        const response = await fetch('/api/messages/create-thread', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
-            },
-            body: JSON.stringify({
-            otherUserId: sellerId,
-            itemId: itemId,
-            }),
+      try {
+        const { threadId } = await sendMessage({
+          senderId: currentUser.uid,
+          recipientId: sellerId,
+          itemId: itemId,
+          // Sending an empty text will just create/prepare the thread
+          text: '', 
         });
 
-        const data = await response.json();
-
-        if (response.ok && data.threadId && data.threadData) {
+        if (threadId) {
             toast({
               title: t('toasts.discussionStarted'),
               description: t('toasts.redirectingToDiscussion'),
             });
             // Redirect with the itemId to ensure it's selected on the chat page
-            router.push(`/messages/${data.threadId}?item=${itemId}`);
+            router.push(`/messages/${threadId}?item=${itemId}`);
         } else {
-            console.error("Error from API:", data.error);
-            toast({
-            variant: "destructive",
-            title: t('toasts.error'),
-            description: data.error || t('toasts.contactError'),
-            });
+             throw new Error(t('toasts.contactError'));
         }
-        } catch (error) {
+      } catch (error: any) {
         console.error("Client-side error contacting seller:", error);
         toast({
-            variant: "destructive",
-            title: t('toasts.communicationError'),
-            description: t('toasts.contactError'),
+          variant: "destructive",
+          title: t('toasts.error'),
+          description: error.message || t('toasts.contactError'),
         });
-        }
+      }
     });
   };
 

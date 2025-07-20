@@ -1,4 +1,5 @@
 
+
 // Can be called from client components if needed, though actions are preferred for mutations
 
 import { db, storage, auth } from '@/lib/firebase'; // Added auth
@@ -22,6 +23,7 @@ import {
   limit,
   deleteField,
   arrayRemove,
+  runTransaction
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getUserDocument } from './userService';
@@ -112,99 +114,117 @@ export const uploadChatAudioAndGetURL = async (audioBlob: Blob, threadId: string
 };
 
 
-export const sendMessage = async (
-  threadId: string,
-  senderId: string,
-  senderName: string,
-  text: string,
-  itemId: string, // Item context is now mandatory
-  imageUrl?: string,
-  audioUrl?: string
-): Promise<void> => {
-  if (!text.trim() && !imageUrl && !audioUrl) return; 
-  if (!threadId || !senderId || !senderName || !itemId) {
-    console.error("ThreadID, SenderID, SenderName, and ItemID are required to send a message.");
-    throw new Error("Missing required parameters for sending message.");
+interface SendMessageParams {
+  senderId: string;
+  recipientId: string;
+  itemId: string;
+  text: string;
+  imageUrl?: string;
+  audioUrl?: string;
+}
+
+const generateThreadId = (uid1: string, uid2: string): string => {
+  if (!uid1 || !uid2) {
+    throw new Error("UIDs cannot be empty for generating thread ID");
+  }
+  return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+};
+
+export const sendMessage = async ({ senderId, recipientId, itemId, text, imageUrl, audioUrl }: SendMessageParams): Promise<{ threadId: string }> => {
+  const isJustCreatingThread = !text && !imageUrl && !audioUrl;
+  if (!senderId || !recipientId || !itemId) {
+    throw new Error("Sender, recipient, and item IDs are required.");
   }
 
+  const threadId = generateThreadId(senderId, recipientId);
   const threadRef = doc(db, 'messageThreads', threadId);
-  
-  // Check for block status before proceeding
-  const threadSnap = await getDoc(threadRef);
-  if (!threadSnap.exists()) {
-    throw new Error("Conversation thread not found.");
-  }
-  const threadData = threadSnap.data() as MessageThread;
-  
-  if (threadData.blockedBy) {
-    // If the conversation is blocked, no one can send a message.
-    throw new Error("La conversation est bloquée. Les messages ne peuvent pas être envoyés.");
-  }
-
-  const messagesColRef = collection(threadRef, 'messages');
-
-  const newMessageData: Omit<Message, 'id' | 'timestamp'> & { timestamp: any } = {
-    threadId,
-    senderId,
-    senderName: senderName || "Utilisateur Inconnu",
-    text: text.trim(),
-    itemId,
-    timestamp: serverTimestamp(),
-    readBy: [senderId], 
-  };
-  if (imageUrl) {
-    newMessageData.imageUrl = imageUrl;
-  }
-  if (audioUrl) {
-    newMessageData.audioUrl = audioUrl;
-  }
-
 
   try {
-    const batch = writeBatch(db);
-    const newMsgDocRef = doc(messagesColRef); 
-    batch.set(newMsgDocRef, newMessageData);
-    
-    let lastMessagePreview = text.trim();
-    if (audioUrl) {
-      lastMessagePreview = "🎤 Sesli Mesaj";
-    } else if (imageUrl && !text.trim()) {
-        lastMessagePreview = "📷 Görüntü";
-    } else if (imageUrl && text.trim()) {
-        lastMessagePreview = `📷 ${text.trim()}`;
-    }
+    await runTransaction(db, async (transaction) => {
+      const threadSnap = await transaction.get(threadRef);
+      const itemDetails = await getItemByIdFromFirestore(itemId);
 
-    const itemDetails = await getItemByIdFromFirestore(itemId);
-    
-    const recipientId = threadData.participantIds.find(id => id !== senderId);
+      if (!itemDetails) {
+        throw new Error("L'article en question n'a pas été trouvé.");
+      }
+      
+      let lastMessagePreview = text.trim();
+      if (audioUrl) {
+          lastMessagePreview = "🎤 Message vocal";
+      } else if (imageUrl) {
+          lastMessagePreview = text.trim() ? `📷 ${text.trim()}` : "📷 Image";
+      }
 
-    const updateData: { [key: string]: any } = {
-      lastMessageText: lastMessagePreview,
-      lastMessageSenderId: senderId,
-      lastMessageAt: serverTimestamp(),
-      participantsWhoHaveSeenLatest: [senderId],
-      itemId: itemDetails?.id || '',
-      itemTitle: itemDetails?.name || '',
-      itemImageUrl: itemDetails?.imageUrls?.[0] || '',
-      itemSellerId: itemDetails?.sellerId || '',
-    };
-    
-    // "Undelete" the thread for the recipient. If they had deleted it, 
-    // a new message brings it back into their inbox.
-    if (recipientId) {
-        updateData.deletedFor = arrayRemove(recipientId);
-        // Add the item to the recipient's unread items list
-        updateData[`unreadItemsFor.${recipientId}`] = arrayUnion(itemId);
-    }
-    
-    batch.update(threadRef, updateData);
-    
-    await batch.commit();
+      if (!threadSnap.exists()) {
+        const senderProfile = await getUserDocument(senderId);
+        const recipientProfile = await getUserDocument(recipientId);
+
+        if (!senderProfile || !recipientProfile) {
+          throw new Error("Impossible de trouver le profil de l'utilisateur.");
+        }
+        
+        const participantIdsSorted: [string, string] = senderId < recipientId ? [senderId, recipientId] : [recipientId, senderId];
+        const namesSorted = participantIdsSorted[0] === senderId ? [senderProfile.name, recipientProfile.name] : [recipientProfile.name, senderProfile.name];
+        const avatarsSorted = participantIdsSorted[0] === senderId ? [senderProfile.avatarUrl, recipientProfile.avatarUrl] : [otherProfile.avatarUrl, senderProfile.avatarUrl];
+
+        const newThreadData = {
+          participantIds: participantIdsSorted,
+          participantNames: [namesSorted[0] || 'Utilisateur', namesSorted[1] || 'Utilisateur'] as [string, string],
+          participantAvatars: [avatarsSorted[0] || 'https://placehold.co/100x100.png?text=?', avatarsSorted[1] || 'https://placehold.co/100x100.png?text=?'] as [string, string],
+          createdAt: serverTimestamp(),
+          lastMessageAt: serverTimestamp(),
+          discussedItemIds: [itemId],
+        };
+        transaction.set(threadRef, newThreadData);
+      } else {
+        const updatePayload: { [key: string]: any } = {
+            discussedItemIds: arrayUnion(itemId),
+            lastMessageAt: serverTimestamp(),
+            deletedFor: arrayRemove(senderId) // Undelete for sender if they send a message
+        };
+        transaction.update(threadRef, updatePayload);
+      }
+      
+      if (!isJustCreatingThread) {
+          const messagesColRef = collection(threadRef, 'messages');
+          const newMsgDocRef = doc(messagesColRef);
+          
+          const newMessageData: Omit<Message, 'id' | 'timestamp'> & { timestamp: any } = {
+            threadId,
+            senderId,
+            senderName: (await getUserDocument(senderId))?.name || "Utilisateur Inconnu",
+            text: text.trim(),
+            itemId,
+            timestamp: serverTimestamp(),
+            readBy: [senderId],
+          };
+          if (imageUrl) newMessageData.imageUrl = imageUrl;
+          if (audioUrl) newMessageData.audioUrl = audioUrl;
+
+          transaction.set(newMsgDocRef, newMessageData);
+
+          const threadUpdateWithMessage = {
+              lastMessageText: lastMessagePreview,
+              lastMessageSenderId: senderId,
+              participantsWhoHaveSeenLatest: [senderId],
+              itemId: itemDetails.id,
+              itemTitle: itemDetails.name,
+              itemImageUrl: itemDetails.imageUrls?.[0] || '',
+              itemSellerId: itemDetails.sellerId,
+              [`unreadItemsFor.${recipientId}`]: arrayUnion(itemId),
+              deletedFor: arrayRemove(recipientId) // Undelete for receiver
+          };
+          transaction.update(threadRef, threadUpdateWithMessage);
+      }
+    });
+
+    return { threadId };
   } catch (error) {
-    console.error("Error sending message: ", error);
+    console.error("Error in sendMessage transaction: ", error);
     throw error;
   }
 };
+
 
 export const getMessageThreadsForUser = (
   userUid: string,
