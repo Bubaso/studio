@@ -3,11 +3,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Folder } from 'lucide-react';
 import type { UserCollection } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface CollectionCardProps {
   collection: UserCollection;
@@ -17,58 +16,40 @@ const genericBlurDataURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAA
 
 export function CollectionCard({ collection }: CollectionCardProps) {
   const t = useTranslations('FavoritesPage.collectionCard');
-  const locale = useLocale();
-  const previews = collection.previewImageUrls || [];
+  const primaryImageUrl = collection.previewImageUrls?.[0];
 
   return (
-    <Link href={`/${locale}/favorites/${collection.id}`} className="block group">
-      <Card className="flex flex-col h-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-[1.015] active:scale-[0.98]">
-        <CardHeader className="p-0 relative">
-          <div className="aspect-video w-full bg-muted overflow-hidden">
-            {previews.length === 0 ? (
-              <div className="flex items-center justify-center h-full">
-                <Folder className="h-12 w-12 text-muted-foreground/50" />
-              </div>
-            ) : (
-              <div className={cn(
-                "grid h-full w-full gap-0.5",
-                previews.length === 1 && "grid-cols-1",
-                previews.length === 2 && "grid-cols-2",
-                previews.length === 3 && "grid-cols-2",
-                previews.length >= 4 && "grid-cols-2 grid-rows-2",
-              )}>
-                {previews.slice(0, 4).map((url, index) => (
-                  <div key={index} className={cn(
-                    "relative overflow-hidden",
-                    previews.length === 3 && index === 0 && "row-span-2"
-                  )}>
-                    <Image
-                      src={url}
-                      alt={`Aperçu de la collection ${collection.name}`}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      placeholder="blur"
-                      blurDataURL={genericBlurDataURL}
-                      data-ai-hint="collection item"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 flex-grow">
-          <CardTitle className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors line-clamp-2" title={collection.name}>
+    <Link href={`/favorites/${collection.id}`} className="block group">
+      <Card className="relative aspect-video w-full overflow-hidden rounded-lg shadow-lg transition-all duration-300 ease-in-out hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]">
+        {primaryImageUrl ? (
+            <Image
+                src={primaryImageUrl}
+                alt={`Preview for ${collection.name} collection`}
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                placeholder="blur"
+                blurDataURL={genericBlurDataURL}
+                data-ai-hint="collection item"
+            />
+        ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+                <Folder className="h-16 w-16 text-muted-foreground/30" />
+            </div>
+        )}
+
+        {/* Gradient Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+
+        {/* Text Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+          <h3 className="font-headline text-lg font-bold drop-shadow-md group-hover:text-primary-foreground transition-colors">
             {collection.name}
-          </CardTitle>
-          <CardDescription>
+          </h3>
+          <p className="text-sm text-white/80 drop-shadow-sm">
             {t('itemCount', { count: collection.itemCount })}
-          </CardDescription>
-        </CardContent>
-        <CardFooter className="p-3 pt-0 text-xs text-muted-foreground">
-           {t('createdAt', { date: new Date(collection.createdAt).toLocaleDateString() })}
-        </CardFooter>
+          </p>
+        </div>
       </Card>
     </Link>
   );
