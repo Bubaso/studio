@@ -25,16 +25,6 @@ import { useLocale, useTranslations } from "next-intl";
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-const GoogleIcon = () => (
-  <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5">
-    <path
-      d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.08-2.58 1.98-4.52 1.98-5.45 0-9.88-4.45-9.88-9.88s4.43-9.88 9.88-9.88c2.92 0 4.96 1.18 6.48 2.62l-2.35 2.35c-.96-.91-2.2-1.98-4.13-1.98-3.3 0-5.98 2.67-5.98 5.98s2.67 5.98 5.98 5.98c3.67 0 5.14-2.5 5.46-3.92h-5.46z"
-      fill="currentColor"
-    />
-  </svg>
-);
-
-
 function SignUpPageContent() {
   const t = useTranslations('SignUpPage');
   const tSignIn = useTranslations('SignInPage');
@@ -186,11 +176,7 @@ function SignUpPageContent() {
               onClick={() => handleOAuthSignIn(googleProvider)}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                <GoogleIcon />
-              )}
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               {t('googleSignUp')}
             </Button>
           </div>
