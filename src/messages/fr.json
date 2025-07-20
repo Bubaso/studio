@@ -471,6 +471,8 @@
     "sendVoiceMessage": "Envoyer un message vocal",
     "selectAnItem": "Sélectionnez un article",
     "selectAnItemDesc": "Veuillez sélectionner un article ci-dessus pour voir la conversation.",
+    "startConversationTitle": "Commencer la conversation",
+    "startConversationDesc": "Envoyez un message pour commencer à discuter de \"{itemName}\".",
     "toast": {
       "notFoundTitle": "Non trouvé",
       "notFoundDesc": "Ce fil de discussion est introuvable.",

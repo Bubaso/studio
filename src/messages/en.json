@@ -471,6 +471,8 @@
     "sendVoiceMessage": "Send voice message",
     "selectAnItem": "Select an Item",
     "selectAnItemDesc": "Please select an item above to view the conversation.",
+    "startConversationTitle": "Start the conversation",
+    "startConversationDesc": "Send a message to start chatting about \"{itemName}\".",
     "toast": {
       "notFoundTitle": "Not Found",
       "notFoundDesc": "This message thread could not be found.",

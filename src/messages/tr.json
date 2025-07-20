@@ -471,6 +471,8 @@
     "sendVoiceMessage": "Sesli mesaj gönder",
     "selectAnItem": "Bir Ürün Seçin",
     "selectAnItemDesc": "Lütfen konuşmayı görüntülemek için yukarıdan bir ürün seçin.",
+    "startConversationTitle": "Konuşmayı başlat",
+    "startConversationDesc": "\"{itemName}\" hakkında sohbet etmeye başlamak için bir mesaj gönderin.",
     "toast": {
       "notFoundTitle": "Bulunamadı",
       "notFoundDesc": "Bu mesaj dizisi bulunamadı.",

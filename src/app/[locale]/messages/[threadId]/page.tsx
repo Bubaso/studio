@@ -272,6 +272,7 @@ export default function MessageThreadPage() {
   useEffect(() => {
     if (threadInfo && discussedItems.length > 0 && !initialItemSelectionDone.current && currentUser) {
       const initialItemIdFromQuery = searchParams.get('item');
+      // The most recent item is in `threadInfo.itemId`. Prioritize this.
       const initialItem = discussedItems.find(i => i.id === initialItemIdFromQuery) ||
                           discussedItems.find(i => i.id === threadInfo.itemId) ||
                           discussedItems[0];
@@ -624,7 +625,7 @@ export default function MessageThreadPage() {
             {selectedItem ? (
                  <div className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-background/30">
-                        {messages.map((msg) => {
+                        {messages.length > 0 ? messages.map((msg) => {
                             const isCurrentUserSender = msg.senderId === currentUser.uid;
                             const senderAvatar = isCurrentUserSender ? (currentUser.photoURL || undefined) : otherParticipantAvatar;
                             const senderNameDisplay = isCurrentUserSender ? t('you') : msg.senderName;
@@ -688,7 +689,13 @@ export default function MessageThreadPage() {
                                 )}
                                 </div>
                             );
-                        })}
+                        }) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-4 text-muted-foreground">
+                                <Package className="h-12 w-12 mb-4" />
+                                <h3 className="font-semibold text-lg text-foreground">{t('startConversationTitle')}</h3>
+                                <p>{t('startConversationDesc', { itemName: selectedItem.name })}</p>
+                            </div>
+                        )}
                         <div ref={messagesEndRef} />
                     </div>
 
@@ -769,3 +776,4 @@ export default function MessageThreadPage() {
     </div>
   );
 }
+
