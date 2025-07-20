@@ -189,7 +189,7 @@ export default function ProfilePageClient() {
               </div>
             )}
             <div className="flex items-center justify-center md:justify-start text-muted-foreground mb-4">
-              <CalendarDays className="h-4 w-4 mr-2" /> {t('joinedOn', { date: new Date(userProfile.joinedDate).toLocaleDateString() })}
+              <CalendarDays className="h-4 w-4 mr-2" /> {t('joinedOn', { date: new Date(userProfile.joinedDate) })}
             </div>
 
             <div className="mt-4 flex w-full flex-col items-stretch gap-2 md:w-auto md:flex-col">
